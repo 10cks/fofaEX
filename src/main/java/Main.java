@@ -81,10 +81,18 @@ public class Main {
                     String line;
                     while ((line = reader.readLine()) != null) {
                         line = line.trim();
-                        if (line.startsWith("\"") && line.contains("\":\"")) {
-                            String[] parts = line.split(":");
-                            String key = parts[0].replace("\"", "").trim();
-                            String value = parts[1].replace("\"", "").replace(",", "").trim();
+
+                        // 跳过井号注释
+                        if (line.startsWith("#")) {
+                            continue;
+                        }
+
+                        if (line.startsWith("\"") && line.contains("{") && line.contains("}")) {
+                            String[] parts = line.split(":", 2);  // Split into at most 2 parts
+                            // remove leading and trailing double quotes from key
+                            String key = parts[0].substring(1, parts[0].length()-1).trim();
+                            // remove leading and trailing braces from value but keep everything inside including equal sign
+                            String value = parts[1].substring(1, parts[1].length()-2).trim();
                             newMap.put(key, value);
                         }
                     }
