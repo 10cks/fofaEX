@@ -8,16 +8,15 @@ import java.awt.event.MouseEvent;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
+import javax.swing.BorderFactory;
 
 public class Main {
 
     public static void main(String[] args) throws ClassNotFoundException, UnsupportedLookAndFeelException, InstantiationException, IllegalAccessException {
-        JFrame jFrame = new JFrame("FofaEX");
+        JFrame jFrame = new JFrame("fofaEX");
 
         // 设置外观风格
         UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
@@ -27,12 +26,12 @@ public class Main {
         jFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // 确保按下关闭按钮时结束程序
 
         // 创建输入框
-        JTextField textField0 = createTextFieldFofa(" FofaEX: Fofa Grammar Extension");
-
+        JTextField textField0 = createTextFieldFofa("fofaEX: fofa Extension");
         textField0.setForeground(Color.BLUE);
-        Font font = new Font("Verdana", Font.BOLD, 15);
+        Font font = new Font("Mono", Font.BOLD, 14);
         textField0.setFont(font);
         textField0.setCaretPosition(textField0.getText().length());
+
 
         // 创建输入框
         JTextField textField1 = createTextField("http://fofa.info/");
@@ -41,6 +40,7 @@ public class Main {
 
         // 创建检查账户按钮
         JButton button = new JButton("检查账户");
+        button.setFocusPainted(false); // 添加这一行来取消焦点边框的绘制
         button.addActionListener(e -> {
             // 点击按钮时显示输入的数据
             JOptionPane.showMessageDialog(null, "网址: " + textField1.getText()
@@ -62,11 +62,13 @@ public class Main {
         JPanel panel1 = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
         JPanel panel2 = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
         JPanel panel3 = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
-        JPanel panel4 = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
+        // 创建面板并使用GridLayout布局
+        JPanel panel4 = new JPanel(new GridLayout(0, 5, 10, 10)); // 0表示行数不限，5表示每行最多5个组件，10, 10是组件之间的间距
         JPanel panel5 = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
 
         // 创建"更新规则"按钮
         JButton updateButton = new JButton("更新规则");
+        updateButton.setFocusPainted(false);
         // 新增一个LinkedHashMap，用于存储按钮的键名和键值
         Map<String, JButton> buttonsMap = new LinkedHashMap<>();
         updateButton.addActionListener(new ActionListener() {
@@ -88,33 +90,37 @@ public class Main {
                     }
                     reader.close();
 
-                    // Remove buttons that no longer exist in the file
+                    // 移除按钮
                     Iterator<Map.Entry<String, JButton>> iterator = buttonsMap.entrySet().iterator();
                     while (iterator.hasNext()) {
                         Map.Entry<String, JButton> entry = iterator.next();
                         if (!newMap.containsKey(entry.getKey())) {
-                            panel3.remove(entry.getValue());
+                            panel4.remove(entry.getValue());
                             iterator.remove();
                         }
                     }
 
-                    // Update existing buttons and add new ones
+                    // 更新并新增按钮
                     for (Map.Entry<String, String> entry : newMap.entrySet()) {
                         JButton existingButton = buttonsMap.get(entry.getKey());
                         if (existingButton == null) {
-                            // This is a new button
+                            // 新按钮
                             JButton newButton = new JButton(entry.getKey());
                             newButton.setActionCommand(entry.getValue());
+                            newButton.setFocusPainted(false); // 添加这一行来取消焦点边框的绘制
+                            newButton.setFocusable(false);  // 禁止了按钮获取焦点，因此按钮不会在被点击后显示为"激活"或"选中"的状态
                             newButton.addActionListener(actionEvent -> {
                                 if (newButton.getForeground() != Color.RED) {
                                     textField0.setText(textField0.getText() + " " + newButton.getActionCommand());
                                     newButton.setForeground(Color.RED);
+                                    newButton.setFont(newButton.getFont().deriveFont(Font.BOLD)); // 设置字体为粗体
                                 } else {
                                     textField0.setText(textField0.getText().replace(" " + newButton.getActionCommand(), ""));
                                     newButton.setForeground(null);
+                                    newButton.setFont(null);
                                 }
                             });
-                            panel3.add(newButton);
+                            panel4.add(newButton);
                             buttonsMap.put(entry.getKey(), newButton);
                         } else {
                             // This is an existing button
@@ -123,8 +129,8 @@ public class Main {
                         }
                     }
 
-                    panel3.revalidate();
-                    panel3.repaint();
+                    panel4.revalidate();
+                    panel4.repaint();
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }
@@ -139,12 +145,17 @@ public class Main {
         panel2.add(textField0); // FofaEX: Fofa Grammar Extension
         panel2.add(updateButton);
 
+
+// 创建一个带有指定的空白边框的新面板，其中指定了上、左、下、右的边距
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
         // 添加面板到主面板
         mainPanel.add(panel1);
         mainPanel.add(panel2);
         mainPanel.add(panel3);
         mainPanel.add(panel4);
         mainPanel.add(panel5);
+
 
         // 把面板添加到JFrame
         jFrame.add(mainPanel, BorderLayout.NORTH);
@@ -153,6 +164,13 @@ public class Main {
         // 设置窗口居中并显示
         jFrame.setLocationRelativeTo(null);
         jFrame.setVisible(true);
+
+        // 在程序运行时，使 textField0 获得焦点
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                textField0.requestFocusInWindow();
+            }
+        });
     }
 
     private static JTextField createTextField(String text) {
@@ -189,7 +207,6 @@ public class Main {
         textField.setPreferredSize(new Dimension(380, 40));
 
         // 创建只有底边的边框
-
         Border blueBorder = BorderFactory.createMatteBorder(0, 0, 1, 0, Color.RED);
         Border defaultBorder = BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY);
 
@@ -210,7 +227,6 @@ public class Main {
                 textField.setBorder(defaultBorder);
             }
         });
-
         return textField;
     }
 }
