@@ -12,6 +12,8 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.swing.BorderFactory;
+import java.awt.Color;
+
 
 public class Main {
 
@@ -31,19 +33,18 @@ public class Main {
         textField0.setBackground(new Color(48, 49, 52));
         // 设置光标
         textField0.setCaret(new CustomCaret(Color.WHITE));
-
         // 设置文字颜色为白色
         textField0.setForeground(Color.WHITE);
 
         Font font = new Font("Mono", Font.BOLD, 14);
         textField0.setFont(font);
-        textField0.setCaretPosition(textField0.getText().length());
-
+        // 将光标放在末尾
+        // textField0.setCaretPosition(textField0.getText().length());
 
         // 创建输入框
-        JTextField textField1 = createTextField("http://fofa.info/");
-        JTextField textField2 = createTextField("请输入邮箱");
-        JTextField textField3 = createTextField("请输入API key");
+        JTextField fofaUrl = createTextField("http://fofa.info/");
+        JTextField fofaMail = createTextField("请输入邮箱");
+        JTextField fofaKey = createTextField("请输入API key");
 
         // 创建检查账户按钮
         JButton checkButton = new JButton("检查账户");
@@ -51,16 +52,14 @@ public class Main {
         checkButton.setFocusable(false);
         checkButton.addActionListener(e -> {
             // 点击按钮时显示输入的数据
-            JOptionPane.showMessageDialog(null, "网址: " + textField1.getText()
-                    + "\n邮箱: " + textField2.getText()
-                    + "\nAPI key: " + textField3.getText());
+            JOptionPane.showMessageDialog(null, "网址: " + fofaUrl.getText()
+                    + "\n邮箱: " + fofaMail.getText()
+                    + "\nAPI key: " + fofaKey.getText());
         });
-
 
         // 创建按钮面板，不改变布局（保持BoxLayout）
         final JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
-
 
         // 创建主面板并使用BoxLayout布局
         JPanel mainPanel = new JPanel();
@@ -156,14 +155,22 @@ public class Main {
         });
 
         // 添加组件到面板
-        panel1.add(textField1); // 网址
-        panel1.add(textField2); // 邮箱
-        panel1.add(textField3); // API key
-        panel1.add(checkButton);     // 检查账户
-        panel1.add(updateButton);
+        panel1.add(fofaUrl); // 网址
+        panel1.add(fofaMail); // 邮箱
+        panel1.add(fofaKey); // API key
+        panel1.add(checkButton);  // 检查账户
+        panel1.add(updateButton); // 更新规则
         panel2.add(textField0); // FofaEX: Fofa Grammar Extension
 
-// 创建一个带有指定的空白边框的新面板，其中指定了上、左、下、右的边距
+        // 添加逻辑运算组件
+        createLogicAddButton("=", "=", panel3, textField0);
+        createLogicAddButton("==", "==", panel3, textField0);
+        createLogicAddButton("&&", "&&", panel3, textField0);
+        createLogicAddButton("||", "||", panel3, textField0);
+        createLogicAddButton("!=", "!=", panel3, textField0);
+        createLogicAddButton("*=", "*=", panel3, textField0);
+
+        // 创建一个带有指定的空白边框的新面板，其中指定了上、左、下、右的边距
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         // 添加面板到主面板
@@ -172,7 +179,6 @@ public class Main {
         mainPanel.add(panel3);
         mainPanel.add(panel4);
         mainPanel.add(panel5);
-
 
         // 把面板添加到JFrame
         jFrame.add(mainPanel, BorderLayout.NORTH);
@@ -236,4 +242,23 @@ public class Main {
 
         return textField;
     }
+
+    private static void createLogicAddButton(String buttonText, String appendText, JPanel panel, JTextField textField) {
+        // 创建按钮
+        JButton button = new JButton(buttonText);
+        button.setFocusPainted(false); // 不显示按钮焦点外边框
+        button.setFocusable(false); // 禁止按钮获取焦点
+
+        // 添加点击事件
+        button.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                // 追加指定文本到文本框中
+                textField.setText(textField.getText() + " " + appendText);
+            }
+        });
+        // 将按钮添加到指定面板中
+        panel.add(button);
+    }
+
 }
