@@ -12,9 +12,15 @@ import javax.swing.BorderFactory;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
-import org.jdesktop.swingx.prompt.PromptSupport;
 import java.awt.Color;
-
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class Main {
     public static void main(String[] args) throws ClassNotFoundException, UnsupportedLookAndFeelException, InstantiationException, IllegalAccessException {
@@ -96,8 +102,8 @@ public class Main {
         // textField0.setCaretPosition(textField0.getText().length());
 
         // 创建输入框
-        JTextField fofaUrl = createTextField("http://fofa.info/");
-        JTextField fofaMail = createTextField("请输入邮箱");
+        JTextField fofaUrl = createTextField("https://fofa.info");
+        JTextField fofaEmail = createTextField("请输入邮箱");
         JTextField fofaKey = createTextField("请输入API key");
 
         // 创建检查账户按钮
@@ -106,10 +112,50 @@ public class Main {
         checkButton.setFocusable(false);
         checkButton.addActionListener(e -> {
             // 点击按钮时显示输入的数据
-            JOptionPane.showMessageDialog(null, "网址: " + fofaUrl.getText()
-                    + "\n邮箱: " + fofaMail.getText()
-                    + "\nAPI key: " + fofaKey.getText());
+            String email = fofaEmail.getText();
+            String key = fofaKey.getText();
+            String fofaUrl_str = fofaUrl.getText();
+
+            // https://fofa.info/api/v1/info/my?email=
+            String authUrl = fofaUrl_str + "/api/v1/info/my?email=" + email + "&key=" + key;
+
+            HttpClient httpClient = HttpClientBuilder.create().build();
+            HttpGet request = new HttpGet(authUrl);
+
+            try {
+                HttpResponse response = httpClient.execute(request);
+                HttpEntity entity = response.getEntity();
+                String responseBody = EntityUtils.toString(entity);
+
+                // 解析JSON数据
+                JSONObject json = new JSONObject(responseBody);
+
+                if (!json.getBoolean("error")) {
+                    // 账户验证有效
+                    StringBuilder output = new StringBuilder();
+                    output.append("账户验证有效\n");
+                    output.append("邮箱地址: ").append(json.getString("email")).append("\n");
+                    output.append("用户名: ").append(json.getString("username")).append("\n");
+
+                    if(json.getBoolean("isvip")){
+                        output.append("身份权限：FOFA会员\n");
+                    }else{
+                        output.append("身份权限：普通用户\n");
+                    };
+                    output.append("F点数量: ").append(json.getInt("fofa_point")).append("\n");
+                    output.append("API月度剩余查询次数: ").append(json.getInt("remain_api_query")).append("\n");
+                    output.append("API月度剩余返回数量: ").append(json.getInt("remain_api_data")).append("\n");
+                    JOptionPane.showMessageDialog(null, output.toString());
+                } else {
+                    // 账户验证无效
+                    JOptionPane.showMessageDialog(null, "账户验证无效！", "提示", JOptionPane.WARNING_MESSAGE);
+                }
+            } catch (IOException | JSONException ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(null, "发生错误，请重试！", "错误", JOptionPane.ERROR_MESSAGE);
+            }
         });
+
 
         // 创建按钮面板，不改变布局（保持BoxLayout）
         final JPanel buttonPanel = new JPanel();
@@ -185,6 +231,10 @@ public class Main {
                             newButton.setFocusable(false);  // 禁止了按钮获取焦点，因此按钮不会在被点击后显示为"激活"或"选中"的状态
                             newButton.addActionListener(actionEvent -> {
                                 if (newButton.getForeground() != Color.RED) {
+                                    // 如果文本为提示文字，则清空文本
+                                    if (textField0.getText().contains("fofaEX: FOFA Extension")) {
+                                        textField0.setText("");
+                                    }
                                     textField0.setText(textField0.getText() + " " + newButton.getActionCommand());
                                     newButton.setForeground(Color.RED);
                                     newButton.setFont(newButton.getFont().deriveFont(Font.BOLD)); // 设置字体为粗体
@@ -192,6 +242,14 @@ public class Main {
                                     textField0.setText(textField0.getText().replace(" " + newButton.getActionCommand(), ""));
                                     newButton.setForeground(null);
                                     newButton.setFont(null);
+                                    // 如果为空则设置 prompt
+                                    if (textField0.getText().isEmpty()) {
+                                        textField0.setText("fofaEX: FOFA Extension");
+                                        textField0.setForeground(Color.GRAY);
+                                        // 将光标放在开头
+                                        textField0.setCaretPosition(0);
+
+                                    }
                                 }
                             });
                             panel4.add(newButton);
@@ -218,7 +276,7 @@ public class Main {
 
         // 添加组件到面板
         panel1.add(fofaUrl); // 网址
-        panel1.add(fofaMail); // 邮箱
+        panel1.add(fofaEmail); // 邮箱
         panel1.add(fofaKey); // API key
         panel1.add(checkButton);  // 检查账户
         panel1.add(updateButton); // 更新规则
@@ -342,6 +400,5 @@ public class Main {
         // 将按钮添加到指定面板中
         panel.add(button);
     }
-
 
 }
