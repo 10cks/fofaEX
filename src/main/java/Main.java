@@ -25,9 +25,16 @@ public class Main {
         jFrame.setSize(1000, 500);
         jFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // 确保按下关闭按钮时结束程序
 
-        // 创建输入框
+        // 创建 fofa 输入框
         JTextField textField0 = createTextFieldFofa("fofaEX: fofa Extension");
-        textField0.setForeground(Color.BLUE);
+        // 设置背景色为 (4, 12, 31)
+        textField0.setBackground(new Color(48, 49, 52));
+        // 设置光标
+        textField0.setCaret(new CustomCaret(Color.WHITE));
+
+        // 设置文字颜色为白色
+        textField0.setForeground(Color.WHITE);
+
         Font font = new Font("Mono", Font.BOLD, 14);
         textField0.setFont(font);
         textField0.setCaretPosition(textField0.getText().length());
@@ -39,9 +46,10 @@ public class Main {
         JTextField textField3 = createTextField("请输入API key");
 
         // 创建检查账户按钮
-        JButton button = new JButton("检查账户");
-        button.setFocusPainted(false); // 添加这一行来取消焦点边框的绘制
-        button.addActionListener(e -> {
+        JButton checkButton = new JButton("检查账户");
+        checkButton.setFocusPainted(false); // 添加这一行来取消焦点边框的绘制
+        checkButton.setFocusable(false);
+        checkButton.addActionListener(e -> {
             // 点击按钮时显示输入的数据
             JOptionPane.showMessageDialog(null, "网址: " + textField1.getText()
                     + "\n邮箱: " + textField2.getText()
@@ -59,8 +67,8 @@ public class Main {
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
 
         // 创建面板并使用FlowLayout布局
-        JPanel panel1 = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
-        JPanel panel2 = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
+        JPanel panel1 = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        JPanel panel2 = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         JPanel panel3 = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
         // 创建面板并使用GridLayout布局
         JPanel panel4 = new JPanel(new GridLayout(0, 5, 10, 10)); // 0表示行数不限，5表示每行最多5个组件，10, 10是组件之间的间距
@@ -69,6 +77,7 @@ public class Main {
         // 创建"更新规则"按钮
         JButton updateButton = new JButton("更新规则");
         updateButton.setFocusPainted(false);
+        updateButton.setFocusable(false);
         // 新增一个LinkedHashMap，用于存储按钮的键名和键值
         Map<String, JButton> buttonsMap = new LinkedHashMap<>();
         updateButton.addActionListener(new ActionListener() {
@@ -115,6 +124,7 @@ public class Main {
                             // 新按钮
                             JButton newButton = new JButton(entry.getKey());
                             newButton.setActionCommand(entry.getValue());
+                            newButton.setToolTipText(entry.getValue()); // 设置按钮的 ToolTip 为键值，悬浮显示
                             newButton.setFocusPainted(false); // 添加这一行来取消焦点边框的绘制
                             newButton.setFocusable(false);  // 禁止了按钮获取焦点，因此按钮不会在被点击后显示为"激活"或"选中"的状态
                             newButton.addActionListener(actionEvent -> {
@@ -149,10 +159,9 @@ public class Main {
         panel1.add(textField1); // 网址
         panel1.add(textField2); // 邮箱
         panel1.add(textField3); // API key
-        panel1.add(button);     // 检查账户
+        panel1.add(checkButton);     // 检查账户
+        panel1.add(updateButton);
         panel2.add(textField0); // FofaEX: Fofa Grammar Extension
-        panel2.add(updateButton);
-
 
 // 创建一个带有指定的空白边框的新面板，其中指定了上、左、下、右的边距
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -211,30 +220,20 @@ public class Main {
     }
 
     private static JTextField createTextFieldFofa(String text) {
-        JTextField textField = new JTextField(text);
-        textField.setPreferredSize(new Dimension(380, 40));
+        RoundJTextField textField = new RoundJTextField(0);
+        textField.setText(text);
+        textField.setPreferredSize(new Dimension(800, 50));
+
+        // 设置文本与边框的间距
+        textField.setMargin(new Insets(0, 10, 0, 5));
 
         // 创建只有底边的边框
         Border blueBorder = BorderFactory.createMatteBorder(0, 0, 1, 0, Color.RED);
         Border defaultBorder = BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY);
 
         // 设置默认边框
-        textField.setBorder(defaultBorder);
+        // textField.setBorder(defaultBorder);
 
-        // 添加鼠标监听器
-        textField.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                // 鼠标进入时，设置边框颜色为蓝色
-                textField.setBorder(blueBorder);
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                // 鼠标离开时，将边框颜色设回默认颜色
-                textField.setBorder(defaultBorder);
-            }
-        });
         return textField;
     }
 }
