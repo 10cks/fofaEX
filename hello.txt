@@ -1,7 +1,6 @@
 # FOFA模糊搜索的正确姿势
 # https://nosec.org/home/detail/5071.html
 
-"edu icp":{org="China Education and Research Network Center"},
 "host":{host="test.baidu.com"},
 "子域是test+1字符":{host*="test?.baidu.com"},
 "子域字符为5个":{host*="?????.baidu.com"},

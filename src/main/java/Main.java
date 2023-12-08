@@ -1,10 +1,7 @@
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -12,11 +9,14 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.swing.BorderFactory;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+
+import org.jdesktop.swingx.prompt.PromptSupport;
 import java.awt.Color;
 
 
 public class Main {
-
     public static void main(String[] args) throws ClassNotFoundException, UnsupportedLookAndFeelException, InstantiationException, IllegalAccessException {
         JFrame jFrame = new JFrame("fofaEX");
 
@@ -28,16 +28,70 @@ public class Main {
         jFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // 确保按下关闭按钮时结束程序
 
         // 创建 fofa 输入框
-        JTextField textField0 = createTextFieldFofa("fofaEX: fofa Extension");
+        JTextField textField0 = createTextFieldFofa("fofaEX: FOFA Extension");
+
+        textField0.addKeyListener(new KeyAdapter(){
+            @Override
+            public void keyPressed(KeyEvent e){
+                // 当输入框内的文字是提示文字时，先清空输入框再允许输入
+                if (textField0.getText().equals("fofaEX: FOFA Extension")){
+                    textField0.setText("");
+                }
+            }
+        });
+
         // 设置背景色为 (4, 12, 31)
         textField0.setBackground(new Color(48, 49, 52));
         // 设置光标
         textField0.setCaret(new CustomCaret(Color.WHITE));
         // 设置文字颜色为白色
-        textField0.setForeground(Color.WHITE);
+        // textField0.setForeground(Color.WHITE);
 
         Font font = new Font("Mono", Font.BOLD, 14);
         textField0.setFont(font);
+
+        // ”fofaEX: fofa Extension“ 事件
+        textField0.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                // 当输入框得到焦点时，如果当前是提示文字，则清空输入框并将文字颜色设置为白色
+                if (textField0.getText().equals("fofaEX: FOFA Extension")){
+                    textField0.setText("");
+                    textField0.setForeground(Color.WHITE);
+                }
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                // 当输入框失去焦点时，如果输入框为空，则显示提示文字，并将文字颜色设置为灰色
+                if (textField0.getText().isEmpty()){
+                    textField0.setText("fofaEX: FOFA Extension");
+                    textField0.setForeground(Color.GRAY);
+                }
+            }
+        });
+
+        textField0.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                textField0.setForeground(Color.WHITE);
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                if (textField0.getText().isEmpty()){
+                    textField0.setForeground(Color.GRAY);
+                } else {
+                    textField0.setForeground(Color.WHITE);
+                }
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                // 平滑字体，无需处理
+            }
+        });
+
         // 将光标放在末尾
         // textField0.setCaretPosition(textField0.getText().length());
 
@@ -65,10 +119,13 @@ public class Main {
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
 
+        // 创建一个子面板，用来在搜索框边上新增按钮
+        JPanel subPanel1 = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+
         // 创建面板并使用FlowLayout布局
         JPanel panel1 = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         JPanel panel2 = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
-        JPanel panel3 = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
+        JPanel panel3 = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         // 创建面板并使用GridLayout布局
         JPanel panel4 = new JPanel(new GridLayout(0, 5, 10, 10)); // 0表示行数不限，5表示每行最多5个组件，10, 10是组件之间的间距
         JPanel panel5 = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
@@ -96,10 +153,10 @@ public class Main {
                         }
 
                         if (line.startsWith("\"") && line.contains("{") && line.contains("}")) {
-                            String[] parts = line.split(":", 2);  // Split into at most 2 parts
-                            // remove leading and trailing double quotes from key
+                            String[] parts = line.split(":", 2);
+
                             String key = parts[0].substring(1, parts[0].length()-1).trim();
-                            // remove leading and trailing braces from value but keep everything inside including equal sign
+
                             String value = parts[1].substring(1, parts[1].length()-2).trim();
                             newMap.put(key, value);
                         }
@@ -154,13 +211,19 @@ public class Main {
             }
         });
 
+        // 搜索按钮
+        // 将textField0添加到新的SubPanel
+        subPanel1.add(textField0);
+        searchButton("搜索",  subPanel1, textField0);
+
         // 添加组件到面板
         panel1.add(fofaUrl); // 网址
         panel1.add(fofaMail); // 邮箱
         panel1.add(fofaKey); // API key
         panel1.add(checkButton);  // 检查账户
         panel1.add(updateButton); // 更新规则
-        panel2.add(textField0); // FofaEX: Fofa Grammar Extension
+        // panel2.add(textField0); // FofaEX: Fofa Grammar Extension
+        panel2.add(subPanel1); // 搜索框 + 搜索按钮
 
         // 添加逻辑运算组件
         createLogicAddButton("=", "=", panel3, textField0);
@@ -169,6 +232,7 @@ public class Main {
         createLogicAddButton("||", "||", panel3, textField0);
         createLogicAddButton("!=", "!=", panel3, textField0);
         createLogicAddButton("*=", "*=", panel3, textField0);
+
 
         // 创建一个带有指定的空白边框的新面板，其中指定了上、左、下、右的边距
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -260,5 +324,24 @@ public class Main {
         // 将按钮添加到指定面板中
         panel.add(button);
     }
+
+    private static void searchButton(String buttonText, JPanel panel, JTextField textField) {
+        // 创建按钮
+        JButton button = new JButton(buttonText);
+        button.setFocusPainted(false); // 不显示按钮焦点外边框
+        button.setFocusable(false); // 禁止按钮获取焦点
+        button.setPreferredSize(new Dimension(60, 50));
+        // 添加点击事件
+        button.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                // 追加指定文本到文本框中
+
+            }
+        });
+        // 将按钮添加到指定面板中
+        panel.add(button);
+    }
+
 
 }
