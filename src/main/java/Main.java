@@ -39,6 +39,8 @@ import javax.swing.text.Document;
 import javax.swing.undo.UndoManager;
 
 import static java.awt.BorderLayout.*;
+import static java.lang.Thread.sleep;
+
 import java.util.Base64;
 
 public class Main {
@@ -118,7 +120,7 @@ public class Main {
 
         // 刷新jf容器及其内部组件的外观
         SwingUtilities.updateComponentTreeUI(jFrame);
-        jFrame.setSize(1000, 500);
+        jFrame.setSize(1000, 800);
         jFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // 确保按下关闭按钮时结束程序
 
         // 创建 fofa 输入框
@@ -235,15 +237,14 @@ public class Main {
         JTextField fofaKey = createTextField("请输入API key");
 
 
-        String asciiIcon = "\n" +
+        String asciiIcon =
                 "   __            __             _____  __  __\n" +
                 "  / _|   ___    / _|   __ _    | ____| \\ \\/ /\n" +
                 " | |_   / _ \\  | |_   / _` |   |  _|    \\  / \n" +
                 " |  _| | (_) | |  _| | (_| |   | |___   /  \\ \n" +
-                " |_|    \\___/  |_|    \\__,_|   |_____| /_/\\_\\\n";
+                " |_|    \\___/  |_|    \\__,_|   |_____| /_/\\_\\";
+
         JLabel labelIcon = new JLabel("<html><pre>" + asciiIcon + "</pre></html>");
-
-
 
 
         // 创建检查账户按钮
@@ -420,7 +421,7 @@ public class Main {
         // 搜索按钮
         // 将textField0添加到新的SubPanel
         subPanel1.add(textField0);
-        searchButton("搜索", subPanel1, textField0, fofaEmail, fofaKey,fofaUrl,panel5,panel6);
+        searchButton("搜索", subPanel1, textField0, fofaEmail, fofaKey,fofaUrl,panel5,panel6,labelIcon);
 
         // 添加组件到面板
         //panel1.add(fofaUrl); // 网址
@@ -565,7 +566,8 @@ public class Main {
         panel.add(button);
     }
 
-    private static void searchButton(String buttonText, JPanel panel, JTextField textField, JTextField emailField, JTextField keyField,JTextField urlField,JPanel resultPanel,JPanel exportPanel) {
+    private static void searchButton(String buttonText, JPanel panel, JTextField textField, JTextField emailField, JTextField keyField,JTextField urlField,JPanel resultPanel,JPanel exportPanel, JLabel changeIcon) {
+
         JButton button = new JButton(buttonText);
         button.setFocusPainted(false);
         button.setFocusable(false);
@@ -576,7 +578,6 @@ public class Main {
                 String domain = urlField.getText().trim();
                 String email = emailField.getText().trim();
                 String key = keyField.getText().trim();
-                String grammar = textField.getText().trim();
 
                 FofaConstants.BASE_URL = domain;
                 FofaClient fofaClient = new FofaClient(email, key);
@@ -594,67 +595,110 @@ public class Main {
                 String key = keyField.getText().trim();
                 String grammar = textField.getText().trim();
 
-                try {
-                    // 调用 SDK
-                    FofaConstants.BASE_URL = domain;
-                    FofaClient fofaClient = new FofaClient(email, key);
-                    FofaSearch fofaSearch = new FofaSearch(fofaClient);
+                String orginIconStr = changeIcon.getText();
 
-                    String query = grammar;
+//                String searchAsciiIcon = "                ____                                 _       _                             \n" +
+//                        "               / ___|    ___    __ _   _ __    ___  | |__   (_)  _ __     __ _             \n" +
+//                        "               \\___ \\   / _ \\  / _` | | '__|  / __| | '_ \\  | | | '_ \\   / _` |            \n" +
+//                        "                ___) | |  __/ | (_| | | |    | (__  | | | | | | | | | | | (_| |  \n" +
+//                        "               |____/   \\___|  \\__,_| |_|     \\___| |_| |_| |_| |_| |_|  \\__, | \n" ;
+//
+//
+//                changeIcon.setText("<html><pre>" + searchAsciiIcon + "</pre></html>");
 
+                changeIcon.setForeground(new Color(89, 154, 248)); // 设置文本颜色为红色
+
+                // 创建 SwingWorker 来处理搜索任务
+                SwingWorker<List<String>, Void> worker = new SwingWorker<List<String>, Void>() {
+                    @Override
+                    protected List<String> doInBackground() throws Exception {
+                        // 这里执行后台任务，即搜索操作
+                        return processSearchResult(textField.getText().trim(), "ip");
+                    }
+
+                    @Override
+                    protected void done() {
+                        try {
+                            // 调用 SDK
+                            FofaConstants.BASE_URL = domain;
+                            FofaClient fofaClient = new FofaClient(email, key);
+                            FofaSearch fofaSearch = new FofaSearch(fofaClient);
+
+                            String query = grammar;
+                            if (query.equals("fofaEX: FOFA Extension")) {
+                                query = ""; // 将字符串设置为空
+                            }
+                            
                     /*
+
                     processSearchResult 函数流程:
                     fofaSearch.all(query,"ip") -> tableIp -> tableIpTrim -> tableIpShow
+
                     */
+                            String allData = fofaSearch.all(query).getResults().toString();
 
-                    String allData = fofaSearch.all(query).getResults().toString();
+                            String[] hostAllData = allData.substring(1, allData.length() - 1).split(", ");
+                            List<String> host = Arrays.asList(hostAllData);
+                            List<String> tableIpShow  = processSearchResult(query, "ip");
+                            List<String> tablePortShow  = processSearchResult(query, "port");
+                            List<String> protocolShow = processSearchResult(query, "protocol");
+                            List<String> titleShow = processSearchResult(query, "title");
+                            List<String> domainShow = processSearchResult(query, "domain");
+                            // List<String> linkShow = processSearchResult(query, "link");
+                            List<String> icpShow = processSearchResult(query, "icp");
+                            List<String> cityShow = processSearchResult(query, "city");
 
-                    String[] hostAllData = allData.substring(1, allData.length() - 1).split(", ");
-                    List<String> host = Arrays.asList(hostAllData);
+                            List<String> linkShow = getApiResult(domain,"link", query, email, key, "results");
+                            // 使用搜索结果更新表格
+                            showResultsInTable(host, tableIpShow, tablePortShow, protocolShow, titleShow, domainShow,linkShow,icpShow,cityShow, resultPanel);
 
-                    List<String> tableIpShow  = processSearchResult(query, "ip");
-                    List<String> tablePortShow  = processSearchResult(query, "port");
-                    List<String> protocolShow = processSearchResult(query, "protocol");
-                    List<String> titleShow = processSearchResult(query, "title");
-                    List<String> domainShow = processSearchResult(query, "domain");
-                    // List<String> linkShow = processSearchResult(query, "icp");
-                    List<String> icpShow = processSearchResult(query, "icp");
-                    List<String> cityShow = processSearchResult(query, "city");
-
-                    List<String> linkShow = getApiResult(domain,"link", grammar, email, key, "results");
-                    // 使用搜索结果更新表格
-                    showResultsInTable(host, tableIpShow, tablePortShow, protocolShow, titleShow, domainShow,linkShow,icpShow,cityShow, resultPanel);
-
-                    // 导出表格
-                    JButton exportButton = new JButton("Export to Excel");
-                    if (!exportButtonAdded) {
-                        exportPanel.add(exportButton);
-                        exportButtonAdded = true;
-                    }
-                    exportButton.addActionListener(new ActionListener() {
-                        @Override
-                        public void actionPerformed(ActionEvent e) {
-                            // 在这里检查 table 是否被初始化
-                            if (table == null) {
-                                JOptionPane.showMessageDialog(null, "表格没有被初始化");
-                                return;
+                            // 导出表格
+                            JButton exportButton = new JButton("Export to Excel");
+                            if (!exportButtonAdded) {
+                                exportPanel.add(exportButton);
+                                exportButtonAdded = true;
                             }
-                            // 检查 table 是否有模型和数据
-                            if (table.getModel() == null || table.getModel().getRowCount() <= 0) {
-                                JOptionPane.showMessageDialog(null, "当前无数据");
-                                return;
-                            }
-                            exportTableToExcel(table);
+                            exportButton.addActionListener(new ActionListener() {
+                                @Override
+                                public void actionPerformed(ActionEvent e) {
+                                    // 在这里检查 table 是否被初始化
+                                    if (table == null) {
+                                        JOptionPane.showMessageDialog(null, "表格没有被初始化");
+                                        changeIcon.setText(orginIconStr);
+                                        changeIcon.setForeground(Color.BLACK);
+                                        return;
+                                    }
+                                    // 检查 table 是否有模型和数据
+                                    if (table.getModel() == null || table.getModel().getRowCount() <= 0) {
+                                        JOptionPane.showMessageDialog(null, "当前无数据");
+                                        changeIcon.setText(orginIconStr);
+                                        changeIcon.setForeground(Color.BLACK);
+                                        return;
+                                    }
+                                    exportTableToExcel(table);
+                                }
+                            });
+
+                        } catch (JSONException ex) {
+                            ex.printStackTrace();
+                            JOptionPane.showMessageDialog(null, "发生错误，请重试！", "错误", JOptionPane.ERROR_MESSAGE);
+                            changeIcon.setText(orginIconStr);
+                            changeIcon.setForeground(Color.BLACK);
+                        } catch (Exception e) {
+                            JOptionPane.showMessageDialog(null, e.getMessage(), "执行失败", JOptionPane.ERROR_MESSAGE);
+                            changeIcon.setText(orginIconStr);
+                            changeIcon.setForeground(Color.BLACK);
+                            throw new RuntimeException(e);
                         }
-                    });
+                        changeIcon.setText(orginIconStr);
+                        changeIcon.setForeground(Color.BLACK);
+                    }
+                };
 
-                } catch (JSONException ex) {
-                    ex.printStackTrace();
-                    JOptionPane.showMessageDialog(null, "发生错误，请重试！", "错误", JOptionPane.ERROR_MESSAGE);
-                } catch (Exception e) {
-                    JOptionPane.showMessageDialog(null, e.getMessage(), "执行失败", JOptionPane.ERROR_MESSAGE);
-                    throw new RuntimeException(e);
-                }
+                // 启动 SwingWorker
+                worker.execute();
+
+
             }
         });
         panel.add(button);
