@@ -51,6 +51,17 @@
             <version>20210307</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.r4v3zn.fofa</groupId>
+            <artifactId>fofa-core</artifactId>
+            <version>1.0.6.RELEASE</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>4.1.2</version>
+        </dependency>
 
     </dependencies>
 
