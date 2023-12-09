@@ -3,6 +3,8 @@ import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -37,10 +39,11 @@ import javax.swing.text.Document;
 import javax.swing.undo.UndoManager;
 
 import static java.awt.BorderLayout.*;
+import java.util.Base64;
 
 public class Main {
 
-
+    private static boolean exportButtonAdded = false;
     // 在类的成员变量中创建弹出菜单
     private static JPopupMenu popupMenu = new JPopupMenu();
     private static JMenuItem itemSelectColumn = new JMenuItem("选择当前整列");
@@ -90,6 +93,29 @@ public class Main {
 
         // 设置外观风格
         UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+
+        // 创建菜单栏
+        JMenuBar menuBar = new JMenuBar();
+
+        // 创建"账户设置"菜单项
+        JMenu settingsMenu = new JMenu("账户设置");
+
+        // 在此菜单项下可以添加更多的子菜单项，以下只是一个示例
+        JMenuItem changePasswordMenuItem = new JMenuItem("FOFA API");
+        settingsMenu.add(changePasswordMenuItem);
+
+        menuBar.add(settingsMenu);
+
+        // 创建"关于"菜单项
+        JMenu aboutMenu = new JMenu("关于");
+        JMenuItem aboutMenuItem = new JMenuItem("关于项目");
+        aboutMenu.add(aboutMenuItem);
+        menuBar.add(aboutMenu);
+
+        // 在JFrame中添加菜单栏
+        jFrame.setJMenuBar(menuBar);
+
+
         // 刷新jf容器及其内部组件的外观
         SwingUtilities.updateComponentTreeUI(jFrame);
         jFrame.setSize(1000, 500);
@@ -139,7 +165,19 @@ public class Main {
                     textField0.setForeground(Color.GRAY);
                 }
             }
+
         });
+
+        textField0.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if(textField0.getText().equals("fofaEX: FOFA Extension")){
+                    textField0.setText("");
+                    textField0.setForeground(Color.WHITE);
+                }
+            }
+        });
+
 
         textField0.getDocument().addDocumentListener(new DocumentListener() {
             @Override
@@ -195,6 +233,18 @@ public class Main {
         JTextField fofaUrl = createTextField("https://fofa.info");
         JTextField fofaEmail = createTextField("请输入邮箱");
         JTextField fofaKey = createTextField("请输入API key");
+
+
+        String asciiIcon = "\n" +
+                "   __            __             _____  __  __\n" +
+                "  / _|   ___    / _|   __ _    | ____| \\ \\/ /\n" +
+                " | |_   / _ \\  | |_   / _` |   |  _|    \\  / \n" +
+                " |  _| | (_) | |  _| | (_| |   | |___   /  \\ \n" +
+                " |_|    \\___/  |_|    \\__,_|   |_____| /_/\\_\\\n";
+        JLabel labelIcon = new JLabel("<html><pre>" + asciiIcon + "</pre></html>");
+
+
+
 
         // 创建检查账户按钮
         JButton checkButton = new JButton("检查账户");
@@ -268,29 +318,11 @@ public class Main {
 
         panel5.setBorder(BorderFactory.createEmptyBorder(20, 5, 10, 5));
 
+        // panel6 用来放导出表格的按键
         JPanel panel6 = new JPanel();
-        JButton exportButton = new JButton("Export to Excel");
-        panel6.add(exportButton);
-
-        exportButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // 在这里检查 table 是否被初始化
-                if (table == null) {
-                    JOptionPane.showMessageDialog(null, "Table is not initialized yet.");
-                    return;
-                }
-                // 检查 table 是否有模型和数据
-                if (table.getModel() == null || table.getModel().getRowCount() <= 0) {
-                    JOptionPane.showMessageDialog(null, "Table is empty.");
-                    return;
-                }
-                exportTableToExcel(table);
-            }
-        });
 
         // 创建"更新规则"按钮
-        JButton updateButton = new JButton("更新规则");
+        JButton updateButton = new JButton("更新");
         updateButton.setFocusPainted(false);
         updateButton.setFocusable(false);
         // 新增一个LinkedHashMap，用于存储按钮的键名和键值
@@ -388,15 +420,15 @@ public class Main {
         // 搜索按钮
         // 将textField0添加到新的SubPanel
         subPanel1.add(textField0);
-        searchButton("搜索", subPanel1, textField0, fofaEmail, fofaKey,fofaUrl,panel5);
+        searchButton("搜索", subPanel1, textField0, fofaEmail, fofaKey,fofaUrl,panel5,panel6);
 
         // 添加组件到面板
-        panel1.add(fofaUrl); // 网址
-        panel1.add(fofaEmail); // 邮箱
-        panel1.add(fofaKey); // API key
-        panel1.add(checkButton);  // 检查账户
-        panel1.add(updateButton); // 更新规则
-        // panel2.add(textField0); // FofaEX: Fofa Grammar Extension
+        //panel1.add(fofaUrl); // 网址
+        //panel1.add(fofaEmail); // 邮箱
+        //panel1.add(fofaKey); // API key
+        //panel1.add(checkButton);  // 检查账户
+
+        panel1.add(labelIcon);
         panel2.add(subPanel1); // 搜索框 + 搜索按钮
 
         // 添加逻辑运算组件
@@ -408,8 +440,8 @@ public class Main {
         createLogicAddButton("*=", "*=", panel3, textField0);
 
 
-        // 新增折叠按钮
 
+        // 新增折叠按钮到panel3
         JButton foldButton = new JButton("▼");
         foldButton.setFocusPainted(false); //添加这一行来取消焦点边框的绘制
         foldButton.setFocusable(false);
@@ -433,6 +465,8 @@ public class Main {
                 panel4.repaint();
             }
         });
+
+        panel3.add(updateButton); // 更新规则
         panel3.add(foldButton);
 
 
@@ -531,14 +565,12 @@ public class Main {
         panel.add(button);
     }
 
-    private static void searchButton(String buttonText, JPanel panel, JTextField textField, JTextField emailField, JTextField keyField,JTextField urlField,JPanel resultPanel) {
+    private static void searchButton(String buttonText, JPanel panel, JTextField textField, JTextField emailField, JTextField keyField,JTextField urlField,JPanel resultPanel,JPanel exportPanel) {
         JButton button = new JButton(buttonText);
         button.setFocusPainted(false);
         button.setFocusable(false);
         button.setPreferredSize(new Dimension(60, 50));
         button.addActionListener(new ActionListener() {
-
-
             public List<String> processSearchResult(String query, String searchType) throws Exception {
 
                 String domain = urlField.getText().trim();
@@ -570,10 +602,6 @@ public class Main {
 
                     String query = grammar;
 
-                    //System.out.println(allData); // 查询
-                    //System.out.println(fofaSearch.all(query)); // 查询
-                    //System.out.println(fofaSearch.all(query,"ip")); // 查询
-
                     /*
                     processSearchResult 函数流程:
                     fofaSearch.all(query,"ip") -> tableIp -> tableIpTrim -> tableIpShow
@@ -589,12 +617,36 @@ public class Main {
                     List<String> protocolShow = processSearchResult(query, "protocol");
                     List<String> titleShow = processSearchResult(query, "title");
                     List<String> domainShow = processSearchResult(query, "domain");
-                    List<String> linkShow = processSearchResult(query, "icp");
+                    // List<String> linkShow = processSearchResult(query, "icp");
                     List<String> icpShow = processSearchResult(query, "icp");
-                    List<String> country_nameShow = processSearchResult(query, "country_name");
+                    List<String> cityShow = processSearchResult(query, "city");
 
+                    List<String> linkShow = getApiResult(domain,"link", grammar, email, key, "results");
                     // 使用搜索结果更新表格
-                    showResultsInTable(host, tableIpShow, tablePortShow, protocolShow, titleShow, domainShow,linkShow,icpShow,country_nameShow, resultPanel);
+                    showResultsInTable(host, tableIpShow, tablePortShow, protocolShow, titleShow, domainShow,linkShow,icpShow,cityShow, resultPanel);
+
+                    // 导出表格
+                    JButton exportButton = new JButton("Export to Excel");
+                    if (!exportButtonAdded) {
+                        exportPanel.add(exportButton);
+                        exportButtonAdded = true;
+                    }
+                    exportButton.addActionListener(new ActionListener() {
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            // 在这里检查 table 是否被初始化
+                            if (table == null) {
+                                JOptionPane.showMessageDialog(null, "表格没有被初始化");
+                                return;
+                            }
+                            // 检查 table 是否有模型和数据
+                            if (table.getModel() == null || table.getModel().getRowCount() <= 0) {
+                                JOptionPane.showMessageDialog(null, "当前无数据");
+                                return;
+                            }
+                            exportTableToExcel(table);
+                        }
+                    });
 
                 } catch (JSONException ex) {
                     ex.printStackTrace();
@@ -605,12 +657,11 @@ public class Main {
                 }
             }
         });
-
         panel.add(button);
     }
 
-    private static void showResultsInTable(List<String> host, List<String>tableIpShow , List<String>tablePortShow , List<String>protocolShow , List<String>titleShow ,List<String>domainShow,List<String>linkShow,List<String>icpShow,List<String>country_nameShow,JPanel panel) {
-        String[] columnNames = {"host","ip","port", "protocol", "title", "domain", "link","icp","country_name"};
+    private static void showResultsInTable(List<String> host, List<String>tableIpShow , List<String>tablePortShow , List<String>protocolShow , List<String>titleShow ,List<String>domainShow,List<String>linkShow,List<String>icpShow,List<String>cityShow,JPanel panel) {
+        String[] columnNames = {"host","ip","port", "protocol", "title", "domain","link","icp","city"};
         Object[][] data = new Object[host.size()][9];
         for (int i = 0; i < host.size(); i++) {
             data[i][0] = host.get(i);
@@ -629,18 +680,21 @@ public class Main {
             if (domainShow.size() > i) {
                 data[i][5] = domainShow.get(i);
             }
+            if (linkShow.size() > i) {
+                data[i][6] = linkShow.get(i);
+            }
             if (icpShow.size() > i) {
                 data[i][7] = icpShow.get(i);
             }
-            if (country_nameShow.size() > i) {
-                data[i][8] = country_nameShow.get(i);
+            if (cityShow.size() > i) {
+                data[i][8] = cityShow.get(i);
             }
         }
         DefaultTableModel model = new DefaultTableModel(data, columnNames);
         table.setModel(model);
         JTableHeader header = table.getTableHeader();
 
-// 自定义Header的渲染器
+        // 自定义Header的渲染器
         header.setDefaultRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(
@@ -666,7 +720,7 @@ public class Main {
             }
         });
 
-// 重新设置表格头，以便新的渲染器生效
+        // 重新设置表格头，以便新的渲染器生效
         table.setTableHeader(header);
 
         adjustColumnWidths(table); // 自动调整列宽
@@ -687,8 +741,6 @@ public class Main {
             table.setModel(model);
         }
 
-        // 在初始化 JTable 之后，添加以下代码
-// 在初始化 JTable 之后，添加以下代码
         table.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
@@ -696,11 +748,7 @@ public class Main {
                     int row = table.rowAtPoint(e.getPoint());
                     int col = table.columnAtPoint(e.getPoint());
                     if (row >= 0 && col >= 0) {
-                        // 在右键点击前不要自动改变选择，除非需要
-                        // table.setRowSelectionInterval(row, row);
-                        // table.setColumnSelectionInterval(col, col);
-
-                        // 显示弹出菜单
+                        // 右键显示弹出菜单
                         popupMenu.show(e.getComponent(), e.getX(), e.getY());
                     }
                 }
@@ -724,6 +772,7 @@ public class Main {
         }
     }
 
+    // 账户设置
     static public void settingInit(BufferedReader rules,BufferedReader accounts,JPanel initPanel,JTextField initTextField,JTextField fofaEmail,JTextField fofaKey,Map<String, JButton> initButtonsMap ){
 
 
@@ -835,7 +884,9 @@ public class Main {
         for (int i = 0; i < table.getRowCount(); i++) {
             XSSFRow dataRow = sheet.createRow(i + 1);
             for (int j = 0; j < table.getColumnCount(); j++) {
-                dataRow.createCell(j).setCellValue(table.getValueAt(i, j).toString());
+                Object value = table.getValueAt(i, j);
+                String text = (value == null) ? "" : value.toString(); // 检查是否为null
+                dataRow.createCell(j).setCellValue(text);
             }
         }
 
@@ -861,5 +912,36 @@ public class Main {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(null, "Export failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    public static List<String> getApiResult(String fofaDomain,String fields, String qbase64, String email, String key, String paramName) throws Exception {
+        String apiUrl = fofaDomain + "/api/v1/search/all?fields=" + fields + "&qbase64=" + Base64.getEncoder().encodeToString(qbase64.getBytes()) + "&email=" + email + "&key=" + key;
+        URL url = new URL(apiUrl);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Accept", "application/json");
+
+        if (connection.getResponseCode() != 200) {
+            throw new RuntimeException("Failed : HTTP error code : " + connection.getResponseCode());
+        }
+
+        BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+        String output;
+        StringBuilder responseBuilder = new StringBuilder();
+        while ((output = br.readLine()) != null) {
+            responseBuilder.append(output);
+        }
+
+        connection.disconnect();
+        String response = responseBuilder.toString();
+        JSONObject jsonResponse = new JSONObject(response);
+        JSONArray jsonArray = jsonResponse.getJSONArray(paramName);
+        List<String> results = new ArrayList<>();
+
+        for (int i = 0; i < jsonArray.length(); i++) {
+            results.add(jsonArray.getString(i));
+        }
+
+        return results;
     }
 }
