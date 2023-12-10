@@ -6,7 +6,6 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import javax.swing.BorderFactory;
@@ -15,10 +14,10 @@ import javax.swing.event.*;
 import java.awt.Color;
 import java.util.List;
 
-import com.r4v3zn.fofa.core.DO.SearchData;
 import com.r4v3zn.fofa.core.client.FofaClient;
 import com.r4v3zn.fofa.core.client.FofaConstants;
 import com.r4v3zn.fofa.core.client.FofaSearch;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -37,10 +36,9 @@ import javax.swing.text.Document;
 import javax.swing.undo.UndoManager;
 
 import static java.awt.BorderLayout.*;
-import static java.lang.Thread.sleep;
 
 import java.util.Base64;
-import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 public class Main {
 
@@ -56,9 +54,46 @@ public class Main {
     private static boolean titleMark = true;
     private static boolean domainMark = true;
     private static boolean linkMark = true;
-    private static boolean icpMark = true;
-    private static boolean cityMark = true;
+    private static boolean icpMark = false;
+    private static boolean cityMark = false;
 
+    /* 下面未完成 */
+    private static boolean countryMark = false;
+    private static boolean countryNameMark = false;
+    private static boolean regionMark = false;
+    private static boolean longitudeMark = false;
+    private static boolean latitudeMark = false;
+    private static boolean asNumberMark = false;
+    private static boolean asOrganizationMark = false;
+    private static boolean hostMark = false;
+    private static boolean osMark = false;
+    private static boolean serverMark = false;
+    private static boolean jarmMark = false;
+    private static boolean headerMark = false;
+    private static boolean bannerMark = false;
+    private static boolean baseProtocolMark = false;
+    private static boolean certsIssuerOrgMark = false;
+    private static boolean certsIssuerCnMark = false;
+    private static boolean certsSubjectOrgMark = false;
+    private static boolean certsSubjectCnMark = false;
+    private static boolean tlsJa3sMark = false;
+    private static boolean tlsVersionMark = false;
+    private static boolean productMark = false;
+    private static boolean productCategoryMark = false;
+    private static boolean versionMark = false;
+    private static boolean lastupdatetimeMark = false;
+    private static boolean cnameMark = false;
+    private static boolean iconHashMark = false;
+    private static boolean certsValidMark = false;
+    private static boolean cnameDomainMark = false;
+    private static boolean bodyMark = false;
+    private static boolean iconMark = false;
+    private static boolean fidMark = false;
+    private static boolean structinfoMark = false;
+
+    /* 上面未完成 */
+
+    private static boolean scrollPaneMark = true;
     private static boolean exportButtonAdded = false;
     // 在类的成员变量中创建弹出菜单
     private static JPopupMenu popupMenu = new JPopupMenu();
@@ -104,6 +139,7 @@ public class Main {
 
     // 创建全局数据表
     private static JTable table;
+
     public static void main(String[] args) throws ClassNotFoundException, UnsupportedLookAndFeelException, InstantiationException, IllegalAccessException, FileNotFoundException {
         JFrame jFrame = new JFrame("fofaEX");
 
@@ -163,11 +199,12 @@ public class Main {
                             output.append("邮箱地址: ").append(json.getString("email")).append("\n");
                             output.append("用户名: ").append(json.getString("username")).append("\n");
 
-                            if(json.getBoolean("isvip")){
+                            if (json.getBoolean("isvip")) {
                                 output.append("身份权限：FOFA会员\n");
-                            }else{
+                            } else {
                                 output.append("身份权限：普通用户\n");
-                            };
+                            }
+                            ;
                             output.append("F点数量: ").append(json.getInt("fofa_point")).append("\n");
                             output.append("API月度剩余查询次数: ").append(json.getInt("remain_api_query")).append("\n");
                             output.append("API月度剩余返回数量: ").append(json.getInt("remain_api_data")).append("\n");
@@ -259,11 +296,11 @@ public class Main {
         // 创建数据表
         table = new JTable();
 
-        textField0.addKeyListener(new KeyAdapter(){
+        textField0.addKeyListener(new KeyAdapter() {
             @Override
-            public void keyPressed(KeyEvent e){
+            public void keyPressed(KeyEvent e) {
                 // 当输入框内的文字是提示文字时，先清空输入框再允许输入
-                if (textField0.getText().equals("fofaEX: FOFA Extension")){
+                if (textField0.getText().equals("fofaEX: FOFA Extension")) {
                     textField0.setText("");
                 }
             }
@@ -283,7 +320,7 @@ public class Main {
             @Override
             public void focusGained(FocusEvent e) {
                 // 当输入框得到焦点时，如果当前是提示文字，则清空输入框并将文字颜色设置为白色
-                if (textField0.getText().equals("fofaEX: FOFA Extension")){
+                if (textField0.getText().equals("fofaEX: FOFA Extension")) {
                     textField0.setText("");
                     textField0.setForeground(Color.WHITE);
                 }
@@ -292,7 +329,7 @@ public class Main {
             @Override
             public void focusLost(FocusEvent e) {
                 // 当输入框失去焦点时，如果输入框为空，则显示提示文字，并将文字颜色设置为灰色
-                if (textField0.getText().isEmpty()){
+                if (textField0.getText().isEmpty()) {
                     textField0.setText("fofaEX: FOFA Extension");
                     textField0.setForeground(Color.GRAY);
                 }
@@ -303,7 +340,7 @@ public class Main {
         textField0.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if(textField0.getText().equals("fofaEX: FOFA Extension")){
+                if (textField0.getText().equals("fofaEX: FOFA Extension")) {
                     textField0.setText("");
                     textField0.setForeground(Color.WHITE);
                 }
@@ -319,7 +356,7 @@ public class Main {
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                if (textField0.getText().isEmpty()){
+                if (textField0.getText().isEmpty()) {
                     textField0.setForeground(Color.GRAY);
                 } else {
                     textField0.setForeground(Color.WHITE);
@@ -371,7 +408,7 @@ public class Main {
 //
 //        JLabel labelIcon = new JLabel("<html><pre>" + asciiIcon + "</pre></html>");
         JLabel labelIcon = new JLabel(" FOFA EX");
-         labelIcon.setForeground(new Color(48, 49, 52)); // 设置文本颜色为红色
+        labelIcon.setForeground(new Color(48, 49, 52)); // 设置文本颜色为红色
         Font iconFont = new Font("Times New Roman", Font.BOLD, 60);
         labelIcon.setFont(iconFont);
 
@@ -400,7 +437,10 @@ public class Main {
         // panel6 用来放导出表格的按键
         JPanel panel6 = new JPanel();
 
-        JPanel panel7 = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
+        // JPanel panel7 = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
+        JPanel panel7 = new JPanel(new GridLayout(0, 10, 0, 0));
+
+        JPanel panel8 = new JPanel();
 
         // 创建"更新规则"按钮
         JButton updateButton = new JButton("♻");
@@ -410,7 +450,7 @@ public class Main {
         Map<String, JButton> buttonsMap = new LinkedHashMap<>();
         BufferedReader rulesReader = new BufferedReader(new FileReader("rules.txt"));
         BufferedReader accountsReader = new BufferedReader(new FileReader("accounts.txt"));
-        settingInit(rulesReader,accountsReader,panel4,textField0,fofaEmail,fofaKey,buttonsMap);
+        settingInit(rulesReader, accountsReader, panel4, textField0, fofaEmail, fofaKey, buttonsMap);
         updateButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -430,9 +470,9 @@ public class Main {
                         if (line.startsWith("\"") && line.contains("{") && line.contains("}")) {
                             String[] parts = line.split(":", 2);
 
-                            String key = parts[0].substring(1, parts[0].length()-1).trim();
+                            String key = parts[0].substring(1, parts[0].length() - 1).trim();
 
-                            String value = parts[1].substring(1, parts[1].length()-2).trim();
+                            String value = parts[1].substring(1, parts[1].length() - 2).trim();
                             newMap.put(key, value);
                         }
                     }
@@ -501,7 +541,7 @@ public class Main {
         // 搜索按钮
         // 将textField0添加到新的SubPanel
         subPanel1.add(textField0);
-        searchButton("搜索", subPanel1, textField0, fofaEmail, fofaKey,fofaUrl,panel5,panel6,labelIcon);
+        searchButton("搜索", subPanel1, textField0, fofaEmail, fofaKey, fofaUrl, panel5, panel6, labelIcon);
 
         // 添加组件到面板
         //panel1.add(fofaUrl); // 网址
@@ -521,7 +561,6 @@ public class Main {
         createLogicAddButton("*=", "*=", panel3, textField0);
 
 
-
         // 新增折叠按钮到panel3
         JButton foldButton = new JButton("▼");
         foldButton.setFocusPainted(false); //添加这一行来取消焦点边框的绘制
@@ -530,20 +569,25 @@ public class Main {
         // 添加点击事件
         foldButton.addActionListener(new ActionListener() {
             boolean isFolded = false;
+
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 if (!isFolded) {
-                    // 折叠panel4为一行
-                    panel4.setLayout(new GridLayout(1, 0));
-                    foldButton.setText("▲");
+                    // 折叠 panel4
+                    panel4.setVisible(false);
+                    foldButton.setText("◀");
+                    scrollPaneMark = false;
                 } else {
-                    // 恢复panel4原本的样子
-                    panel4.setLayout(new GridLayout(0, 5, 10, 10)); //假设原本是每行最多5个
+                    // 展开 panel4
+                    panel4.setVisible(true);
                     foldButton.setText("▼");
+                    scrollPaneMark = true;
                 }
                 isFolded = !isFolded;
-                panel4.revalidate();
-                panel4.repaint();
+
+                // 重新验证和重绘包含 panel4 和 panel5 的主面板
+                mainPanel.revalidate();
+                mainPanel.repaint();
             }
         });
 
@@ -552,14 +596,54 @@ public class Main {
 
 
         // 创建复选框
-        addRuleBox(panel7,"ip",newValue -> ipMark = newValue );
-        addRuleBox(panel7,"port",newValue -> portMark = newValue );
-        addRuleBox(panel7,"protocol",newValue -> protocolMark = newValue );
-        addRuleBox(panel7,"title",newValue -> titleMark = newValue );
-        addRuleBox(panel7,"domain",newValue -> domainMark = newValue );
-        addRuleBox(panel7,"link",newValue -> linkMark = newValue );
-        addRuleBox(panel7,"icp",newValue -> icpMark = newValue );
-        addRuleBox(panel7,"city",newValue -> cityMark = newValue );
+        addRuleBox(panel7, "ip", newValue -> ipMark = newValue, ipMark);
+        addRuleBox(panel7, "port", newValue -> portMark = newValue, portMark);
+        addRuleBox(panel7, "protocol", newValue -> protocolMark = newValue, protocolMark);
+        addRuleBox(panel7, "title", newValue -> titleMark = newValue, titleMark);
+        addRuleBox(panel7, "domain", newValue -> domainMark = newValue, domainMark);
+        addRuleBox(panel7, "link", newValue -> linkMark = newValue, linkMark);
+        addRuleBox(panel7, "icp", newValue -> icpMark = newValue, icpMark);
+        addRuleBox(panel7, "city", newValue -> cityMark = newValue, cityMark);
+
+        /* 下面代码未完成 */
+
+        addRuleBox(panel7, "country", newValue -> countryMark = newValue, countryMark);
+        addRuleBox(panel7, "countryName", newValue -> countryNameMark = newValue, countryNameMark);
+        addRuleBox(panel7, "region", newValue -> regionMark = newValue, regionMark);
+        addRuleBox(panel7, "longitude", newValue -> longitudeMark = newValue, longitudeMark);
+        addRuleBox(panel7, "latitude", newValue -> latitudeMark = newValue, latitudeMark);
+        addRuleBox(panel7, "asNumber", newValue -> asNumberMark = newValue, asNumberMark);
+        addRuleBox(panel7, "asOrganization", newValue -> asOrganizationMark = newValue, asOrganizationMark);
+        addRuleBox(panel7, "host", newValue -> hostMark = newValue, hostMark);
+        addRuleBox(panel7, "os", newValue -> osMark = newValue, osMark);
+        addRuleBox(panel7, "server", newValue -> serverMark = newValue, serverMark);
+        addRuleBox(panel7, "jarm", newValue -> jarmMark = newValue, jarmMark);
+        addRuleBox(panel7, "header", newValue -> headerMark = newValue, headerMark);
+        addRuleBox(panel7, "banner", newValue -> bannerMark = newValue, bannerMark);
+        addRuleBox(panel7, "baseProtocol", newValue -> baseProtocolMark = newValue, baseProtocolMark);
+        addRuleBox(panel7, "certsIssuerOrg", newValue -> certsIssuerOrgMark = newValue, certsIssuerOrgMark);
+        addRuleBox(panel7, "certsIssuerCn", newValue -> certsIssuerCnMark = newValue, certsIssuerCnMark);
+        addRuleBox(panel7, "certsSubjectOrg", newValue -> certsSubjectOrgMark = newValue, certsSubjectOrgMark);
+        addRuleBox(panel7, "certsSubjectCn", newValue -> certsSubjectCnMark = newValue, certsSubjectCnMark);
+        addRuleBox(panel7, "tlsJa3s", newValue -> tlsJa3sMark = newValue, tlsJa3sMark);
+        addRuleBox(panel7, "tlsVersion", newValue -> tlsVersionMark = newValue, tlsVersionMark);
+        addRuleBox(panel7, "product", newValue -> productMark = newValue, productMark);
+        addRuleBox(panel7, "productCategory", newValue -> productCategoryMark = newValue, productCategoryMark);
+        addRuleBox(panel7, "version", newValue -> versionMark = newValue, versionMark);
+        addRuleBox(panel7, "lastupdatetime", newValue -> lastupdatetimeMark = newValue, lastupdatetimeMark);
+        addRuleBox(panel7, "cname", newValue -> cnameMark = newValue, cnameMark);
+        addRuleBox(panel7, "iconHash", newValue -> iconHashMark = newValue, iconHashMark);
+        addRuleBox(panel7, "certsValid", newValue -> certsValidMark = newValue, certsValidMark);
+        addRuleBox(panel7, "cnameDomain", newValue -> cnameDomainMark = newValue, cnameDomainMark);
+        addRuleBox(panel7, "body", newValue -> bodyMark = newValue, bodyMark);
+        addRuleBox(panel7, "icon", newValue -> iconMark = newValue, iconMark);
+        addRuleBox(panel7, "fid", newValue -> fidMark = newValue, fidMark);
+        addRuleBox(panel7, "structinfo", newValue -> structinfoMark = newValue, structinfoMark);
+
+
+        /* 上面代码未完成 */
+
+
 
         // 设置全局边框：创建一个带有指定的空白边框的新面板，其中指定了上、左、下、右的边距
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -656,7 +740,7 @@ public class Main {
         panel.add(button);
     }
 
-    private static void searchButton(String buttonText, JPanel panel, JTextField textField, JTextField emailField, JTextField keyField,JTextField urlField,JPanel resultPanel,JPanel exportPanel, JLabel changeIcon) {
+    private static void searchButton(String buttonText, JPanel panel, JTextField textField, JTextField emailField, JTextField keyField, JTextField urlField, JPanel resultPanel, JPanel exportPanel, JLabel changeIcon) {
 
         JButton button = new JButton(buttonText);
         button.setFocusPainted(false);
@@ -677,6 +761,7 @@ public class Main {
                 String[] trimmedData = rawData.substring(1, rawData.length() - 1).split(", ");
                 return Arrays.asList(trimmedData);
             }
+
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
 
@@ -702,16 +787,55 @@ public class Main {
 
                 // 创建 SwingWorker 来处理搜索任务
                 SwingWorker<List<String>, Void> worker = new SwingWorker<List<String>, Void>() {
-                    @Override
-                    protected List<String> doInBackground() throws Exception {
-                        // 这里执行后台任务，即搜索操作
-                        return processSearchResult(textField.getText().trim(), "ip");
-                    }
 
-                    private void fontSet(JLabel changeIcon,String originIconStr){
+                    private void fontSet(JLabel changeIcon, String originIconStr) {
                         changeIcon.setText(originIconStr);
                         changeIcon.setForeground(new Color(48, 49, 52));
                     }
+
+                    @Override
+                    protected List<String> doInBackground() throws Exception {
+                        // 这里执行后台任务，即搜索操作
+                        Map<String, List<String>> searchResults = new HashMap<>();
+                        String query = grammar.equals("fofaEX: FOFA Extension") ? "" : grammar;
+
+                        // 检查各种标记，并执行搜索
+                        if (ipMark) {
+                            searchResults.put("ip", processSearchResult(query, "ip"));
+                        }
+                        if (portMark) {
+                            searchResults.put("port", processSearchResult(query, "port"));
+                        }
+
+                        if (protocolMark) {
+                            searchResults.put("protocol", processSearchResult(query, "protocol"));
+                        }
+
+                        if (titleMark) {
+                            List<String> encodedTitles = processSearchResult(query, "title");
+                            searchResults.put("title", decodeHtmlEntities(encodedTitles));
+                        }
+
+                        if (domainMark) {
+                            searchResults.put("domain", processSearchResult(query, "domain"));
+                        }
+
+                        if (linkMark) {
+                            searchResults.put("link", getApiResult(domain, "link", query, email, key, "results"));
+                        }
+
+                        if (icpMark) {
+                            searchResults.put("icp", processSearchResult(query, "icp"));
+                        }
+
+                        if (cityMark) {
+                            searchResults.put("city", processSearchResult(query, "city"));
+                        }
+
+                        return (List<String>) searchResults;
+                    }
+
+
                     @Override
                     protected void done() {
                         try {
@@ -724,20 +848,21 @@ public class Main {
                             if (query.equals("fofaEX: FOFA Extension")) {
                                 query = ""; // 将字符串设置为空
                             }
-                            
-                    /*
 
-                    封装成 processSearchResult 函数流程:
-                    fofaSearch.all(query,"ip") -> tableIp -> tableIpTrim -> tableIpShow
+                            /*
 
-                    */
+                            封装成 processSearchResult 函数流程:
+                            fofaSearch.all(query,"ip") -> tableIp -> tableIpTrim -> ipTableShow
+
+                            */
+
                             String allData = fofaSearch.all(query).getResults().toString();
 
                             String[] hostAllData = allData.substring(1, allData.length() - 1).split(", ");
                             List<String> tableHostShow = Arrays.asList(hostAllData);
 
-                            List<String> tableIpShow = null;
-                            List<String> tablePortShow  = null;
+                            List<String> ipShow = null;
+                            List<String> portTableShow = null;
                             List<String> protocolShow = null;
                             List<String> titleShow = null;
                             List<String> domainShow = null;
@@ -746,11 +871,11 @@ public class Main {
                             List<String> cityShow = null;
 
                             if (ipMark) {
-                                tableIpShow  = processSearchResult(query, "ip");
+                                ipShow = processSearchResult(query, "ip");
                             }
 
                             if (portMark) {
-                                tablePortShow  = processSearchResult(query, "port");
+                                portTableShow = processSearchResult(query, "port");
                             }
 
                             if (protocolMark) {
@@ -758,7 +883,8 @@ public class Main {
                             }
 
                             if (titleMark) {
-                                titleShow = processSearchResult(query, "title");
+                                List<String> encodedTitles = processSearchResult(query, "title");
+                                titleShow = decodeHtmlEntities(encodedTitles);
                             }
 
                             if (domainMark) {
@@ -767,7 +893,7 @@ public class Main {
 
                             // List<String> linkShow = processSearchResult(query, "link");
                             if (linkMark) {
-                                linkShow = getApiResult(domain,"link", query, email, key, "results");
+                                linkShow = getApiResult(domain, "link", query, email, key, "results");
                             }
 
                             if (icpMark) {
@@ -779,10 +905,12 @@ public class Main {
                             }
 
                             // 使用搜索结果更新表格
-                            showResultsInTable(tableHostShow, tableIpShow, tablePortShow, protocolShow, titleShow, domainShow,linkShow,icpShow,cityShow, resultPanel);
+                            showResultsInTable(tableHostShow, ipShow, portTableShow, protocolShow, titleShow, domainShow, linkShow, icpShow, cityShow, resultPanel);
 
                             // 导出表格
                             JButton exportButton = new JButton("Export to Excel");
+                            exportButton.setFocusPainted(false); // 添加这一行来取消焦点边框的绘制
+                            exportButton.setFocusable(false);  // 禁止了按钮获取焦点，因此按钮不会在被点击后显示为"激活"或"选中"的状态
                             if (!exportButtonAdded) {
                                 exportPanel.add(exportButton);
                                 exportButtonAdded = true;
@@ -793,13 +921,13 @@ public class Main {
                                     // 在这里检查 table 是否被初始化
                                     if (table == null) {
                                         JOptionPane.showMessageDialog(null, "表格没有被初始化");
-                                        fontSet(changeIcon,orginIconStr);
+                                        fontSet(changeIcon, orginIconStr);
                                         return;
                                     }
                                     // 检查 table 是否有模型和数据
                                     if (table.getModel() == null || table.getModel().getRowCount() <= 0) {
                                         JOptionPane.showMessageDialog(null, "当前无数据");
-                                        fontSet(changeIcon,orginIconStr);
+                                        fontSet(changeIcon, orginIconStr);
                                         return;
                                     }
                                     exportTableToExcel(table);
@@ -809,29 +937,26 @@ public class Main {
                         } catch (JSONException ex) {
                             ex.printStackTrace();
                             JOptionPane.showMessageDialog(null, "发生错误，请重试！", "错误", JOptionPane.ERROR_MESSAGE);
-                            fontSet(changeIcon,orginIconStr);
+                            fontSet(changeIcon, orginIconStr);
                         } catch (Exception e) {
                             JOptionPane.showMessageDialog(null, e.getMessage(), "执行失败", JOptionPane.ERROR_MESSAGE);
-                            fontSet(changeIcon,orginIconStr);
+                            fontSet(changeIcon, orginIconStr);
                             throw new RuntimeException(e);
                         }
-                        fontSet(changeIcon,orginIconStr);
+                        fontSet(changeIcon, orginIconStr);
                     }
                 };
 
                 // 启动 SwingWorker
                 worker.execute();
-
-
             }
         });
         panel.add(button);
     }
 
-    private static void showResultsInTable(List<String> host, List<String>tableIpShow , List<String>tablePortShow , List<String>protocolShow , List<String>titleShow ,List<String>domainShow,List<String>linkShow,List<String>icpShow,List<String>cityShow,JPanel panel) {
+    private static void showResultsInTable(List<String> host, List<String> tableIpShow, List<String> tablePortShow, List<String> protocolShow, List<String> titleShow, List<String> domainShow, List<String> linkShow, List<String> icpShow, List<String> cityShow, JPanel panel) {
         // String[] columnNames = {"host","ip","port", "protocol", "title", "domain","link","icp","city"};
         List<String> columnNamesList = new ArrayList<String>(List.of("host"));
-        System.out.println(columnNamesList);
 
         if (cityMark) {
             columnNamesList.add(1, "city");  // 插入“ip" 列到正确的位置
@@ -898,43 +1023,27 @@ public class Main {
             if (cityMark && cityShow.size() > i) {
                 data[i][columnIndex++] = cityShow.get(i);
             }
-
-//            if (tableIpShow.size() > i) {
-//                data[i][1] = tableIpShow.get(i);
-//            }
-//            if (tablePortShow.size() > i) {
-//                data[i][2] = tablePortShow.get(i);
-//            }
-//            if (protocolShow.size() > i) {
-//                data[i][3] = protocolShow.get(i);
-//            }
-//            if (titleShow.size() > i) {
-//                data[i][4] = titleShow.get(i);
-//            }
-//            if (domainShow.size() > i) {
-//                data[i][5] = domainShow.get(i);
-//            }
-//            if (linkShow.size() > i) {
-//                data[i][6] = linkShow.get(i);
-//            }
-//            if (icpShow.size() > i) {
-//                data[i][7] = icpShow.get(i);
-//            }
-//            if (cityShow.size() > i) {
-//                data[i][8] = cityShow.get(i);
-//            }
         }
         DefaultTableModel model = new DefaultTableModel(data, columnNames);
 
         table.setModel(model);
         JTableHeader header = getjTableHeader();
 
+
+
         // 重新设置表格头，以便新的渲染器生效
         table.setTableHeader(header);
 
         adjustColumnWidths(table); // 自动调整列宽
         JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setPreferredSize(new Dimension(800, 450)); // 设置滚动窗格的首选大小
+
+
+        if(scrollPaneMark){
+            scrollPane.setPreferredSize(new Dimension(800, 450)); // 设置滚动窗格的首选大小
+        }else{
+            scrollPane.setPreferredSize(new Dimension(800, 600)); // 设置滚动窗格的首选大小
+        }
+
         table.setRowHeight(24); // 设置表格的行高
         table.setFillsViewportHeight(true);
 
@@ -1006,14 +1115,14 @@ public class Main {
                 Component comp = table.prepareRenderer(renderer, row, column);
                 width = Math.max(comp.getPreferredSize().width + 1, width);
             }
-            if(width > 300)
-                width=300;
+            if (width > 300)
+                width = 300;
             columnModel.getColumn(column).setPreferredWidth(width);
         }
     }
 
     // 账户设置
-    static public void settingInit(BufferedReader rules,BufferedReader accounts,JPanel initPanel,JTextField initTextField,JTextField fofaEmail,JTextField fofaKey,Map<String, JButton> initButtonsMap ){
+    static public void settingInit(BufferedReader rules, BufferedReader accounts, JPanel initPanel, JTextField initTextField, JTextField fofaEmail, JTextField fofaKey, Map<String, JButton> initButtonsMap) {
 
 
         try {
@@ -1021,94 +1130,93 @@ public class Main {
             String fofaKeyLine = accounts.readLine();
 
             // 检查是否有内容需要解析和赋值
-            if (fofaEmailLine != null && fofaKeyLine != null)
-            {
+            if (fofaEmailLine != null && fofaKeyLine != null) {
                 fofaEmail.setText(fofaEmailLine.split(":")[1]);
                 fofaKey.setText(fofaKeyLine.split(":")[1]);
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-            // 读取文件内容，并创建新的按钮
-            try {
-                Map<String, String> newMap = new LinkedHashMap<>();
-                String line;
-                while ((line = rules.readLine()) != null) {
-                    line = line.trim();
+        // 读取文件内容，并创建新的按钮
+        try {
+            Map<String, String> newMap = new LinkedHashMap<>();
+            String line;
+            while ((line = rules.readLine()) != null) {
+                line = line.trim();
 
-                    // 跳过井号注释
-                    if (line.startsWith("#")) {
-                        continue;
-                    }
-
-                    if (line.startsWith("\"") && line.contains("{") && line.contains("}")) {
-                        String[] parts = line.split(":", 2);
-
-                        String key = parts[0].substring(1, parts[0].length()-1).trim();
-
-                        String value = parts[1].substring(1, parts[1].length()-2).trim();
-                        newMap.put(key, value);
-                    }
-                }
-                rules.close();
-
-                // 移除按钮
-                Iterator<Map.Entry<String, JButton>> iterator = initButtonsMap.entrySet().iterator();
-                while (iterator.hasNext()) {
-                    Map.Entry<String, JButton> entry = iterator.next();
-                    if (!newMap.containsKey(entry.getKey())) {
-                        initPanel.remove(entry.getValue());
-                        iterator.remove();
-                    }
+                // 跳过井号注释
+                if (line.startsWith("#")) {
+                    continue;
                 }
 
-                // 更新并新增按钮
-                for (Map.Entry<String, String> entry : newMap.entrySet()) {
-                    JButton existingButton = initButtonsMap.get(entry.getKey());
-                    if (existingButton == null) {
-                        // 新按钮
-                        JButton newButton = new JButton(entry.getKey());
-                        newButton.setActionCommand(entry.getValue());
-                        newButton.setToolTipText(entry.getValue()); // 设置按钮的 ToolTip 为键值，悬浮显示
-                        newButton.setFocusPainted(false); // 添加这一行来取消焦点边框的绘制
-                        newButton.setFocusable(false);  // 禁止了按钮获取焦点，因此按钮不会在被点击后显示为"激活"或"选中"的状态
-                        newButton.addActionListener(actionEvent -> {
-                            if (newButton.getForeground() != Color.RED) {
-                                // 如果文本为提示文字，则清空文本
-                                if (initTextField.getText().contains("fofaEX: FOFA Extension")) {
-                                    initTextField.setText("");
-                                }
-                                initTextField.setText(initTextField.getText() + " " + newButton.getActionCommand());
-                                newButton.setForeground(Color.RED);
-                                newButton.setFont(newButton.getFont().deriveFont(Font.BOLD)); // 设置字体为粗体
-                            } else {
-                                initTextField.setText(initTextField.getText().replace(" " + newButton.getActionCommand(), ""));
-                                newButton.setForeground(null);
-                                newButton.setFont(null);
-                                // 如果为空则设置 prompt
-                                if (initTextField.getText().isEmpty()) {
-                                    initTextField.setText("fofaEX: FOFA Extension");
-                                    initTextField.setForeground(Color.GRAY);
-                                    // 将光标放在开头
-                                    initTextField.setCaretPosition(0);
+                if (line.startsWith("\"") && line.contains("{") && line.contains("}")) {
+                    String[] parts = line.split(":", 2);
 
-                                }
-                            }
-                        });
-                        initPanel.add(newButton);
-                        initButtonsMap.put(entry.getKey(), newButton);
-                    } else {
-                        // This is an existing button
-                        existingButton.setActionCommand(entry.getValue());
-                        existingButton.setText(entry.getKey()); // Update button text
-                    }
+                    String key = parts[0].substring(1, parts[0].length() - 1).trim();
+
+                    String value = parts[1].substring(1, parts[1].length() - 2).trim();
+                    newMap.put(key, value);
                 }
-                initPanel.revalidate();
-                initPanel.repaint();
-            } catch (IOException ioException) {
-                ioException.printStackTrace();
             }
+            rules.close();
+
+            // 移除按钮
+            Iterator<Map.Entry<String, JButton>> iterator = initButtonsMap.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<String, JButton> entry = iterator.next();
+                if (!newMap.containsKey(entry.getKey())) {
+                    initPanel.remove(entry.getValue());
+                    iterator.remove();
+                }
+            }
+
+            // 更新并新增按钮
+            for (Map.Entry<String, String> entry : newMap.entrySet()) {
+                JButton existingButton = initButtonsMap.get(entry.getKey());
+                if (existingButton == null) {
+                    // 新按钮
+                    JButton newButton = new JButton(entry.getKey());
+                    newButton.setActionCommand(entry.getValue());
+                    newButton.setToolTipText(entry.getValue()); // 设置按钮的 ToolTip 为键值，悬浮显示
+                    newButton.setFocusPainted(false); // 添加这一行来取消焦点边框的绘制
+                    newButton.setFocusable(false);  // 禁止了按钮获取焦点，因此按钮不会在被点击后显示为"激活"或"选中"的状态
+                    newButton.addActionListener(actionEvent -> {
+                        if (newButton.getForeground() != Color.RED) {
+                            // 如果文本为提示文字，则清空文本
+                            if (initTextField.getText().contains("fofaEX: FOFA Extension")) {
+                                initTextField.setText("");
+                            }
+                            initTextField.setText(initTextField.getText() + " " + newButton.getActionCommand());
+                            newButton.setForeground(Color.RED);
+                            newButton.setFont(newButton.getFont().deriveFont(Font.BOLD)); // 设置字体为粗体
+                        } else {
+                            initTextField.setText(initTextField.getText().replace(" " + newButton.getActionCommand(), ""));
+                            newButton.setForeground(null);
+                            newButton.setFont(null);
+                            // 如果为空则设置 prompt
+                            if (initTextField.getText().isEmpty()) {
+                                initTextField.setText("fofaEX: FOFA Extension");
+                                initTextField.setForeground(Color.GRAY);
+                                // 将光标放在开头
+                                initTextField.setCaretPosition(0);
+
+                            }
+                        }
+                    });
+                    initPanel.add(newButton);
+                    initButtonsMap.put(entry.getKey(), newButton);
+                } else {
+                    // This is an existing button
+                    existingButton.setActionCommand(entry.getValue());
+                    existingButton.setText(entry.getKey()); // Update button text
+                }
+            }
+            initPanel.revalidate();
+            initPanel.repaint();
+        } catch (IOException ioException) {
+            ioException.printStackTrace();
         }
+    }
 
     private static void exportTableToExcel(JTable table) {
         XSSFWorkbook workbook = new XSSFWorkbook();
@@ -1155,7 +1263,7 @@ public class Main {
     }
 
     // 单独给link用的，可以封装成 SDK
-    public static List<String> getApiResult(String fofaDomain,String fields, String qbase64, String email, String key, String paramName) throws Exception {
+    public static List<String> getApiResult(String fofaDomain, String fields, String qbase64, String email, String key, String paramName) throws Exception {
         String apiUrl = fofaDomain + "/api/v1/search/all?fields=" + fields + "&qbase64=" + Base64.getEncoder().encodeToString(qbase64.getBytes()) + "&email=" + email + "&key=" + key;
         URL url = new URL(apiUrl);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -1186,11 +1294,12 @@ public class Main {
         return results;
     }
 
-    public static void addRuleBox(JPanel panel, String checkBoxName, RuleMarkChangeCallback callback) {
+    public static void addRuleBox(JPanel panel, String checkBoxName, RuleMarkChangeCallback callback, Boolean selectMark) {
         // 创建复选框
         JCheckBox newBox = new JCheckBox(checkBoxName);
         newBox.setFocusPainted(false);
         newBox.setSelected(callback != null && callback instanceof RuleMarkChangeCallback);
+        newBox.setSelected(selectMark);  // 直接使用 ipMark 的当前值
 
         // 添加 ItemListener
         newBox.addItemListener(new ItemListener() {
@@ -1209,5 +1318,12 @@ public class Main {
     // addRuleBox 的回调函数
     public interface RuleMarkChangeCallback {
         void onRuleMarkChange(boolean newValue);
+    }
+
+    // 处理 title 实体编码问题
+    public static List<String> decodeHtmlEntities(List<String> encodedTitles) {
+        return encodedTitles.stream()
+                .map(StringEscapeUtils::unescapeHtml4)
+                .collect(Collectors.toList());
     }
 }
