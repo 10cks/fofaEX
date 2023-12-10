@@ -14,6 +14,7 @@ import javax.swing.event.*;
 import java.awt.Color;
 import java.util.List;
 
+import com.r4v3zn.fofa.core.DO.SearchData;
 import com.r4v3zn.fofa.core.client.FofaClient;
 import com.r4v3zn.fofa.core.client.FofaConstants;
 import com.r4v3zn.fofa.core.client.FofaSearch;
@@ -80,7 +81,7 @@ public class Main {
     private static boolean latitudeMark = false;
     private static boolean asNumberMark = false;
     private static boolean asOrganizationMark = false;
-    private static boolean hostMark = false;
+    private static boolean hostMark = true;
     private static boolean osMark = false;
     private static boolean serverMark = false;
     private static boolean jarmMark = false;
@@ -109,7 +110,14 @@ public class Main {
     /* 上面未完成 */
 
     private static boolean scrollPaneMark = true;
+
+    // 标记
     private static boolean exportButtonAdded = false;
+    private static boolean timeAdded = false;
+    private static JLabel timeLabel;
+
+    private static int queryTotalNumber;
+
     // 在类的成员变量中创建弹出菜单
     private static JPopupMenu popupMenu = new JPopupMenu();
     private static JMenuItem itemSelectColumn = new JMenuItem("选择当前整列");
@@ -455,7 +463,7 @@ public class Main {
         // JPanel panel7 = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
         JPanel panel7 = new JPanel(new GridLayout(0, 10, 0, 0));
 
-        JPanel panel8 = new JPanel();
+        JPanel panel8 = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
 
         // 创建"更新规则"按钮
         JButton updateButton = new JButton("♻");
@@ -556,7 +564,7 @@ public class Main {
         // 搜索按钮
         // 将textField0添加到新的SubPanel
         subPanel1.add(textField0);
-        searchButton("搜索", subPanel1, textField0, fofaEmail, fofaKey, fofaUrl, panel5, panel6, labelIcon, panel2, panel7);
+        searchButton("搜索", subPanel1, textField0, fofaEmail, fofaKey, fofaUrl, panel5, panel6, labelIcon, panel2, panel7,panel8);
 
         // 添加组件到面板
         //panel1.add(fofaUrl); // 网址
@@ -611,6 +619,7 @@ public class Main {
 
 
         // 创建复选框
+        addRuleBox(panel7, "host", newValue -> hostMark = newValue, hostMark,true);
         addRuleBox(panel7, "ip", newValue -> ipMark = newValue, ipMark);
         addRuleBox(panel7, "port", newValue -> portMark = newValue, portMark);
         addRuleBox(panel7, "protocol", newValue -> protocolMark = newValue, protocolMark);
@@ -629,7 +638,6 @@ public class Main {
         addRuleBox(panel7, "latitude", newValue -> latitudeMark = newValue, latitudeMark);
         addRuleBox(panel7, "asNumber", newValue -> asNumberMark = newValue, asNumberMark);
         addRuleBox(panel7, "asOrganization", newValue -> asOrganizationMark = newValue, asOrganizationMark);
-        addRuleBox(panel7, "host", newValue -> hostMark = newValue, hostMark);
         addRuleBox(panel7, "os", newValue -> osMark = newValue, osMark);
         addRuleBox(panel7, "server", newValue -> serverMark = newValue, serverMark);
         addRuleBox(panel7, "jarm", newValue -> jarmMark = newValue, jarmMark);
@@ -670,6 +678,7 @@ public class Main {
         mainPanel.add(panel4);
         mainPanel.add(panel5);
         mainPanel.add(panel6);
+        mainPanel.add(panel8);
 
         // 把面板添加到JFrame
         jFrame.add(mainPanel, NORTH);
@@ -754,7 +763,7 @@ public class Main {
         panel.add(button);
     }
 
-    private static void searchButton(String buttonText, JPanel panel, JTextField textField, JTextField emailField, JTextField keyField, JTextField urlField, JPanel resultPanel, JPanel exportPanel, JLabel changeIcon, JPanel disablePanel2, JPanel disablePanel7) {
+    private static void searchButton(String buttonText, JPanel panel, JTextField textField, JTextField emailField, JTextField keyField, JTextField urlField, JPanel resultPanel, JPanel exportPanel, JLabel changeIcon, JPanel disablePanel2, JPanel disablePanel7,JPanel totalPanel8) {
 
         JButton button = new JButton(buttonText);
         button.setFocusPainted(false);
@@ -816,6 +825,7 @@ public class Main {
 
                         SearchResults results = new SearchResults();
 
+                        long startTime = System.nanoTime();
                         try {
                             // 调用 SDK
                             FofaConstants.BASE_URL = domain;
@@ -827,9 +837,14 @@ public class Main {
                                 query = ""; // 将字符串设置为空
                             }
 
-                            String allData = fofaSearch.all(query).getResults().toString();
+                            SearchData fofaResult = fofaSearch.all(query);
+
+                            String allData = fofaResult.getResults().toString();
+
+                            queryTotalNumber = fofaResult.getSize();
 
                             String[] hostAllData = allData.substring(1, allData.length() - 1).split(", ");
+
                             List<String> hostShow = Arrays.asList(hostAllData);
 
                             List<String> ipShow = null;
@@ -900,12 +915,16 @@ public class Main {
                                     if (table == null) {
                                         JOptionPane.showMessageDialog(null, "表格没有被初始化");
                                         fontSet(changeIcon, orginIconStr);
+                                        setComponentsEnabled(disablePanel2, true);
+                                        setComponentsEnabled(disablePanel7, true);
                                         return;
                                     }
                                     // 检查 table 是否有模型和数据
                                     if (table.getModel() == null || table.getModel().getRowCount() <= 0) {
                                         JOptionPane.showMessageDialog(null, "当前无数据");
                                         fontSet(changeIcon, orginIconStr);
+                                        setComponentsEnabled(disablePanel2, true);
+                                        setComponentsEnabled(disablePanel7, true);
                                         return;
                                     }
                                     exportTableToExcel(table);
@@ -916,12 +935,41 @@ public class Main {
                             ex.printStackTrace();
                             JOptionPane.showMessageDialog(null, "发生错误，请重试！", "错误", JOptionPane.ERROR_MESSAGE);
                             fontSet(changeIcon, orginIconStr);
+                            setComponentsEnabled(disablePanel2, true);
+                            setComponentsEnabled(disablePanel7, true);
                         } catch (Exception e) {
                             JOptionPane.showMessageDialog(null, e.getMessage(), "执行失败", JOptionPane.ERROR_MESSAGE);
                             fontSet(changeIcon, orginIconStr);
+                            setComponentsEnabled(disablePanel2, true);
+                            setComponentsEnabled(disablePanel7, true);
                             throw new RuntimeException(e);
+                        }finally {
+                            long endTime = System.nanoTime(); // Stop the timer
+                            long duration = endTime - startTime;
+                            double seconds = (double) duration / 1_000_000_000.0; // Convert nanoseconds to seconds
+                            SwingUtilities.invokeLater(() -> {
+                                if (!timeAdded) {
+                                    // 只有当timeLabel为null时才创建新的实例
+                                    if (timeLabel == null) {
+                                        timeLabel = new JLabel();
+                                    }
+                                    timeLabel.setText("<html>Size: " + queryTotalNumber + "<br>Time: " + seconds + " seconds</html>");
+                                    totalPanel8.add(timeLabel);
+                                    timeAdded = true;
+                                } else {
+                                    if (timeLabel != null) { // 确保timeLabel不为null
+                                        timeLabel.setText("<html>Size: " + queryTotalNumber + "<br>Time: " + seconds + " seconds</html>");
+                                    }
+                                }
+                                totalPanel8.revalidate();
+                                totalPanel8.repaint();
+                            });
                         }
+
+
                         fontSet(changeIcon, orginIconStr);
+                        setComponentsEnabled(disablePanel2, true);
+                        setComponentsEnabled(disablePanel7, true);
 
                         return results;
                     }
@@ -931,10 +979,6 @@ public class Main {
                         try {
                             SearchResults searchResults = get();
                             boolean hasData = searchResults != null && !searchResults.host.isEmpty();
-
-                            setComponentsEnabled(disablePanel2, true);
-                            setComponentsEnabled(disablePanel7, true);
-
                             showResultsInTable(
                                     searchResults.host,
                                     searchResults.ip,
@@ -1044,9 +1088,9 @@ public class Main {
 
 
         if (scrollPaneMark) {
-            scrollPane.setPreferredSize(new Dimension(800, 450)); // 设置滚动窗格的首选大小
+            scrollPane.setPreferredSize(new Dimension(800, 430)); // 设置滚动窗格的首选大小
         } else {
-            scrollPane.setPreferredSize(new Dimension(800, 600)); // 设置滚动窗格的首选大小
+            scrollPane.setPreferredSize(new Dimension(800, 580)); // 设置滚动窗格的首选大小
         }
 
         table.setRowHeight(24); // 设置表格的行高
@@ -1320,6 +1364,32 @@ public class Main {
         panel.add(newBox);
     }
 
+    public static void addRuleBox(JPanel panel, String checkBoxName, RuleMarkChangeCallback callback, Boolean selectMark,Boolean setAlways) {
+        // 创建复选框
+        JCheckBox newBox = new JCheckBox(checkBoxName);
+        newBox.setFocusPainted(false);
+        newBox.setSelected(callback != null && callback instanceof RuleMarkChangeCallback);
+        newBox.setSelected(selectMark);  // 直接使用 ipMark 的当前值
+        newBox.setName("noChange");
+        if (setAlways) {
+            newBox.setSelected(true);   // 始终勾选
+            newBox.setEnabled(false);   // 禁用复选框，使其无法修改
+        }
+
+        // 添加 ItemListener
+        newBox.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                // 使用回调接口来通知外部变量的更改
+                if (callback != null) {
+                    callback.onRuleMarkChange(e.getStateChange() == ItemEvent.SELECTED);
+                }
+            }
+        });
+
+        // 添加到面板
+        panel.add(newBox);
+    }
+
     // addRuleBox 的回调函数
     public interface RuleMarkChangeCallback {
         void onRuleMarkChange(boolean newValue);
@@ -1334,7 +1404,14 @@ public class Main {
 
     private static void setComponentsEnabled(Container container, boolean enabled) {
         for (Component component : container.getComponents()) {
+            // 检查组件是否是复选框并且名字为 "host"
+            if (component instanceof JCheckBox && "noChange".equals(component.getName())) {
+                // 忽略名为 "host" 的复选框，不改变其可用性
+                continue;
+            }
+
             component.setEnabled(enabled);
+
             if (component instanceof Container) {
                 setComponentsEnabled((Container) component, enabled);
             }
