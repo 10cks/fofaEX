@@ -38,8 +38,22 @@ import javax.swing.undo.UndoManager;
 import static java.awt.BorderLayout.*;
 
 import java.util.Base64;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+
+class SearchResults {
+    List<String> host;
+    List<String> ip;
+    List<String> port;
+    List<String> protocol;
+    List<String> title;
+    List<String> domain;
+    List<String> link;
+    List<String> icp;
+    List<String> city;
+    // ... 可能还有其他字段 ...
+}
 public class Main {
 
     // 创建输入框
@@ -786,7 +800,7 @@ public class Main {
                 changeIcon.setFont(font);
 
                 // 创建 SwingWorker 来处理搜索任务
-                SwingWorker<List<String>, Void> worker = new SwingWorker<List<String>, Void>() {
+                SwingWorker<SearchResults, Void> worker = new SwingWorker<SearchResults, Void>() {
 
                     private void fontSet(JLabel changeIcon, String originIconStr) {
                         changeIcon.setText(originIconStr);
@@ -794,50 +808,10 @@ public class Main {
                     }
 
                     @Override
-                    protected List<String> doInBackground() throws Exception {
-                        // 这里执行后台任务，即搜索操作
-                        Map<String, List<String>> searchResults = new HashMap<>();
-                        String query = grammar.equals("fofaEX: FOFA Extension") ? "" : grammar;
+                    protected SearchResults doInBackground() throws Exception {
 
-                        // 检查各种标记，并执行搜索
-                        if (ipMark) {
-                            searchResults.put("ip", processSearchResult(query, "ip"));
-                        }
-                        if (portMark) {
-                            searchResults.put("port", processSearchResult(query, "port"));
-                        }
+                        SearchResults results = new SearchResults();
 
-                        if (protocolMark) {
-                            searchResults.put("protocol", processSearchResult(query, "protocol"));
-                        }
-
-                        if (titleMark) {
-                            List<String> encodedTitles = processSearchResult(query, "title");
-                            searchResults.put("title", decodeHtmlEntities(encodedTitles));
-                        }
-
-                        if (domainMark) {
-                            searchResults.put("domain", processSearchResult(query, "domain"));
-                        }
-
-                        if (linkMark) {
-                            searchResults.put("link", getApiResult(domain, "link", query, email, key, "results"));
-                        }
-
-                        if (icpMark) {
-                            searchResults.put("icp", processSearchResult(query, "icp"));
-                        }
-
-                        if (cityMark) {
-                            searchResults.put("city", processSearchResult(query, "city"));
-                        }
-
-                        return (List<String>) searchResults;
-                    }
-
-
-                    @Override
-                    protected void done() {
                         try {
                             // 调用 SDK
                             FofaConstants.BASE_URL = domain;
@@ -849,20 +823,13 @@ public class Main {
                                 query = ""; // 将字符串设置为空
                             }
 
-                            /*
-
-                            封装成 processSearchResult 函数流程:
-                            fofaSearch.all(query,"ip") -> tableIp -> tableIpTrim -> ipTableShow
-
-                            */
-
                             String allData = fofaSearch.all(query).getResults().toString();
 
                             String[] hostAllData = allData.substring(1, allData.length() - 1).split(", ");
-                            List<String> tableHostShow = Arrays.asList(hostAllData);
+                            List<String> hostShow = Arrays.asList(hostAllData);
 
                             List<String> ipShow = null;
-                            List<String> portTableShow = null;
+                            List<String> portShow = null;
                             List<String> protocolShow = null;
                             List<String> titleShow = null;
                             List<String> domainShow = null;
@@ -875,7 +842,7 @@ public class Main {
                             }
 
                             if (portMark) {
-                                portTableShow = processSearchResult(query, "port");
+                                portShow = processSearchResult(query, "port");
                             }
 
                             if (protocolMark) {
@@ -904,8 +871,16 @@ public class Main {
                                 cityShow = processSearchResult(query, "city");
                             }
 
-                            // 使用搜索结果更新表格
-                            showResultsInTable(tableHostShow, ipShow, portTableShow, protocolShow, titleShow, domainShow, linkShow, icpShow, cityShow, resultPanel);
+                            results.host = hostShow;
+                            results.ip = ipShow;
+                            results.port = portShow;
+                            results.protocol = protocolShow;
+                            results.title = titleShow;
+                            results.domain = domainShow;
+                            results.link = linkShow;
+                            results.icp = icpShow;
+                            results.city = cityShow;
+
 
                             // 导出表格
                             JButton exportButton = new JButton("Export to Excel");
@@ -944,6 +919,31 @@ public class Main {
                             throw new RuntimeException(e);
                         }
                         fontSet(changeIcon, orginIconStr);
+
+                        return results;
+                    }
+
+                    @Override
+                    protected void done() {
+                        try {
+                            SearchResults searchResults = get();
+
+                            showResultsInTable(
+                                    searchResults.host,
+                                    searchResults.ip,
+                                    searchResults.port,
+                                    searchResults.protocol,
+                                    searchResults.title,
+                                    searchResults.domain,
+                                    searchResults.link,
+                                    searchResults.icp,
+                                    searchResults.city,
+                                    resultPanel
+                            );
+
+                        } catch (InterruptedException | ExecutionException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 };
 
