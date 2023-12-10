@@ -54,6 +54,7 @@ class SearchResults {
     List<String> city;
     // ... 可能还有其他字段 ...
 }
+
 public class Main {
 
     // 创建输入框
@@ -555,7 +556,7 @@ public class Main {
         // 搜索按钮
         // 将textField0添加到新的SubPanel
         subPanel1.add(textField0);
-        searchButton("搜索", subPanel1, textField0, fofaEmail, fofaKey, fofaUrl, panel5, panel6, labelIcon);
+        searchButton("搜索", subPanel1, textField0, fofaEmail, fofaKey, fofaUrl, panel5, panel6, labelIcon, panel2, panel7);
 
         // 添加组件到面板
         //panel1.add(fofaUrl); // 网址
@@ -658,7 +659,6 @@ public class Main {
         /* 上面代码未完成 */
 
 
-
         // 设置全局边框：创建一个带有指定的空白边框的新面板，其中指定了上、左、下、右的边距
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
@@ -754,7 +754,7 @@ public class Main {
         panel.add(button);
     }
 
-    private static void searchButton(String buttonText, JPanel panel, JTextField textField, JTextField emailField, JTextField keyField, JTextField urlField, JPanel resultPanel, JPanel exportPanel, JLabel changeIcon) {
+    private static void searchButton(String buttonText, JPanel panel, JTextField textField, JTextField emailField, JTextField keyField, JTextField urlField, JPanel resultPanel, JPanel exportPanel, JLabel changeIcon, JPanel disablePanel2, JPanel disablePanel7) {
 
         JButton button = new JButton(buttonText);
         button.setFocusPainted(false);
@@ -798,6 +798,10 @@ public class Main {
                 changeIcon.setForeground(new Color(89, 154, 248)); // 设置文本颜色为红色
                 Font font = new Font("Times New Roman", Font.BOLD, 60);
                 changeIcon.setFont(font);
+
+                setComponentsEnabled(disablePanel2, false);
+                setComponentsEnabled(disablePanel7, false);
+
 
                 // 创建 SwingWorker 来处理搜索任务
                 SwingWorker<SearchResults, Void> worker = new SwingWorker<SearchResults, Void>() {
@@ -881,7 +885,6 @@ public class Main {
                             results.icp = icpShow;
                             results.city = cityShow;
 
-
                             // 导出表格
                             JButton exportButton = new JButton("Export to Excel");
                             exportButton.setFocusPainted(false); // 添加这一行来取消焦点边框的绘制
@@ -927,6 +930,10 @@ public class Main {
                     protected void done() {
                         try {
                             SearchResults searchResults = get();
+                            boolean hasData = searchResults != null && !searchResults.host.isEmpty();
+
+                            setComponentsEnabled(disablePanel2, true);
+                            setComponentsEnabled(disablePanel7, true);
 
                             showResultsInTable(
                                     searchResults.host,
@@ -946,7 +953,6 @@ public class Main {
                         }
                     }
                 };
-
                 // 启动 SwingWorker
                 worker.execute();
             }
@@ -1030,7 +1036,6 @@ public class Main {
         JTableHeader header = getjTableHeader();
 
 
-
         // 重新设置表格头，以便新的渲染器生效
         table.setTableHeader(header);
 
@@ -1038,9 +1043,9 @@ public class Main {
         JScrollPane scrollPane = new JScrollPane(table);
 
 
-        if(scrollPaneMark){
+        if (scrollPaneMark) {
             scrollPane.setPreferredSize(new Dimension(800, 450)); // 设置滚动窗格的首选大小
-        }else{
+        } else {
             scrollPane.setPreferredSize(new Dimension(800, 600)); // 设置滚动窗格的首选大小
         }
 
@@ -1325,5 +1330,14 @@ public class Main {
         return encodedTitles.stream()
                 .map(StringEscapeUtils::unescapeHtml4)
                 .collect(Collectors.toList());
+    }
+
+    private static void setComponentsEnabled(Container container, boolean enabled) {
+        for (Component component : container.getComponents()) {
+            component.setEnabled(enabled);
+            if (component instanceof Container) {
+                setComponentsEnabled((Container) component, enabled);
+            }
+        }
     }
 }
