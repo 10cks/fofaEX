@@ -12,7 +12,6 @@ import javax.swing.event.*;
 import java.awt.Color;
 import java.util.List;
 
-import com.r4v3zn.fofa.core.DO.SearchData;
 import com.r4v3zn.fofa.core.client.FofaClient;
 import com.r4v3zn.fofa.core.client.FofaConstants;
 import com.r4v3zn.fofa.core.client.FofaSearch;
@@ -98,8 +97,9 @@ public class Main {
     private static boolean timeAdded = false;
     private static JLabel timeLabel;
     private static int queryTotalNumber;
-
     private static int numberOfItems;
+    private static int currentPage;
+    private static int sizeSetting = 10000;
 
     // 在类的成员变量中创建弹出菜单
     private static JPopupMenu popupMenu = new JPopupMenu();
@@ -603,8 +603,8 @@ public class Main {
 
         // 创建复选框
         addRuleBox(panel7, "host", newValue -> hostMark = newValue, hostMark, true);
-        addRuleBox(panel7, "ip", newValue -> ipMark = newValue, ipMark,true);
-        addRuleBox(panel7, "port", newValue -> portMark = newValue, portMark,true);
+        addRuleBox(panel7, "ip", newValue -> ipMark = newValue, ipMark, true);
+        addRuleBox(panel7, "port", newValue -> portMark = newValue, portMark, true);
         addRuleBox(panel7, "protocol", newValue -> protocolMark = newValue, protocolMark);
         addRuleBox(panel7, "title", newValue -> titleMark = newValue, titleMark);
         addRuleBox(panel7, "domain", newValue -> domainMark = newValue, domainMark);
@@ -753,6 +753,8 @@ public class Main {
         button.setFocusable(false);
         button.setPreferredSize(new Dimension(60, 50));
         button.addActionListener(new ActionListener() {
+
+            // 基于 fofaSearch SDK
             public List<String> processSearchResult(String query, String searchType) throws Exception {
 
                 String domain = urlField.getText().trim();
@@ -809,81 +811,152 @@ public class Main {
                         SearchResults results = new SearchResults();
                         QueryResponse queryResponse = new QueryResponse();
                         String errorMessage = null; // 用于存储错误消息
+                        errorMessage = queryResponse.errmsg; // 存储错误消息以便后面使用
+                        String fieldsTotal = "";
 
                         long startTime = System.nanoTime();
                         try {
                             // 调用 SDK
                             FofaConstants.BASE_URL = domain;
                             FofaClient fofaClient = new FofaClient(email, key);
-                            FofaSearch fofaSearch = new FofaSearch(fofaClient);
 
                             String query = grammar;
                             if (query.equals("fofaEX: FOFA Extension")) {
                                 query = ""; // 将字符串设置为空
                             }
 
-                            JSONObject jsonResponse = FofaAPI.getAllJsonResult(domain, query, email, key);
 
-                            queryResponse.error = (boolean)FofaAPI.getValueFromJson(jsonResponse, "error");
-                            queryResponse.errmsg = (String)FofaAPI.getValueFromJson(jsonResponse,"errmsg");
-                            queryResponse.results  = (List<List<String>>)FofaAPI.getValueFromJson(jsonResponse, "results");
+                            if (protocolMark) {
 
-                            errorMessage = queryResponse.errmsg; // 存储错误消息以便后面使用
+                                fieldsTotal += ",protocol";
+
+                            }
+
+                            if (titleMark) {
+
+                                fieldsTotal += ",title";
+                            }
+
+                            if (domainMark) {
+
+                                fieldsTotal += ",domain";
+                            }
+
+                            if (linkMark) {
+
+                                fieldsTotal += ",link";
+                            }
+
+                            if (icpMark) {
+
+                                fieldsTotal += ",icp";
+                            }
+
+                            if (cityMark) {
+
+                                fieldsTotal += ",city";
+                            }
+
+                            // 创建字典
+                            Map<String, Boolean> marks = new LinkedHashMap<>();
+                            marks.put("host", ipMark);
+                            marks.put("ip", ipMark);
+                            marks.put("port", portMark);
+                            marks.put("protocol", protocolMark);
+                            marks.put("title", titleMark);
+                            marks.put("domain", domainMark);
+                            marks.put("link", linkMark);
+                            marks.put("icp", icpMark);
+                            marks.put("city", cityMark);
+                            marks.put("country", countryMark);
+                            marks.put("countryName", countryNameMark);
+                            marks.put("region", regionMark);
+                            marks.put("longitude", longitudeMark);
+                            marks.put("latitude", latitudeMark);
+                            marks.put("asNumber", asNumberMark);
+                            marks.put("asOrganization", asOrganizationMark);
+                            marks.put("os", osMark);
+                            marks.put("server", serverMark);
+                            marks.put("jarm", jarmMark);
+                            marks.put("header", headerMark);
+                            marks.put("banner", bannerMark);
+                            marks.put("baseProtocol", baseProtocolMark);
+                            marks.put("certsIssuerOrg", certsIssuerOrgMark);
+                            marks.put("certsIssuerCn", certsIssuerCnMark);
+                            marks.put("certsSubjectOrg", certsSubjectOrgMark);
+                            marks.put("certsSubjectCn", certsSubjectCnMark);
+                            marks.put("tlsJa3s", tlsJa3sMark);
+                            marks.put("tlsVersion", tlsVersionMark);
+                            marks.put("product", productMark);
+                            marks.put("productCategory", productCategoryMark);
+                            marks.put("version", versionMark);
+                            marks.put("lastupdatetime", lastupdatetimeMark);
+                            marks.put("cname", cnameMark);
+                            marks.put("iconHash", iconHashMark);
+                            marks.put("certsValid", certsValidMark);
+                            marks.put("cnameDomain", cnameDomainMark);
+                            marks.put("body", bodyMark);
+                            marks.put("icon", iconMark);
+                            marks.put("fid", fidMark);
+                            marks.put("structinfo", structinfoMark);
+
+                            // 标记为真的放在一起
+                            List<String> trueMarks = extractTrueMarks(marks);
+                            System.out.println(trueMarks);
+
+                            // 开始查询
+                            JSONObject jsonResponse = FofaAPI.getAllJsonResult(domain, email, key, query, fieldsTotal, sizeSetting);
+                            // 检查错误信息
+                            queryResponse.error = (boolean) FofaAPI.getValueFromJson(jsonResponse, "error");
+                            queryResponse.errmsg = (String) FofaAPI.getValueFromJson(jsonResponse, "errmsg");
+                            // 取出整体 results
+                            queryResponse.results = (List<List<String>>) FofaAPI.getValueFromJson(jsonResponse, "results");
+
                             if (queryResponse.error) {
                                 throw new Exception(queryResponse.errmsg);
                             }
 
                             List<List<String>> allShow = queryResponse.results;
-
-                            List<String> hostShow = FofaAPI.getColumn(allShow,"host");
-
-                            numberOfItems = hostShow.size();
+                            // 需要放在异常后面
+                            currentPage = (int) FofaAPI.getValueFromJson(jsonResponse, "page");
                             queryTotalNumber = (int) FofaAPI.getValueFromJson(jsonResponse, "size");
 
-                            List<String> ipShow = FofaAPI.getColumn(allShow,"ip");
-                            List<String> portShow = FofaAPI.getColumn(allShow,"port");
-                            List<String> protocolShow = null;
-                            List<String> titleShow = null;
-                            List<String> domainShow = null;
-                            List<String> linkShow = null;
-                            List<String> icpShow = null;
-                            List<String> cityShow = null;
+                            List<String> hostShow = FofaAPI.getColumn(allShow, 0);
 
-                            if (protocolMark) {
-                                protocolShow = processSearchResult(query, "protocol");
+                            numberOfItems = hostShow.size();
+                            int i = 0;
+                            for (String mark : trueMarks) {
+                                switch (mark) {
+                                    case "host":
+                                        results.host = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "ip":
+                                        results.ip = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "protocol":
+                                        results.protocol = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "port":
+                                        results.port = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "title":
+                                        results.title = decodeHtmlEntities(FofaAPI.getColumn(allShow, i));
+                                        break;
+                                    case "domain":
+                                        results.domain = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "link":
+                                        results.link = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "icp":
+                                        results.icp = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "city":
+                                        results.city = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                }
+                                i = i + 1;
                             }
-
-                            if (titleMark) {
-                                List<String> encodedTitles = processSearchResult(query, "title");
-                                titleShow = decodeHtmlEntities(encodedTitles);
-                            }
-
-                            if (domainMark) {
-                                domainShow = processSearchResult(query, "domain");
-                            }
-
-                            // List<String> linkShow = processSearchResult(query, "link");
-                            if (linkMark) {
-                                linkShow = FofaAPI.getFieldsResult(domain, "link", query, email, key, "results");
-                            }
-
-                            if (icpMark) {
-                                icpShow = processSearchResult(query, "icp");
-                            }
-
-                            if (cityMark) {
-                                cityShow = processSearchResult(query, "city");
-                            }
-
-                            results.host = hostShow;
-                            results.ip = ipShow;
-                            results.port = portShow;
-                            results.protocol = protocolShow;
-                            results.title = titleShow;
-                            results.domain = domainShow;
-                            results.link = linkShow;
-                            results.icp = icpShow;
-                            results.city = cityShow;
 
                             // 导出表格
                             JButton exportButton = new JButton("Export to Excel");
@@ -933,24 +1006,24 @@ public class Main {
                             long duration = endTime - startTime;
                             double seconds = (double) duration / 1_000_000_000.0; // Convert nanoseconds to seconds
                             SwingUtilities.invokeLater(() -> {
+                                String totalLabelShow = "<html>" + "Page: " + currentPage + "<br>" + "Items/Totals: " + numberOfItems + "/" + queryTotalNumber + "<br>Time: " + seconds + " seconds</html>";
                                 if (!timeAdded) {
                                     // 只有当timeLabel为null时才创建新的实例
                                     if (timeLabel == null) {
                                         timeLabel = new JLabel();
                                     }
-                                    timeLabel.setText("<html>" + "Item: " + numberOfItems + "<br>" + "Size: " + queryTotalNumber + "<br>Time: " + seconds + " seconds</html>");
+                                    timeLabel.setText(totalLabelShow);
                                     totalPanel8.add(timeLabel);
                                     timeAdded = true;
                                 } else {
                                     if (timeLabel != null) { // 确保timeLabel不为null
-                                        timeLabel.setText("<html>" + "Item: " + numberOfItems + "<br>" + "Size: " + queryTotalNumber + "<br>Time: " + seconds + " seconds</html>");
+                                        timeLabel.setText(totalLabelShow);
                                     }
                                 }
                                 totalPanel8.revalidate();
                                 totalPanel8.repaint();
                             });
                         }
-
 
                         fontSet(changeIcon, orginIconStr);
                         setComponentsEnabled(disablePanel2, true);
@@ -964,6 +1037,7 @@ public class Main {
                         try {
                             SearchResults searchResults = get();
                             boolean hasData = searchResults != null && !searchResults.host.isEmpty();
+                            assert searchResults != null;
                             showResultsInTable(
                                     searchResults.host,
                                     searchResults.ip,
@@ -994,35 +1068,35 @@ public class Main {
         List<String> columnNamesList = new ArrayList<String>(List.of("host"));
 
         if (cityMark) {
-            columnNamesList.add(1, "city");  // 插入“ip" 列到正确的位置
+            columnNamesList.add(1, "city");
         }
 
         if (icpMark) {
-            columnNamesList.add(1, "icp");  // 插入“ip" 列到正确的位置
+            columnNamesList.add(1, "icp");
         }
 
         if (linkMark) {
-            columnNamesList.add(1, "link");  // 插入“ip" 列到正确的位置
+            columnNamesList.add(1, "link");
         }
 
         if (domainMark) {
-            columnNamesList.add(1, "domain");  // 插入“ip" 列到正确的位置
+            columnNamesList.add(1, "domain");
         }
 
         if (titleMark) {
-            columnNamesList.add(1, "title");  // 插入“ip" 列到正确的位置
+            columnNamesList.add(1, "title");
         }
 
         if (protocolMark) {
-            columnNamesList.add(1, "protocol");  // 插入“ip" 列到正确的位置
+            columnNamesList.add(1, "protocol");
         }
 
         if (portMark) {
-            columnNamesList.add(1, "port");  // 插入“ip" 列到正确的位置
+            columnNamesList.add(1, "port");
         }
 
         if (ipMark) {
-            columnNamesList.add(1, "ip");  // 插入“ip" 列到正确的位置
+            columnNamesList.add(1, "ip");
         }
 
         String[] columnNames = columnNamesList.toArray(new String[0]);
@@ -1370,5 +1444,15 @@ public class Main {
                 setComponentsEnabled((Container) component, enabled);
             }
         }
+    }
+
+    private static List<String> extractTrueMarks(Map<String, Boolean> marks) {
+        List<String> trueMarks = new ArrayList<>();
+        for (Map.Entry<String, Boolean> entry : marks.entrySet()) {
+            if (entry.getValue()) {
+                trueMarks.add(entry.getKey());
+            }
+        }
+        return trueMarks;
     }
 }
