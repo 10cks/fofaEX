@@ -3,9 +3,7 @@ import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
-import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import javax.swing.BorderFactory;
@@ -28,7 +26,6 @@ import org.apache.http.util.EntityUtils;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -38,23 +35,8 @@ import javax.swing.undo.UndoManager;
 
 import static java.awt.BorderLayout.*;
 
-import java.util.Base64;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
-
-
-class SearchResults {
-    List<String> host;
-    List<String> ip;
-    List<String> port;
-    List<String> protocol;
-    List<String> title;
-    List<String> domain;
-    List<String> link;
-    List<String> icp;
-    List<String> city;
-    // ... 可能还有其他字段 ...
-}
 
 public class Main {
 
@@ -115,8 +97,9 @@ public class Main {
     private static boolean exportButtonAdded = false;
     private static boolean timeAdded = false;
     private static JLabel timeLabel;
-
     private static int queryTotalNumber;
+
+    private static int numberOfItems;
 
     // 在类的成员变量中创建弹出菜单
     private static JPopupMenu popupMenu = new JPopupMenu();
@@ -564,7 +547,7 @@ public class Main {
         // 搜索按钮
         // 将textField0添加到新的SubPanel
         subPanel1.add(textField0);
-        searchButton("搜索", subPanel1, textField0, fofaEmail, fofaKey, fofaUrl, panel5, panel6, labelIcon, panel2, panel7,panel8);
+        searchButton("搜索", subPanel1, textField0, fofaEmail, fofaKey, fofaUrl, panel5, panel6, labelIcon, panel2, panel7, panel8);
 
         // 添加组件到面板
         //panel1.add(fofaUrl); // 网址
@@ -619,9 +602,9 @@ public class Main {
 
 
         // 创建复选框
-        addRuleBox(panel7, "host", newValue -> hostMark = newValue, hostMark,true);
-        addRuleBox(panel7, "ip", newValue -> ipMark = newValue, ipMark);
-        addRuleBox(panel7, "port", newValue -> portMark = newValue, portMark);
+        addRuleBox(panel7, "host", newValue -> hostMark = newValue, hostMark, true);
+        addRuleBox(panel7, "ip", newValue -> ipMark = newValue, ipMark,true);
+        addRuleBox(panel7, "port", newValue -> portMark = newValue, portMark,true);
         addRuleBox(panel7, "protocol", newValue -> protocolMark = newValue, protocolMark);
         addRuleBox(panel7, "title", newValue -> titleMark = newValue, titleMark);
         addRuleBox(panel7, "domain", newValue -> domainMark = newValue, domainMark);
@@ -763,7 +746,7 @@ public class Main {
         panel.add(button);
     }
 
-    private static void searchButton(String buttonText, JPanel panel, JTextField textField, JTextField emailField, JTextField keyField, JTextField urlField, JPanel resultPanel, JPanel exportPanel, JLabel changeIcon, JPanel disablePanel2, JPanel disablePanel7,JPanel totalPanel8) {
+    private static void searchButton(String buttonText, JPanel panel, JTextField textField, JTextField emailField, JTextField keyField, JTextField urlField, JPanel resultPanel, JPanel exportPanel, JLabel changeIcon, JPanel disablePanel2, JPanel disablePanel7, JPanel totalPanel8) {
 
         JButton button = new JButton(buttonText);
         button.setFocusPainted(false);
@@ -824,6 +807,8 @@ public class Main {
                     protected SearchResults doInBackground() throws Exception {
 
                         SearchResults results = new SearchResults();
+                        QueryResponse queryResponse = new QueryResponse();
+                        String errorMessage = null; // 用于存储错误消息
 
                         long startTime = System.nanoTime();
                         try {
@@ -837,32 +822,32 @@ public class Main {
                                 query = ""; // 将字符串设置为空
                             }
 
-                            SearchData fofaResult = fofaSearch.all(query);
+                            JSONObject jsonResponse = FofaAPI.getAllJsonResult(domain, query, email, key);
 
-                            String allData = fofaResult.getResults().toString();
+                            queryResponse.error = (boolean)FofaAPI.getValueFromJson(jsonResponse, "error");
+                            queryResponse.errmsg = (String)FofaAPI.getValueFromJson(jsonResponse,"errmsg");
+                            queryResponse.results  = (List<List<String>>)FofaAPI.getValueFromJson(jsonResponse, "results");
 
-                            queryTotalNumber = fofaResult.getSize();
+                            errorMessage = queryResponse.errmsg; // 存储错误消息以便后面使用
+                            if (queryResponse.error) {
+                                throw new Exception(queryResponse.errmsg);
+                            }
 
-                            String[] hostAllData = allData.substring(1, allData.length() - 1).split(", ");
+                            List<List<String>> allShow = queryResponse.results;
 
-                            List<String> hostShow = Arrays.asList(hostAllData);
+                            List<String> hostShow = FofaAPI.getColumn(allShow,"host");
 
-                            List<String> ipShow = null;
-                            List<String> portShow = null;
+                            numberOfItems = hostShow.size();
+                            queryTotalNumber = (int) FofaAPI.getValueFromJson(jsonResponse, "size");
+
+                            List<String> ipShow = FofaAPI.getColumn(allShow,"ip");
+                            List<String> portShow = FofaAPI.getColumn(allShow,"port");
                             List<String> protocolShow = null;
                             List<String> titleShow = null;
                             List<String> domainShow = null;
                             List<String> linkShow = null;
                             List<String> icpShow = null;
                             List<String> cityShow = null;
-
-                            if (ipMark) {
-                                ipShow = processSearchResult(query, "ip");
-                            }
-
-                            if (portMark) {
-                                portShow = processSearchResult(query, "port");
-                            }
 
                             if (protocolMark) {
                                 protocolShow = processSearchResult(query, "protocol");
@@ -879,7 +864,7 @@ public class Main {
 
                             // List<String> linkShow = processSearchResult(query, "link");
                             if (linkMark) {
-                                linkShow = getApiResult(domain, "link", query, email, key, "results");
+                                linkShow = FofaAPI.getFieldsResult(domain, "link", query, email, key, "results");
                             }
 
                             if (icpMark) {
@@ -938,12 +923,12 @@ public class Main {
                             setComponentsEnabled(disablePanel2, true);
                             setComponentsEnabled(disablePanel7, true);
                         } catch (Exception e) {
-                            JOptionPane.showMessageDialog(null, e.getMessage(), "执行失败", JOptionPane.ERROR_MESSAGE);
+                            JOptionPane.showMessageDialog(null, errorMessage != null ? errorMessage : e.getMessage(), "执行失败", JOptionPane.ERROR_MESSAGE);
                             fontSet(changeIcon, orginIconStr);
                             setComponentsEnabled(disablePanel2, true);
                             setComponentsEnabled(disablePanel7, true);
                             throw new RuntimeException(e);
-                        }finally {
+                        } finally {
                             long endTime = System.nanoTime(); // Stop the timer
                             long duration = endTime - startTime;
                             double seconds = (double) duration / 1_000_000_000.0; // Convert nanoseconds to seconds
@@ -953,12 +938,12 @@ public class Main {
                                     if (timeLabel == null) {
                                         timeLabel = new JLabel();
                                     }
-                                    timeLabel.setText("<html>Size: " + queryTotalNumber + "<br>Time: " + seconds + " seconds</html>");
+                                    timeLabel.setText("<html>" + "Item: " + numberOfItems + "<br>" + "Size: " + queryTotalNumber + "<br>Time: " + seconds + " seconds</html>");
                                     totalPanel8.add(timeLabel);
                                     timeAdded = true;
                                 } else {
                                     if (timeLabel != null) { // 确保timeLabel不为null
-                                        timeLabel.setText("<html>Size: " + queryTotalNumber + "<br>Time: " + seconds + " seconds</html>");
+                                        timeLabel.setText("<html>" + "Item: " + numberOfItems + "<br>" + "Size: " + queryTotalNumber + "<br>Time: " + seconds + " seconds</html>");
                                     }
                                 }
                                 totalPanel8.revalidate();
@@ -1088,9 +1073,9 @@ public class Main {
 
 
         if (scrollPaneMark) {
-            scrollPane.setPreferredSize(new Dimension(800, 430)); // 设置滚动窗格的首选大小
+            scrollPane.setPreferredSize(new Dimension(800, 400)); // 设置滚动窗格的首选大小
         } else {
-            scrollPane.setPreferredSize(new Dimension(800, 580)); // 设置滚动窗格的首选大小
+            scrollPane.setPreferredSize(new Dimension(800, 550)); // 设置滚动窗格的首选大小
         }
 
         table.setRowHeight(24); // 设置表格的行高
@@ -1311,37 +1296,6 @@ public class Main {
         }
     }
 
-    // 单独给link用的，可以封装成 SDK
-    public static List<String> getApiResult(String fofaDomain, String fields, String qbase64, String email, String key, String paramName) throws Exception {
-        String apiUrl = fofaDomain + "/api/v1/search/all?fields=" + fields + "&qbase64=" + Base64.getEncoder().encodeToString(qbase64.getBytes()) + "&email=" + email + "&key=" + key;
-        URL url = new URL(apiUrl);
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("GET");
-        connection.setRequestProperty("Accept", "application/json");
-
-        if (connection.getResponseCode() != 200) {
-            throw new RuntimeException("Failed : HTTP error code : " + connection.getResponseCode());
-        }
-
-        BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-        String output;
-        StringBuilder responseBuilder = new StringBuilder();
-        while ((output = br.readLine()) != null) {
-            responseBuilder.append(output);
-        }
-
-        connection.disconnect();
-        String response = responseBuilder.toString();
-        JSONObject jsonResponse = new JSONObject(response);
-        JSONArray jsonArray = jsonResponse.getJSONArray(paramName);
-        List<String> results = new ArrayList<>();
-
-        for (int i = 0; i < jsonArray.length(); i++) {
-            results.add(jsonArray.getString(i));
-        }
-
-        return results;
-    }
 
     public static void addRuleBox(JPanel panel, String checkBoxName, RuleMarkChangeCallback callback, Boolean selectMark) {
         // 创建复选框
@@ -1364,7 +1318,7 @@ public class Main {
         panel.add(newBox);
     }
 
-    public static void addRuleBox(JPanel panel, String checkBoxName, RuleMarkChangeCallback callback, Boolean selectMark,Boolean setAlways) {
+    public static void addRuleBox(JPanel panel, String checkBoxName, RuleMarkChangeCallback callback, Boolean selectMark, Boolean setAlways) {
         // 创建复选框
         JCheckBox newBox = new JCheckBox(checkBoxName);
         newBox.setFocusPainted(false);
