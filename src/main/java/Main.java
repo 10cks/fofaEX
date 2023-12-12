@@ -47,6 +47,9 @@ public class Main {
     private static JTextField fofaEmail = createTextField("请输入邮箱");
     private static JTextField fofaKey = createTextField("请输入API key");
 
+    private static String rulesPath = "rules.txt";
+    private static String accountsPath = "accounts.txt";
+
     // 设置 field 规则
     private static boolean ipMark = true;
     private static boolean portMark = true;
@@ -93,6 +96,7 @@ public class Main {
     /* 上面未完成 */
 
     private static boolean scrollPaneMark = true;
+    private static JDialog searchDialog = null;
 
     // 标记
     private static boolean exportButtonAdded = false;
@@ -112,22 +116,24 @@ public class Main {
     private static JMenuItem itemOpenLink = new JMenuItem("打开链接");
     static JMenuItem itemCopy = new JMenuItem("复制");
 
+    private static JMenuItem itemSearch = new JMenuItem("搜索");
 
-    static {
+    static TableCellRenderer highlightRenderer = new HighlightRenderer();
+    private static TableCellRenderer defaultRenderer;
+
+    public static void initializeTable() {
         // 添加菜单项到弹出菜单
-        popupMenu.add(itemCopy);
         popupMenu.add(itemOpenLink);
+        popupMenu.add(itemCopy);
+        popupMenu.add(itemSearch);
         popupMenu.add(itemSelectColumn);
         popupMenu.add(itemDeselectColumn);
-
-
-
-
-        // 为右键菜单项添加事件监听器
+        defaultRenderer = table.getDefaultRenderer(Object.class);
+        // 为右键菜单项添加全选当前列监听器
         itemSelectColumn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // 全选当前列
+
                 if (table != null) {
                     int col = table.getSelectedColumn();
                     if (col >= 0) {
@@ -210,9 +216,96 @@ public class Main {
                 }
             }
         });
+
+        itemSearch.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                    createSearchDialog();
+            }
+        });
+    }
+
+    private static void createSearchDialog() {
+
+        // 检查对话框是否已经存在
+        if (searchDialog != null) {
+            // 对话框已经存在，可能需要将其带到前面
+            searchDialog.toFront();
+            searchDialog.requestFocus();
+            return;
+        }
+
+        // 创建一个新的JDialog
+        JDialog searchDialog = new JDialog((Frame) null, "搜索", false); // false表示非模态对话框
+        searchDialog.setLayout(new FlowLayout());
+        searchDialog.setAlwaysOnTop(true);
+        JLabel label = new JLabel("输入搜索内容：");
+        JTextField searchField = new JTextField(20);
+        JButton searchButton = new JButton("搜索");
+        JButton closeButton = new JButton("退出高亮");
+
+        // 添加组件到对话框
+        searchDialog.add(label);
+        searchDialog.add(searchField);
+        searchDialog.add(searchButton);
+        searchDialog.add(closeButton);
+
+        // 搜索按钮监听器
+        searchButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String searchText = searchField.getText();
+                if (searchText != null && !searchText.isEmpty()) {
+                    // 执行搜索并高亮显示匹配的单元格
+                    searchTable(searchText);
+                }
+            }
+        });
+
+        // 退出按钮监听器
+        closeButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                searchDialog.dispose(); // 关闭对话框
+                resetSearch(); // 重置搜索结果
+                //searchDialog = null; // 重置searchDialog引用
+            }
+        });
+
+        // 显示对话框
+        searchDialog.pack();
+        searchDialog.setLocationRelativeTo(null); // 在屏幕中央显示
+        searchDialog.setVisible(true);
+    }
+
+    private static void searchTable(String searchText) {
+        if (!(highlightRenderer instanceof HighlightRenderer)) {
+            highlightRenderer = new HighlightRenderer();
+        }
+        // Update the search text in the highlight renderer
+        ((HighlightRenderer) highlightRenderer).setSearchText(searchText);
+
+        // Apply the highlight renderer to all columns
+        for (int col = 0; col < table.getColumnCount(); col++) {
+            table.getColumnModel().getColumn(col).setCellRenderer(highlightRenderer);
+        }
+
+        // Repaint the table to show the changes
+        table.repaint();
+    }
+
+    private static void resetSearch() {
+        // Reset the renderer to the default for all columns
+        for (int col = 0; col < table.getColumnCount(); col++) {
+            table.getColumnModel().getColumn(col).setCellRenderer(defaultRenderer);
+        }
+
+        // 退出时恢复表格颜色
+        table.repaint();
     }
 
     public static void main(String[] args) throws ClassNotFoundException, UnsupportedLookAndFeelException, InstantiationException, IllegalAccessException, FileNotFoundException {
+
         JFrame jFrame = new JFrame("fofaEX");
 
         // 设置外观风格
@@ -304,7 +397,7 @@ public class Main {
                     String contentToWrite = "fofaEmail: " + emailValue + "\n" +
                             "fofaKey: " + keyValue + "\n";
 
-                    File rulesFile = new File("accounts.txt");
+                    File rulesFile = new File(accountsPath);
                     try {
                         // 如果文件不存在，则创建新文件
                         if (!rulesFile.exists()) {
@@ -582,7 +675,7 @@ public class Main {
         BufferedReader accountsReader = null;
         try {
             // 创建 rules.txt 文件如果它不存在
-            File rulesFile = new File("rules.txt");
+            File rulesFile = new File(rulesPath);
             if (!rulesFile.exists()) {
                 rulesFile.createNewFile();
                 System.out.println("[+] The current path does not contain rules.txt. Create rules.txt.");
@@ -590,7 +683,7 @@ public class Main {
             rulesReader = new BufferedReader(new FileReader(rulesFile));
 
             // 创建 accounts.txt 文件如果它不存在
-            File accountsFile = new File("accounts.txt");
+            File accountsFile = new File(accountsPath);
             if (!accountsFile.exists()) {
                 accountsFile.createNewFile();
                 System.out.println("[+] The current path does not contain accounts.txt. Create accounts.txt.");
@@ -609,7 +702,7 @@ public class Main {
             public void actionPerformed(ActionEvent e) {
                 // 读取文件内容，并创建新的按钮
                 try {
-                    BufferedReader reader = new BufferedReader(new FileReader("rules.txt"));
+                    BufferedReader reader = new BufferedReader(new FileReader(rulesPath));
                     Map<String, String> newMap = new LinkedHashMap<>();
                     String line;
                     while ((line = reader.readLine()) != null) {
@@ -631,7 +724,7 @@ public class Main {
                     }
                     reader.close();
 
-                    // 移除按钮
+                    // 配置文件删除按钮
                     Iterator<Map.Entry<String, JButton>> iterator = buttonsMap.entrySet().iterator();
                     while (iterator.hasNext()) {
                         Map.Entry<String, JButton> entry = iterator.next();
@@ -641,7 +734,7 @@ public class Main {
                         }
                     }
 
-                    // 更新并新增按钮
+                    // 配置文件更新并新增按钮
                     for (Map.Entry<String, String> entry : newMap.entrySet()) {
                         JButton existingButton = buttonsMap.get(entry.getKey());
                         if (existingButton == null) {
@@ -674,6 +767,38 @@ public class Main {
                                     }
                                 }
                             });
+
+                            // 添加右键单击事件的处理
+                            newButton.addMouseListener(new MouseAdapter() {
+                                @Override
+                                public void mousePressed(MouseEvent e) {
+                                    if (SwingUtilities.isRightMouseButton(e)) {
+                                        // 在这里处理右键单击事件
+                                        JPopupMenu popupMenu = new JPopupMenu();
+                                        JMenuItem deleteItem = new JMenuItem("删除");
+                                        deleteItem.addActionListener(actionEvent -> {
+                                            // 在这里处理删除操作
+                                            int dialogResult = JOptionPane.showConfirmDialog(panel5,
+                                                    "是否删除?", "删除确认",
+                                                    JOptionPane.YES_NO_OPTION,
+                                                    JOptionPane.QUESTION_MESSAGE);
+                                            if (dialogResult == JOptionPane.YES_OPTION) {
+                                                // 确认删除操作
+                                                panel5.remove(newButton);
+                                                buttonsMap.remove(entry.getKey());
+                                                panel5.revalidate();
+                                                panel5.repaint();
+                                                // 从文件中删除
+                                                removeButtonAndLineFromFile(entry.getKey(), rulesPath);
+                                            }
+                                        });
+
+                                        popupMenu.add(deleteItem);
+                                        popupMenu.show(e.getComponent(), e.getX(), e.getY());
+                                    }
+                                }
+                            });
+
                             panel5.add(newButton);
                             buttonsMap.put(entry.getKey(), newButton);
                         } else {
@@ -681,6 +806,8 @@ public class Main {
                             existingButton.setActionCommand(entry.getValue());
                             existingButton.setText(entry.getKey()); // Update button text
                         }
+
+
                     }
 
                     panel5.revalidate();
@@ -690,6 +817,7 @@ public class Main {
                 }
             }
         });
+
 
         // 搜索按钮
         // 将textField0添加到新的SubPanel
@@ -701,6 +829,8 @@ public class Main {
 
         searchButton("◁", false, panel7, textField0, fofaEmail, fofaKey, fofaUrl, panel6, panel8, labelIcon, panel2, panel3, panel7, panel9, "left");
         searchButton("▷", false, panel7, textField0, fofaEmail, fofaKey, fofaUrl, panel6, panel8, labelIcon, panel2, panel3, panel7, panel9, "right");
+
+
         // 添加逻辑运算组件
         createLogicAddButton("=", "=", panel4, textField0);
         createLogicAddButton("==", "==", panel4, textField0);
@@ -791,10 +921,8 @@ public class Main {
         addRuleBox(panel3, "fid", newValue -> fidMark = newValue, fidMark);
         addRuleBox(panel3, "structinfo", newValue -> structinfoMark = newValue, structinfoMark);
 
-
-        /* 上面代码未完成 */
-
-
+        // 初始化 table 右键
+        initializeTable();
         // 设置全局边框：创建一个带有指定的空白边框的新面板，其中指定了上、左、下、右的边距
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
@@ -1163,7 +1291,6 @@ public class Main {
                             } else if (pageButton.equals("right")) {
 
                                 currentPage = currentPage + 1;
-
                             }
                             // 开始查询
                             JSONObject jsonResponse = FofaAPI.getAllJsonResult(domain, email, key, query, fieldsTotal, sizeSetting, currentPage);
@@ -1371,7 +1498,7 @@ public class Main {
                             long duration = endTime - startTime;
                             double seconds = (double) duration / 1_000_000_000.0; // Convert nanoseconds to seconds
                             SwingUtilities.invokeLater(() -> {
-                                String totalLabelShow = "<html>" + "Page: " + currentPage + "<br>" + "Items/Totals: " + numberOfItems*currentPage + "/" + queryTotalNumber + "<br>Time: " + seconds + " seconds</html>";
+                                String totalLabelShow = "<html>" + "Page: " + currentPage + "<br>" + "Items/Totals: " + numberOfItems * currentPage + "/" + queryTotalNumber + "<br>Time: " + seconds + " seconds</html>";
                                 if (!timeAdded) {
                                     // 只有当timeLabel为null时才创建新的实例
                                     if (timeLabel == null) {
@@ -1723,7 +1850,6 @@ public class Main {
         table.setModel(model);
         JTableHeader header = getjTableHeader();
 
-
         // 重新设置表格头，以便新的渲染器生效
         table.setTableHeader(header);
 
@@ -1752,6 +1878,8 @@ public class Main {
             table.setModel(model);
         }
 
+        // 设置表格的默认渲染器
+        table.setDefaultRenderer(Object.class, new SelectedCellBorderHighlighter());
         // 添加右键鼠标事件
         table.addMouseListener(new MouseAdapter() {
             @Override
@@ -1766,7 +1894,6 @@ public class Main {
                 }
             }
         });
-
     }
 
     private static JTableHeader getjTableHeader() {
@@ -1896,6 +2023,54 @@ public class Main {
                             }
                         }
                     });
+
+                    // 添加右键单击事件的处理
+                    newButton.addMouseListener(new MouseAdapter() {
+                        @Override
+                        public void mousePressed(MouseEvent e) {
+                            if (SwingUtilities.isRightMouseButton(e)) {
+                                // 在这里处理右键单击事件
+                                JPopupMenu popupMenu = new JPopupMenu();
+                                JMenuItem deleteItem = new JMenuItem("删除");
+                                JMenuItem editItem = new JMenuItem("修改");
+                                deleteItem.addActionListener(actionEvent -> {
+                                    // 在这里处理删除操作
+                                    int dialogResult = JOptionPane.showConfirmDialog(initPanel,
+                                            "是否删除?", "删除确认",
+                                            JOptionPane.YES_NO_OPTION,
+                                            JOptionPane.QUESTION_MESSAGE);
+                                    if (dialogResult == JOptionPane.YES_OPTION) {
+                                        // 确认删除操作
+                                        initPanel.remove(newButton);
+                                        initButtonsMap.remove(entry.getKey());
+                                        initPanel.revalidate();
+                                        initPanel.repaint();
+                                        // 从文件中删除
+                                        removeButtonAndLineFromFile(entry.getKey(), rulesPath);
+                                    }
+                                });
+
+                                editItem.addActionListener(actionEvent -> {
+                                    // 弹出输入对话框，初始值设置为当前按钮名称
+                                    String newName = JOptionPane.showInputDialog(initPanel, "修改按钮名称:", entry.getKey());
+                                    if (newName != null && !newName.equals(entry.getKey()) && !newName.trim().isEmpty()) {
+                                        // 修改按钮名称和映射表中的对应关系
+                                        updateButtonName(entry.getKey(), newName.trim(), newButton, initButtonsMap, rulesPath);
+                                    }
+                                });
+
+                                popupMenu.add(editItem);
+                                popupMenu.add(deleteItem);
+
+                                popupMenu.show(e.getComponent(), e.getX(), e.getY());
+
+                                popupMenu.add(deleteItem);
+                                popupMenu.show(e.getComponent(), e.getX(), e.getY());
+                            }
+                        }
+                    });
+
+
                     initPanel.add(newButton);
                     initButtonsMap.put(entry.getKey(), newButton);
                 } else {
@@ -1908,6 +2083,75 @@ public class Main {
             initPanel.repaint();
         } catch (IOException ioException) {
             ioException.printStackTrace();
+        }
+    }
+
+    // 按钮修改
+    public static void updateButtonName(String oldName, String newName, JButton buttonToUpdate, Map<String, JButton> buttonsMap, String filePath) {
+        // 更新按钮名称
+        buttonToUpdate.setText(newName);
+        buttonsMap.remove(oldName);
+        buttonsMap.put(newName, buttonToUpdate);
+
+        // 更新rules.txt文件中的内容
+        File inputFile = new File(filePath);
+        File tempFile = new File(inputFile.getAbsolutePath() + ".tmp");
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(inputFile));
+             BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
+            String lineToReplace = "\"" + oldName + "\":";
+            String currentLine;
+
+            while ((currentLine = reader.readLine()) != null) {
+                if (currentLine.trim().startsWith(lineToReplace)) {
+                    // 替换旧行为新行
+                    currentLine = currentLine.replace(oldName, newName);
+                }
+                writer.write(currentLine + System.getProperty("line.separator"));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // 删除原始文件，并将临时文件重命名为原始文件名
+        if (!inputFile.delete()) {
+            System.out.println("Could not delete file");
+            return;
+        }
+        if (!tempFile.renameTo(inputFile)) {
+            System.out.println("Could not rename file");
+        }
+    }
+
+    // 按钮删除
+    public static void removeButtonAndLineFromFile(String buttonName, String filePath) {
+        File inputFile = new File(filePath);
+        File tempFile = new File(inputFile.getAbsolutePath() + ".tmp");
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(inputFile));
+             BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
+            String lineToRemove = "\"" + buttonName + "\":";
+            String currentLine;
+
+            while ((currentLine = reader.readLine()) != null) {
+                // trim newline when comparing with lineToRemove
+                String trimmedLine = currentLine.trim();
+                if (trimmedLine.startsWith(lineToRemove)) continue;
+                writer.write(currentLine + System.getProperty("line.separator"));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // Delete the original file
+        if (!inputFile.delete()) {
+            System.out.println("Could not delete file");
+            return;
+        }
+
+        // Rename the new file to the filename the original file had.
+        if (!tempFile.renameTo(inputFile)) {
+            System.out.println("Could not rename file");
         }
     }
 
