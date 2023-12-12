@@ -242,7 +242,7 @@ public class Main {
         JLabel label = new JLabel("输入搜索内容：");
         JTextField searchField = new JTextField(20);
         JButton searchButton = new JButton("搜索");
-        JButton closeButton = new JButton("退出");
+        JButton closeButton = new JButton("退出高亮");
 
         // 添加组件到对话框
         searchDialog.add(label);
@@ -394,8 +394,8 @@ public class Main {
                     String keyValue = fofaKey.getText();
 
                     // 准备写入到文件的内容
-                    String contentToWrite = "fofaEmail: " + emailValue + "\n" +
-                            "fofaKey: " + keyValue + "\n";
+                    String contentToWrite = "fofaEmail:" + emailValue + "\n" +
+                            "fofaKey:" + keyValue + "\n";
 
                     File rulesFile = new File(accountsPath);
                     try {
