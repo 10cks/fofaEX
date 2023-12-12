@@ -1,8 +1,11 @@
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
 import java.io.*;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -53,10 +56,9 @@ public class Main {
     private static boolean linkMark = true;
     private static boolean icpMark = false;
     private static boolean cityMark = false;
-
-    /* 下面未完成 */
     private static boolean countryMark = false;
-    private static boolean countryNameMark = false;
+    /* 下面未完成 */
+    private static boolean country_nameMark = false;
     private static boolean regionMark = false;
     private static boolean longitudeMark = false;
     private static boolean latitudeMark = false;
@@ -98,18 +100,28 @@ public class Main {
     private static JLabel timeLabel;
     private static int queryTotalNumber;
     private static int numberOfItems;
-    private static int currentPage;
+    private static int currentPage = 1;
     private static int sizeSetting = 10000;
+    // 创建全局数据表
+    private static JTable table;
 
     // 在类的成员变量中创建弹出菜单
     private static JPopupMenu popupMenu = new JPopupMenu();
     private static JMenuItem itemSelectColumn = new JMenuItem("选择当前整列");
     private static JMenuItem itemDeselectColumn = new JMenuItem("取消选择整列");
+    private static JMenuItem itemOpenLink = new JMenuItem("打开链接");
+    static JMenuItem itemCopy = new JMenuItem("复制");
+
 
     static {
         // 添加菜单项到弹出菜单
+        popupMenu.add(itemCopy);
+        popupMenu.add(itemOpenLink);
         popupMenu.add(itemSelectColumn);
         popupMenu.add(itemDeselectColumn);
+
+
+
 
         // 为右键菜单项添加事件监听器
         itemSelectColumn.addActionListener(new ActionListener() {
@@ -141,10 +153,64 @@ public class Main {
                 }
             }
         });
-    }
 
-    // 创建全局数据表
-    private static JTable table;
+
+        // 为打开链接的菜单项添加事件监听器
+        itemOpenLink.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // 执行打开链接的操作
+                if (table != null) {
+                    int selectedRow = table.getSelectedRow();
+                    int selectedCol = table.getSelectedColumn();
+                    if (selectedRow >= 0 && selectedCol >= 0) {
+                        Object cellContent = table.getValueAt(selectedRow, selectedCol);
+                        if (cellContent != null && cellContent.toString().startsWith("http")) {
+                            try {
+                                Desktop desktop = Desktop.getDesktop();
+                                URI uri = new URI(cellContent.toString());
+                                desktop.browse(uri);
+                            } catch (Exception ex) {
+                                JOptionPane.showMessageDialog(popupMenu, "无法打开链接：" + cellContent, "错误", JOptionPane.ERROR_MESSAGE);
+                            }
+                        } else {
+                            JOptionPane.showMessageDialog(popupMenu, "当前单元格不包含有效链接", "警告", JOptionPane.WARNING_MESSAGE);
+                        }
+                    }
+                }
+            }
+        });
+
+        // 为复制的菜单项添加事件监听器
+        itemCopy.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // 执行复制操作
+                if (table != null) {
+                    int[] selectedRows = table.getSelectedRows();
+                    int[] selectedColumns = table.getSelectedColumns();
+                    StringBuilder sb = new StringBuilder();
+
+                    for (int i = 0; i < selectedRows.length; i++) {
+                        for (int j = 0; j < selectedColumns.length; j++) {
+                            Object value = table.getValueAt(selectedRows[i], selectedColumns[j]);
+                            sb.append(value == null ? "" : value.toString());
+                            if (j < selectedColumns.length - 1) {
+                                sb.append("\t"); // 列之间添加制表符分隔
+                            }
+                        }
+                        if (i < selectedRows.length - 1) {
+                            sb.append("\n"); // 行之间添加换行符分隔
+                        }
+                    }
+
+                    StringSelection stringSelection = new StringSelection(sb.toString());
+                    Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                    clipboard.setContents(stringSelection, null);
+                }
+            }
+        });
+    }
 
     public static void main(String[] args) throws ClassNotFoundException, UnsupportedLookAndFeelException, InstantiationException, IllegalAccessException, FileNotFoundException {
         JFrame jFrame = new JFrame("fofaEX");
@@ -243,6 +309,31 @@ public class Main {
             }
         });
 
+        // 创建"搜索设置"菜单项
+        JMenu configureMenu = new JMenu("查询设置");
+        JMenuItem configureMenuItem = new JMenuItem("默认查询数量");
+        configureMenuItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // 创建一个JTextField 初始化为 sizeSetting 的值
+                JTextField inputField = new JTextField(String.valueOf(sizeSetting));
+                int result = JOptionPane.showConfirmDialog(null, inputField,
+                        "请输入默认查询数量", JOptionPane.OK_CANCEL_OPTION);
+                if (result == JOptionPane.OK_OPTION) {
+                    try {
+                        // 尝试将输入的文本解析为整数并更新 sizeSetting
+                        sizeSetting = Integer.parseInt(inputField.getText());
+                    } catch (NumberFormatException ex) {
+                        // 输入的不是有效的整数，可以在这里处理错误
+                        JOptionPane.showMessageDialog(null, "请输入一个有效的整数值");
+                    }
+                }
+            }
+        });
+
+
+        configureMenu.add(configureMenuItem);
+        menuBar.add(configureMenu);
 
         // 创建"关于"菜单项
         JMenu aboutMenu = new JMenu("关于");
@@ -429,24 +520,24 @@ public class Main {
 
         // 创建一个子面板，用来在搜索框边上新增按钮
         JPanel subPanel1 = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
-
         // 创建面板并使用FlowLayout布局
         JPanel panel1 = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 4)); // hgap: 组件间的水平间距 vgap: 件间的垂直间距
         JPanel panel2 = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
-        JPanel panel3 = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+
+        JPanel panel3 = new JPanel(new GridLayout(0, 10, 0, 0));
+
+        JPanel panel4 = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         // 创建面板并使用GridLayout布局
-        JPanel panel4 = new JPanel(new GridLayout(0, 5, 10, 10)); // 0表示行数不限，5表示每行最多5个组件，10, 10是组件之间的间距
-        JPanel panel5 = new JPanel(new BorderLayout());
+        JPanel panel5 = new JPanel(new GridLayout(0, 5, 10, 10)); // 0表示行数不限，5表示每行最多5个组件，10, 10是组件之间的间距
 
-        panel5.setBorder(BorderFactory.createEmptyBorder(20, 5, 10, 5));
+        JPanel panel6 = new JPanel(new BorderLayout());
+        panel6.setBorder(BorderFactory.createEmptyBorder(20, 5, 10, 5));
 
-        // panel6 用来放导出表格的按键
-        JPanel panel6 = new JPanel();
+        JPanel panel7 = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        // panel8 用来放导出表格的按键
+        JPanel panel8 = new JPanel();
 
-        // JPanel panel7 = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
-        JPanel panel7 = new JPanel(new GridLayout(0, 10, 0, 0));
-
-        JPanel panel8 = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        JPanel panel9 = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
 
         // 创建"更新规则"按钮
         JButton updateButton = new JButton("♻");
@@ -456,7 +547,7 @@ public class Main {
         Map<String, JButton> buttonsMap = new LinkedHashMap<>();
         BufferedReader rulesReader = new BufferedReader(new FileReader("rules.txt"));
         BufferedReader accountsReader = new BufferedReader(new FileReader("accounts.txt"));
-        settingInit(rulesReader, accountsReader, panel4, textField0, fofaEmail, fofaKey, buttonsMap);
+        settingInit(rulesReader, accountsReader, panel5, textField0, fofaEmail, fofaKey, buttonsMap);
         updateButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -489,7 +580,7 @@ public class Main {
                     while (iterator.hasNext()) {
                         Map.Entry<String, JButton> entry = iterator.next();
                         if (!newMap.containsKey(entry.getKey())) {
-                            panel4.remove(entry.getValue());
+                            panel5.remove(entry.getValue());
                             iterator.remove();
                         }
                     }
@@ -527,7 +618,7 @@ public class Main {
                                     }
                                 }
                             });
-                            panel4.add(newButton);
+                            panel5.add(newButton);
                             buttonsMap.put(entry.getKey(), newButton);
                         } else {
                             // This is an existing button
@@ -536,8 +627,8 @@ public class Main {
                         }
                     }
 
-                    panel4.revalidate();
-                    panel4.repaint();
+                    panel5.revalidate();
+                    panel5.repaint();
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }
@@ -547,24 +638,20 @@ public class Main {
         // 搜索按钮
         // 将textField0添加到新的SubPanel
         subPanel1.add(textField0);
-        searchButton("搜索", subPanel1, textField0, fofaEmail, fofaKey, fofaUrl, panel5, panel6, labelIcon, panel2, panel7, panel8);
-
-        // 添加组件到面板
-        //panel1.add(fofaUrl); // 网址
-        //panel1.add(fofaEmail); // 邮箱
-        //panel1.add(fofaKey); // API key
-        //panel1.add(checkButton);  // 检查账户
+        searchButton("搜索", true, subPanel1, textField0, fofaEmail, fofaKey, fofaUrl, panel6, panel8, labelIcon, panel2, panel3, panel7, panel9, "null");
 
         panel1.add(labelIcon);
         panel2.add(subPanel1); // 搜索框 + 搜索按钮
 
+        searchButton("◁", false, panel7, textField0, fofaEmail, fofaKey, fofaUrl, panel6, panel8, labelIcon, panel2, panel3, panel7, panel9, "left");
+        searchButton("▷", false, panel7, textField0, fofaEmail, fofaKey, fofaUrl, panel6, panel8, labelIcon, panel2, panel3, panel7, panel9, "right");
         // 添加逻辑运算组件
-        createLogicAddButton("=", "=", panel3, textField0);
-        createLogicAddButton("==", "==", panel3, textField0);
-        createLogicAddButton("&&", "&&", panel3, textField0);
-        createLogicAddButton("||", "||", panel3, textField0);
-        createLogicAddButton("!=", "!=", panel3, textField0);
-        createLogicAddButton("*=", "*=", panel3, textField0);
+        createLogicAddButton("=", "=", panel4, textField0);
+        createLogicAddButton("==", "==", panel4, textField0);
+        createLogicAddButton("&&", "&&", panel4, textField0);
+        createLogicAddButton("||", "||", panel4, textField0);
+        createLogicAddButton("!=", "!=", panel4, textField0);
+        createLogicAddButton("*=", "*=", panel4, textField0);
 
 
         // 新增折叠按钮到panel3
@@ -579,72 +666,74 @@ public class Main {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 if (!isFolded) {
-                    // 折叠 panel4
-                    panel4.setVisible(false);
+                    // 折叠 panel5
+                    panel5.setVisible(false);
                     foldButton.setText("◀");
                     scrollPaneMark = false;
                 } else {
-                    // 展开 panel4
-                    panel4.setVisible(true);
+                    // 展开 panel5
+                    panel5.setVisible(true);
                     foldButton.setText("▼");
                     scrollPaneMark = true;
                 }
                 isFolded = !isFolded;
 
-                // 重新验证和重绘包含 panel4 和 panel5 的主面板
+                // 重新验证和重绘包含 panel5 和 panel6 的主面板
                 mainPanel.revalidate();
                 mainPanel.repaint();
             }
         });
 
-        panel3.add(updateButton); // 更新规则
-        panel3.add(foldButton);
+        panel4.add(updateButton); // 更新规则
+        panel4.add(foldButton);
 
 
         // 创建复选框
-        addRuleBox(panel7, "host", newValue -> hostMark = newValue, hostMark, true);
-        addRuleBox(panel7, "ip", newValue -> ipMark = newValue, ipMark, true);
-        addRuleBox(panel7, "port", newValue -> portMark = newValue, portMark, true);
-        addRuleBox(panel7, "protocol", newValue -> protocolMark = newValue, protocolMark);
-        addRuleBox(panel7, "title", newValue -> titleMark = newValue, titleMark);
-        addRuleBox(panel7, "domain", newValue -> domainMark = newValue, domainMark);
-        addRuleBox(panel7, "link", newValue -> linkMark = newValue, linkMark);
-        addRuleBox(panel7, "icp", newValue -> icpMark = newValue, icpMark);
-        addRuleBox(panel7, "city", newValue -> cityMark = newValue, cityMark);
+        addRuleBox(panel3, "host", newValue -> hostMark = newValue, hostMark, true);
+        addRuleBox(panel3, "ip", newValue -> ipMark = newValue, ipMark, true);
+        addRuleBox(panel3, "port", newValue -> portMark = newValue, portMark, true);
+        addRuleBox(panel3, "protocol", newValue -> protocolMark = newValue, protocolMark);
+        addRuleBox(panel3, "title", newValue -> titleMark = newValue, titleMark);
+        addRuleBox(panel3, "domain", newValue -> domainMark = newValue, domainMark);
+        addRuleBox(panel3, "link", newValue -> linkMark = newValue, linkMark);
+        addRuleBox(panel3, "icp", newValue -> icpMark = newValue, icpMark);
+        addRuleBox(panel3, "city", newValue -> cityMark = newValue, cityMark);
 
         /* 下面代码未完成 */
 
-        addRuleBox(panel7, "country", newValue -> countryMark = newValue, countryMark);
-        addRuleBox(panel7, "countryName", newValue -> countryNameMark = newValue, countryNameMark);
-        addRuleBox(panel7, "region", newValue -> regionMark = newValue, regionMark);
-        addRuleBox(panel7, "longitude", newValue -> longitudeMark = newValue, longitudeMark);
-        addRuleBox(panel7, "latitude", newValue -> latitudeMark = newValue, latitudeMark);
-        addRuleBox(panel7, "asNumber", newValue -> asNumberMark = newValue, asNumberMark);
-        addRuleBox(panel7, "asOrganization", newValue -> asOrganizationMark = newValue, asOrganizationMark);
-        addRuleBox(panel7, "os", newValue -> osMark = newValue, osMark);
-        addRuleBox(panel7, "server", newValue -> serverMark = newValue, serverMark);
-        addRuleBox(panel7, "jarm", newValue -> jarmMark = newValue, jarmMark);
-        addRuleBox(panel7, "header", newValue -> headerMark = newValue, headerMark);
-        addRuleBox(panel7, "banner", newValue -> bannerMark = newValue, bannerMark);
-        addRuleBox(panel7, "baseProtocol", newValue -> baseProtocolMark = newValue, baseProtocolMark);
-        addRuleBox(panel7, "certsIssuerOrg", newValue -> certsIssuerOrgMark = newValue, certsIssuerOrgMark);
-        addRuleBox(panel7, "certsIssuerCn", newValue -> certsIssuerCnMark = newValue, certsIssuerCnMark);
-        addRuleBox(panel7, "certsSubjectOrg", newValue -> certsSubjectOrgMark = newValue, certsSubjectOrgMark);
-        addRuleBox(panel7, "certsSubjectCn", newValue -> certsSubjectCnMark = newValue, certsSubjectCnMark);
-        addRuleBox(panel7, "tlsJa3s", newValue -> tlsJa3sMark = newValue, tlsJa3sMark);
-        addRuleBox(panel7, "tlsVersion", newValue -> tlsVersionMark = newValue, tlsVersionMark);
-        addRuleBox(panel7, "product", newValue -> productMark = newValue, productMark);
-        addRuleBox(panel7, "productCategory", newValue -> productCategoryMark = newValue, productCategoryMark);
-        addRuleBox(panel7, "version", newValue -> versionMark = newValue, versionMark);
-        addRuleBox(panel7, "lastupdatetime", newValue -> lastupdatetimeMark = newValue, lastupdatetimeMark);
-        addRuleBox(panel7, "cname", newValue -> cnameMark = newValue, cnameMark);
-        addRuleBox(panel7, "iconHash", newValue -> iconHashMark = newValue, iconHashMark);
-        addRuleBox(panel7, "certsValid", newValue -> certsValidMark = newValue, certsValidMark);
-        addRuleBox(panel7, "cnameDomain", newValue -> cnameDomainMark = newValue, cnameDomainMark);
-        addRuleBox(panel7, "body", newValue -> bodyMark = newValue, bodyMark);
-        addRuleBox(panel7, "icon", newValue -> iconMark = newValue, iconMark);
-        addRuleBox(panel7, "fid", newValue -> fidMark = newValue, fidMark);
-        addRuleBox(panel7, "structinfo", newValue -> structinfoMark = newValue, structinfoMark);
+        addRuleBox(panel3, "country", newValue -> countryMark = newValue, countryMark);
+
+        /* 测试一下 */
+        addRuleBox(panel3, "country_name", newValue -> country_nameMark = newValue, country_nameMark);
+        addRuleBox(panel3, "region", newValue -> regionMark = newValue, regionMark);
+        addRuleBox(panel3, "longitude", newValue -> longitudeMark = newValue, longitudeMark);
+        addRuleBox(panel3, "latitude", newValue -> latitudeMark = newValue, latitudeMark);
+        addRuleBox(panel3, "asNumber", newValue -> asNumberMark = newValue, asNumberMark);
+        addRuleBox(panel3, "asOrganization", newValue -> asOrganizationMark = newValue, asOrganizationMark);
+        addRuleBox(panel3, "os", newValue -> osMark = newValue, osMark);
+        addRuleBox(panel3, "server", newValue -> serverMark = newValue, serverMark);
+        addRuleBox(panel3, "jarm", newValue -> jarmMark = newValue, jarmMark);
+        addRuleBox(panel3, "header", newValue -> headerMark = newValue, headerMark);
+        addRuleBox(panel3, "banner", newValue -> bannerMark = newValue, bannerMark);
+        addRuleBox(panel3, "baseProtocol", newValue -> baseProtocolMark = newValue, baseProtocolMark);
+        addRuleBox(panel3, "certsIssuerOrg", newValue -> certsIssuerOrgMark = newValue, certsIssuerOrgMark);
+        addRuleBox(panel3, "certsIssuerCn", newValue -> certsIssuerCnMark = newValue, certsIssuerCnMark);
+        addRuleBox(panel3, "certsSubjectOrg", newValue -> certsSubjectOrgMark = newValue, certsSubjectOrgMark);
+        addRuleBox(panel3, "certsSubjectCn", newValue -> certsSubjectCnMark = newValue, certsSubjectCnMark);
+        addRuleBox(panel3, "tlsJa3s", newValue -> tlsJa3sMark = newValue, tlsJa3sMark);
+        addRuleBox(panel3, "tlsVersion", newValue -> tlsVersionMark = newValue, tlsVersionMark);
+        addRuleBox(panel3, "product", newValue -> productMark = newValue, productMark);
+        addRuleBox(panel3, "productCategory", newValue -> productCategoryMark = newValue, productCategoryMark);
+        addRuleBox(panel3, "version", newValue -> versionMark = newValue, versionMark);
+        addRuleBox(panel3, "lastupdatetime", newValue -> lastupdatetimeMark = newValue, lastupdatetimeMark);
+        addRuleBox(panel3, "cname", newValue -> cnameMark = newValue, cnameMark);
+        addRuleBox(panel3, "iconHash", newValue -> iconHashMark = newValue, iconHashMark);
+        addRuleBox(panel3, "certsValid", newValue -> certsValidMark = newValue, certsValidMark);
+        addRuleBox(panel3, "cnameDomain", newValue -> cnameDomainMark = newValue, cnameDomainMark);
+        addRuleBox(panel3, "body", newValue -> bodyMark = newValue, bodyMark);
+        addRuleBox(panel3, "icon", newValue -> iconMark = newValue, iconMark);
+        addRuleBox(panel3, "fid", newValue -> fidMark = newValue, fidMark);
+        addRuleBox(panel3, "structinfo", newValue -> structinfoMark = newValue, structinfoMark);
 
 
         /* 上面代码未完成 */
@@ -656,12 +745,13 @@ public class Main {
         // 添加面板到主面板
         mainPanel.add(panel1);
         mainPanel.add(panel2);
-        mainPanel.add(panel7);
         mainPanel.add(panel3);
         mainPanel.add(panel4);
         mainPanel.add(panel5);
         mainPanel.add(panel6);
+        mainPanel.add(panel7);
         mainPanel.add(panel8);
+        mainPanel.add(panel9);
 
         // 把面板添加到JFrame
         jFrame.add(mainPanel, NORTH);
@@ -746,12 +836,15 @@ public class Main {
         panel.add(button);
     }
 
-    private static void searchButton(String buttonText, JPanel panel, JTextField textField, JTextField emailField, JTextField keyField, JTextField urlField, JPanel resultPanel, JPanel exportPanel, JLabel changeIcon, JPanel disablePanel2, JPanel disablePanel7, JPanel totalPanel8) {
+    private static void searchButton(String buttonText, boolean shouldSetSize, JPanel panel, JTextField textField, JTextField emailField, JTextField keyField, JTextField urlField, JPanel resultPanel, JPanel exportPanel, JLabel changeIcon, JPanel disablePanel2, JPanel disablePanel3, JPanel disablePanel7, JPanel totalPanel8, String pageButton) {
 
         JButton button = new JButton(buttonText);
         button.setFocusPainted(false);
         button.setFocusable(false);
-        button.setPreferredSize(new Dimension(60, 50));
+
+        if (shouldSetSize) {
+            button.setPreferredSize(new Dimension(60, 50));
+        }
         button.addActionListener(new ActionListener() {
 
             // 基于 fofaSearch SDK
@@ -794,6 +887,7 @@ public class Main {
                 changeIcon.setFont(font);
 
                 setComponentsEnabled(disablePanel2, false);
+                setComponentsEnabled(disablePanel3, false);
                 setComponentsEnabled(disablePanel7, false);
 
 
@@ -857,6 +951,103 @@ public class Main {
                                 fieldsTotal += ",city";
                             }
 
+                            if (countryMark) {
+
+                                fieldsTotal += ",country";
+                            }
+                            if (country_nameMark) {
+
+                                fieldsTotal += ",country_name";
+                            }
+                            if (regionMark) {
+
+                                fieldsTotal += ",region";
+                            }
+                            if (longitudeMark) {
+                                fieldsTotal += ",longitude";
+                            }
+                            if (latitudeMark) {
+                                fieldsTotal += ",latitude";
+                            }
+                            if (asNumberMark) {
+                                fieldsTotal += ",asNumber";
+                            }
+                            if (asOrganizationMark) {
+                                fieldsTotal += ",asOrganization";
+                            }
+                            if (osMark) {
+                                fieldsTotal += ",os";
+                            }
+                            if (serverMark) {
+                                fieldsTotal += ",server";
+                            }
+                            if (jarmMark) {
+                                fieldsTotal += ",jarm";
+                            }
+                            if (headerMark) {
+                                fieldsTotal += ",header";
+                            }
+                            if (bannerMark) {
+                                fieldsTotal += ",banner";
+                            }
+                            if (baseProtocolMark) {
+                                fieldsTotal += ",baseProtocol";
+                            }
+                            if (certsIssuerOrgMark) {
+                                fieldsTotal += ",certsIssuerOrg";
+                            }
+                            if (certsIssuerCnMark) {
+                                fieldsTotal += ",certsIssuerCn";
+                            }
+                            if (certsSubjectOrgMark) {
+                                fieldsTotal += ",certsSubjectOrg";
+                            }
+                            if (certsSubjectCnMark) {
+                                fieldsTotal += ",certsSubjectCn";
+                            }
+                            if (tlsJa3sMark) {
+                                fieldsTotal += ",tlsJa3s";
+                            }
+                            if (tlsVersionMark) {
+                                fieldsTotal += ",tlsVersion";
+                            }
+                            if (productMark) {
+                                fieldsTotal += ",product";
+                            }
+                            if (productCategoryMark) {
+                                fieldsTotal += ",productCategory";
+                            }
+                            if (versionMark) {
+                                fieldsTotal += ",version";
+                            }
+                            if (lastupdatetimeMark) {
+                                fieldsTotal += ",lastupdatetime";
+                            }
+                            if (cnameMark) {
+                                fieldsTotal += ",cname";
+                            }
+                            if (iconHashMark) {
+                                fieldsTotal += ",iconHash";
+                            }
+                            if (certsValidMark) {
+                                fieldsTotal += ",certsValid";
+                            }
+                            if (cnameDomainMark) {
+                                fieldsTotal += ",cnameDomain";
+                            }
+                            if (bodyMark) {
+                                fieldsTotal += ",body";
+                            }
+                            if (iconMark) {
+                                fieldsTotal += ",icon";
+                            }
+                            if (fidMark) {
+                                fieldsTotal += ",fid";
+                            }
+                            if (structinfoMark) {
+                                fieldsTotal += ",structinfo";
+                            }
+
                             // 创建字典
                             Map<String, Boolean> marks = new LinkedHashMap<>();
                             marks.put("host", ipMark);
@@ -869,7 +1060,7 @@ public class Main {
                             marks.put("icp", icpMark);
                             marks.put("city", cityMark);
                             marks.put("country", countryMark);
-                            marks.put("countryName", countryNameMark);
+                            marks.put("country_name", country_nameMark);
                             marks.put("region", regionMark);
                             marks.put("longitude", longitudeMark);
                             marks.put("latitude", latitudeMark);
@@ -904,8 +1095,22 @@ public class Main {
                             List<String> trueMarks = extractTrueMarks(marks);
                             System.out.println(trueMarks);
 
+
+                            if (pageButton.equals("left")) {
+                                if (currentPage != 0) {
+                                    currentPage = currentPage - 1;
+                                } else {
+
+                                }
+                                currentPage = 1;
+
+                            } else if (pageButton.equals("right")) {
+
+                                currentPage = currentPage + 1;
+
+                            }
                             // 开始查询
-                            JSONObject jsonResponse = FofaAPI.getAllJsonResult(domain, email, key, query, fieldsTotal, sizeSetting);
+                            JSONObject jsonResponse = FofaAPI.getAllJsonResult(domain, email, key, query, fieldsTotal, sizeSetting, currentPage);
                             // 检查错误信息
                             queryResponse.error = (boolean) FofaAPI.getValueFromJson(jsonResponse, "error");
                             queryResponse.errmsg = (String) FofaAPI.getValueFromJson(jsonResponse, "errmsg");
@@ -918,7 +1123,10 @@ public class Main {
 
                             List<List<String>> allShow = queryResponse.results;
                             // 需要放在异常后面
-                            currentPage = (int) FofaAPI.getValueFromJson(jsonResponse, "page");
+
+//                            currentPage = (int) FofaAPI.getValueFromJson(jsonResponse, "page");
+
+
                             queryTotalNumber = (int) FofaAPI.getValueFromJson(jsonResponse, "size");
 
                             List<String> hostShow = FofaAPI.getColumn(allShow, 0);
@@ -954,6 +1162,99 @@ public class Main {
                                     case "city":
                                         results.city = FofaAPI.getColumn(allShow, i);
                                         break;
+                                    case "country":
+                                        results.country = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "country_name":
+                                        results.country_name = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "region":
+                                        results.region = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "longitude":
+                                        results.longitude = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "latitude":
+                                        results.latitude = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "asNumber":
+                                        results.asNumber = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "asOrganization":
+                                        results.asOrganization = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "os":
+                                        results.os = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "server":
+                                        results.server = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "jarm":
+                                        results.jarm = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "header":
+                                        results.header = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "banner":
+                                        results.banner = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "baseProtocol":
+                                        results.baseProtocol = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "certsIssuerOrg":
+                                        results.certsIssuerOrg = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "certsIssuerCn":
+                                        results.certsIssuerCn = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "certsSubjectOrg":
+                                        results.certsSubjectOrg = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "certsSubjectCn":
+                                        results.certsSubjectCn = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "tlsJa3s":
+                                        results.tlsJa3s = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "tlsVersion":
+                                        results.tlsVersion = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "product":
+                                        results.product = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "productCategory":
+                                        results.productCategory = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "version":
+                                        results.version = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "lastupdatetime":
+                                        results.lastupdatetime = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "cname":
+                                        results.cname = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "iconHash":
+                                        results.iconHash = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "certsValid":
+                                        results.certsValid = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "cnameDomain":
+                                        results.cnameDomain = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "body":
+                                        results.body = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "icon":
+                                        results.icon = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "fid":
+                                        results.fid = FofaAPI.getColumn(allShow, i);
+                                        break;
+                                    case "structinfo":
+                                        results.structinfo = FofaAPI.getColumn(allShow, i);
+                                        break;
                                 }
                                 i = i + 1;
                             }
@@ -962,6 +1263,8 @@ public class Main {
                             JButton exportButton = new JButton("Export to Excel");
                             exportButton.setFocusPainted(false); // 添加这一行来取消焦点边框的绘制
                             exportButton.setFocusable(false);  // 禁止了按钮获取焦点，因此按钮不会在被点击后显示为"激活"或"选中"的状态
+
+
                             if (!exportButtonAdded) {
                                 exportPanel.add(exportButton);
                                 exportButtonAdded = true;
@@ -974,6 +1277,7 @@ public class Main {
                                         JOptionPane.showMessageDialog(null, "表格没有被初始化");
                                         fontSet(changeIcon, orginIconStr);
                                         setComponentsEnabled(disablePanel2, true);
+                                        setComponentsEnabled(disablePanel3, true);
                                         setComponentsEnabled(disablePanel7, true);
                                         return;
                                     }
@@ -982,6 +1286,7 @@ public class Main {
                                         JOptionPane.showMessageDialog(null, "当前无数据");
                                         fontSet(changeIcon, orginIconStr);
                                         setComponentsEnabled(disablePanel2, true);
+                                        setComponentsEnabled(disablePanel3, true);
                                         setComponentsEnabled(disablePanel7, true);
                                         return;
                                     }
@@ -990,15 +1295,19 @@ public class Main {
                             });
 
                         } catch (JSONException ex) {
+                            currentPage = 1;
                             ex.printStackTrace();
                             JOptionPane.showMessageDialog(null, "发生错误，请重试！", "错误", JOptionPane.ERROR_MESSAGE);
                             fontSet(changeIcon, orginIconStr);
                             setComponentsEnabled(disablePanel2, true);
+                            setComponentsEnabled(disablePanel3, true);
                             setComponentsEnabled(disablePanel7, true);
                         } catch (Exception e) {
                             JOptionPane.showMessageDialog(null, errorMessage != null ? errorMessage : e.getMessage(), "执行失败", JOptionPane.ERROR_MESSAGE);
+                            currentPage = 1;
                             fontSet(changeIcon, orginIconStr);
                             setComponentsEnabled(disablePanel2, true);
+                            setComponentsEnabled(disablePanel3, true);
                             setComponentsEnabled(disablePanel7, true);
                             throw new RuntimeException(e);
                         } finally {
@@ -1006,7 +1315,7 @@ public class Main {
                             long duration = endTime - startTime;
                             double seconds = (double) duration / 1_000_000_000.0; // Convert nanoseconds to seconds
                             SwingUtilities.invokeLater(() -> {
-                                String totalLabelShow = "<html>" + "Page: " + currentPage + "<br>" + "Items/Totals: " + numberOfItems + "/" + queryTotalNumber + "<br>Time: " + seconds + " seconds</html>";
+                                String totalLabelShow = "<html>" + "Page: " + currentPage + "<br>" + "Items/Totals: " + numberOfItems*currentPage + "/" + queryTotalNumber + "<br>Time: " + seconds + " seconds</html>";
                                 if (!timeAdded) {
                                     // 只有当timeLabel为null时才创建新的实例
                                     if (timeLabel == null) {
@@ -1027,6 +1336,7 @@ public class Main {
 
                         fontSet(changeIcon, orginIconStr);
                         setComponentsEnabled(disablePanel2, true);
+                        setComponentsEnabled(disablePanel3, true);
                         setComponentsEnabled(disablePanel7, true);
 
                         return results;
@@ -1048,6 +1358,37 @@ public class Main {
                                     searchResults.link,
                                     searchResults.icp,
                                     searchResults.city,
+                                    searchResults.country,
+                                    searchResults.country_name,
+                                    searchResults.region,
+                                    searchResults.longitude,
+                                    searchResults.latitude,
+                                    searchResults.asNumber,
+                                    searchResults.asOrganization,
+                                    searchResults.os,
+                                    searchResults.server,
+                                    searchResults.jarm,
+                                    searchResults.header,
+                                    searchResults.banner,
+                                    searchResults.baseProtocol,
+                                    searchResults.certsIssuerOrg,
+                                    searchResults.certsIssuerCn,
+                                    searchResults.certsSubjectOrg,
+                                    searchResults.certsSubjectCn,
+                                    searchResults.tlsJa3s,
+                                    searchResults.tlsVersion,
+                                    searchResults.product,
+                                    searchResults.productCategory,
+                                    searchResults.version,
+                                    searchResults.lastupdatetime,
+                                    searchResults.cname,
+                                    searchResults.iconHash,
+                                    searchResults.certsValid,
+                                    searchResults.cnameDomain,
+                                    searchResults.body,
+                                    searchResults.icon,
+                                    searchResults.fid,
+                                    searchResults.structinfo,
                                     resultPanel
                             );
 
@@ -1063,9 +1404,104 @@ public class Main {
         panel.add(button);
     }
 
-    private static void showResultsInTable(List<String> host, List<String> tableIpShow, List<String> tablePortShow, List<String> protocolShow, List<String> titleShow, List<String> domainShow, List<String> linkShow, List<String> icpShow, List<String> cityShow, JPanel panel) {
-        // String[] columnNames = {"host","ip","port", "protocol", "title", "domain","link","icp","city"};
+    private static void showResultsInTable(List<String> host, List<String> tableIpShow, List<String> tablePortShow, List<String> protocolShow, List<String> titleShow, List<String> domainShow, List<String> linkShow, List<String> icpShow, List<String> cityShow, List<String> countryShow, List<String> country_nameShow, List<String> regionShow, List<String> longitudeShow, List<String> latitudeShow, List<String> asNumberShow, List<String> asOrganizationShow, List<String> osShow, List<String> serverShow, List<String> jarmShow, List<String> headerShow, List<String> bannerShow, List<String> baseProtocolShow, List<String> certsIssuerOrgShow, List<String> certsIssuerCnShow, List<String> certsSubjectOrgShow, List<String> certsSubjectCnShow, List<String> tlsJa3sShow, List<String> tlsVersionShow, List<String> productShow, List<String> productCategoryShow, List<String> versionShow, List<String> lastupdatetimeShow, List<String> cnameShow, List<String> iconHashShow, List<String> certsValidShow, List<String> cnameDomainShow, List<String> bodyShow, List<String> iconShow, List<String> fidShow, List<String> structinfoShow, JPanel panel) {
         List<String> columnNamesList = new ArrayList<String>(List.of("host"));
+
+        if (structinfoMark) {
+            columnNamesList.add(1, "structinfo");
+        }
+        if (fidMark) {
+            columnNamesList.add(1, "fid");
+        }
+        if (iconMark) {
+            columnNamesList.add(1, "icon");
+        }
+        if (bodyMark) {
+            columnNamesList.add(1, "body");
+        }
+        if (cnameDomainMark) {
+            columnNamesList.add(1, "cnameDomain");
+        }
+        if (certsValidMark) {
+            columnNamesList.add(1, "certsValid");
+        }
+        if (iconHashMark) {
+            columnNamesList.add(1, "iconHash");
+        }
+        if (cnameMark) {
+            columnNamesList.add(1, "cname");
+        }
+        if (lastupdatetimeMark) {
+            columnNamesList.add(1, "lastupdatetime");
+        }
+        if (versionMark) {
+            columnNamesList.add(1, "version");
+        }
+        if (productCategoryMark) {
+            columnNamesList.add(1, "productCategory");
+        }
+        if (productMark) {
+            columnNamesList.add(1, "product");
+        }
+        if (tlsVersionMark) {
+            columnNamesList.add(1, "tlsVersion");
+        }
+        if (tlsJa3sMark) {
+            columnNamesList.add(1, "tlsJa3s");
+        }
+        if (certsSubjectCnMark) {
+            columnNamesList.add(1, "certsSubjectCn");
+        }
+        if (certsSubjectOrgMark) {
+            columnNamesList.add(1, "certsSubjectOrg");
+        }
+        if (certsIssuerCnMark) {
+            columnNamesList.add(1, "certsIssuerCn");
+        }
+        if (certsIssuerOrgMark) {
+            columnNamesList.add(1, "certsIssuerOrg");
+        }
+        if (baseProtocolMark) {
+            columnNamesList.add(1, "baseProtocol");
+        }
+        if (bannerMark) {
+            columnNamesList.add(1, "banner");
+        }
+        if (headerMark) {
+            columnNamesList.add(1, "header");
+        }
+        if (jarmMark) {
+            columnNamesList.add(1, "jarm");
+        }
+        if (serverMark) {
+            columnNamesList.add(1, "server");
+        }
+        if (osMark) {
+            columnNamesList.add(1, "os");
+        }
+        if (asOrganizationMark) {
+            columnNamesList.add(1, "asOrganization");
+        }
+        if (asNumberMark) {
+            columnNamesList.add(1, "asNumber");
+        }
+        if (latitudeMark) {
+            columnNamesList.add(1, "latitude");
+        }
+        if (longitudeMark) {
+            columnNamesList.add(1, "longitude");
+        }
+        if (regionMark) {
+            columnNamesList.add(1, "region");
+        }
+
+        if (country_nameMark) {
+            columnNamesList.add(1, "country_name");
+        }
+
+        if (countryMark) {
+            columnNamesList.add(1, "country");
+        }
 
         if (cityMark) {
             columnNamesList.add(1, "city");
@@ -1132,6 +1568,99 @@ public class Main {
             if (cityMark && cityShow.size() > i) {
                 data[i][columnIndex++] = cityShow.get(i);
             }
+            if (countryMark && countryShow.size() > i) {
+                data[i][columnIndex++] = countryShow.get(i);
+            }
+            if (country_nameMark && country_nameShow.size() > i) {
+                data[i][columnIndex++] = country_nameShow.get(i);
+            }
+            if (regionMark && regionShow.size() > i) {
+                data[i][columnIndex++] = regionShow.get(i);
+            }
+            if (longitudeMark && longitudeShow.size() > i) {
+                data[i][columnIndex++] = longitudeShow.get(i);
+            }
+            if (latitudeMark && latitudeShow.size() > i) {
+                data[i][columnIndex++] = latitudeShow.get(i);
+            }
+            if (asNumberMark && asNumberShow.size() > i) {
+                data[i][columnIndex++] = asNumberShow.get(i);
+            }
+            if (asOrganizationMark && asOrganizationShow.size() > i) {
+                data[i][columnIndex++] = asOrganizationShow.get(i);
+            }
+            if (osMark && osShow.size() > i) {
+                data[i][columnIndex++] = osShow.get(i);
+            }
+            if (serverMark && serverShow.size() > i) {
+                data[i][columnIndex++] = serverShow.get(i);
+            }
+            if (jarmMark && jarmShow.size() > i) {
+                data[i][columnIndex++] = jarmShow.get(i);
+            }
+            if (headerMark && headerShow.size() > i) {
+                data[i][columnIndex++] = headerShow.get(i);
+            }
+            if (bannerMark && bannerShow.size() > i) {
+                data[i][columnIndex++] = bannerShow.get(i);
+            }
+            if (baseProtocolMark && baseProtocolShow.size() > i) {
+                data[i][columnIndex++] = baseProtocolShow.get(i);
+            }
+            if (certsIssuerOrgMark && certsIssuerOrgShow.size() > i) {
+                data[i][columnIndex++] = certsIssuerOrgShow.get(i);
+            }
+            if (certsIssuerCnMark && certsIssuerCnShow.size() > i) {
+                data[i][columnIndex++] = certsIssuerCnShow.get(i);
+            }
+            if (certsSubjectOrgMark && certsSubjectOrgShow.size() > i) {
+                data[i][columnIndex++] = certsSubjectOrgShow.get(i);
+            }
+            if (certsSubjectCnMark && certsSubjectCnShow.size() > i) {
+                data[i][columnIndex++] = certsSubjectCnShow.get(i);
+            }
+            if (tlsJa3sMark && tlsJa3sShow.size() > i) {
+                data[i][columnIndex++] = tlsJa3sShow.get(i);
+            }
+            if (tlsVersionMark && tlsVersionShow.size() > i) {
+                data[i][columnIndex++] = tlsVersionShow.get(i);
+            }
+            if (productMark && productShow.size() > i) {
+                data[i][columnIndex++] = productShow.get(i);
+            }
+            if (productCategoryMark && productCategoryShow.size() > i) {
+                data[i][columnIndex++] = productCategoryShow.get(i);
+            }
+            if (versionMark && versionShow.size() > i) {
+                data[i][columnIndex++] = versionShow.get(i);
+            }
+            if (lastupdatetimeMark && lastupdatetimeShow.size() > i) {
+                data[i][columnIndex++] = lastupdatetimeShow.get(i);
+            }
+            if (cnameMark && cnameShow.size() > i) {
+                data[i][columnIndex++] = cnameShow.get(i);
+            }
+            if (iconHashMark && iconHashShow.size() > i) {
+                data[i][columnIndex++] = iconHashShow.get(i);
+            }
+            if (certsValidMark && certsValidShow.size() > i) {
+                data[i][columnIndex++] = certsValidShow.get(i);
+            }
+            if (cnameDomainMark && cnameDomainShow.size() > i) {
+                data[i][columnIndex++] = cnameDomainShow.get(i);
+            }
+            if (bodyMark && bodyShow.size() > i) {
+                data[i][columnIndex++] = bodyShow.get(i);
+            }
+            if (iconMark && iconShow.size() > i) {
+                data[i][columnIndex++] = iconShow.get(i);
+            }
+            if (fidMark && fidShow.size() > i) {
+                data[i][columnIndex++] = fidShow.get(i);
+            }
+            if (structinfoMark && structinfoShow.size() > i) {
+                data[i][columnIndex++] = structinfoShow.get(i);
+            }
         }
         DefaultTableModel model = new DefaultTableModel(data, columnNames);
 
@@ -1147,9 +1676,9 @@ public class Main {
 
 
         if (scrollPaneMark) {
-            scrollPane.setPreferredSize(new Dimension(800, 400)); // 设置滚动窗格的首选大小
+            scrollPane.setPreferredSize(new Dimension(800, 380)); // 设置滚动窗格的首选大小
         } else {
-            scrollPane.setPreferredSize(new Dimension(800, 550)); // 设置滚动窗格的首选大小
+            scrollPane.setPreferredSize(new Dimension(800, 530)); // 设置滚动窗格的首选大小
         }
 
         table.setRowHeight(24); // 设置表格的行高
