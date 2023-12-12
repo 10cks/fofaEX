@@ -242,7 +242,7 @@ public class Main {
         JLabel label = new JLabel("输入搜索内容：");
         JTextField searchField = new JTextField(20);
         JButton searchButton = new JButton("搜索");
-        JButton closeButton = new JButton("退出高亮");
+        JButton closeButton = new JButton("退出");
 
         // 添加组件到对话框
         searchDialog.add(label);
@@ -1154,10 +1154,10 @@ public class Main {
                                 fieldsTotal += ",latitude";
                             }
                             if (asNumberMark) {
-                                fieldsTotal += ",asNumber";
+                                fieldsTotal += ",as_number";
                             }
                             if (asOrganizationMark) {
-                                fieldsTotal += ",asOrganization";
+                                fieldsTotal += ",as_organization";
                             }
                             if (osMark) {
                                 fieldsTotal += ",os";
@@ -1175,31 +1175,31 @@ public class Main {
                                 fieldsTotal += ",banner";
                             }
                             if (baseProtocolMark) {
-                                fieldsTotal += ",baseProtocol";
+                                fieldsTotal += ",base_protocol";
                             }
                             if (certsIssuerOrgMark) {
-                                fieldsTotal += ",certsIssuerOrg";
+                                fieldsTotal += ",certs_issuer_org";
                             }
                             if (certsIssuerCnMark) {
-                                fieldsTotal += ",certsIssuerCn";
+                                fieldsTotal += ",certs_issuer_cn";
                             }
                             if (certsSubjectOrgMark) {
-                                fieldsTotal += ",certsSubjectOrg";
+                                fieldsTotal += ",certs_subject_org";
                             }
                             if (certsSubjectCnMark) {
-                                fieldsTotal += ",certsSubjectCn";
+                                fieldsTotal += ",certs_subject_cn";
                             }
                             if (tlsJa3sMark) {
-                                fieldsTotal += ",tlsJa3s";
+                                fieldsTotal += ",tls_ja3s";
                             }
                             if (tlsVersionMark) {
-                                fieldsTotal += ",tlsVersion";
+                                fieldsTotal += ",tls_version";
                             }
                             if (productMark) {
                                 fieldsTotal += ",product";
                             }
                             if (productCategoryMark) {
-                                fieldsTotal += ",productCategory";
+                                fieldsTotal += ",product_category";
                             }
                             if (versionMark) {
                                 fieldsTotal += ",version";
@@ -1211,13 +1211,13 @@ public class Main {
                                 fieldsTotal += ",cname";
                             }
                             if (iconHashMark) {
-                                fieldsTotal += ",iconHash";
+                                fieldsTotal += ",icon_hash";
                             }
                             if (certsValidMark) {
-                                fieldsTotal += ",certsValid";
+                                fieldsTotal += ",certs_valid";
                             }
                             if (cnameDomainMark) {
-                                fieldsTotal += ",cnameDomain";
+                                fieldsTotal += ",cname_domain";
                             }
                             if (bodyMark) {
                                 fieldsTotal += ",body";
