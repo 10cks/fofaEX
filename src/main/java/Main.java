@@ -216,7 +216,7 @@ public class Main {
         JFrame jFrame = new JFrame("fofaEX");
 
         // 设置外观风格
-        UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 
         // 创建菜单栏
         JMenuBar menuBar = new JMenuBar();
@@ -291,6 +291,37 @@ public class Main {
                     }
                 });
 
+                // 创建"保存设置"按钮
+                JButton saveSettingsButton = new JButton("保存设置");
+                saveSettingsButton.setFocusPainted(false); // 取消焦点边框的绘制
+                saveSettingsButton.setFocusable(false);
+                saveSettingsButton.addActionListener(SaveError -> {
+                    // 获取文本框中的值
+                    String emailValue = fofaEmail.getText();
+                    String keyValue = fofaKey.getText();
+
+                    // 准备写入到文件的内容
+                    String contentToWrite = "fofaEmail: " + emailValue + "\n" +
+                            "fofaKey: " + keyValue + "\n";
+
+                    File rulesFile = new File("accounts.txt");
+                    try {
+                        // 如果文件不存在，则创建新文件
+                        if (!rulesFile.exists()) {
+                            rulesFile.createNewFile();
+                        }
+
+                        // 写入内容到文件，使用 try-with-resources 自动关闭 FileWriter
+                        try (FileWriter writer = new FileWriter(rulesFile, false)) {
+                            writer.write(contentToWrite);
+                            JOptionPane.showMessageDialog(null, "设置已保存。");
+                        }
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                        JOptionPane.showMessageDialog(null, "保存设置时发生错误！", "错误", JOptionPane.ERROR_MESSAGE);
+                    }
+                });
+
                 // 添加组件到设置面板
                 settingsPanel.add(new JLabel("FOFA URL:"));
                 settingsPanel.add(fofaUrl);
@@ -299,6 +330,7 @@ public class Main {
                 settingsPanel.add(new JLabel("API Key:"));
                 settingsPanel.add(fofaKey);
                 settingsPanel.add(checkButton);
+                settingsPanel.add(saveSettingsButton);
 
                 // 添加设置面板到设置窗口，并显示设置窗口
                 settingsFrame.add(settingsPanel);
@@ -545,15 +577,39 @@ public class Main {
         updateButton.setFocusable(false);
         // 新增一个LinkedHashMap，用于存储按钮的键名和键值
         Map<String, JButton> buttonsMap = new LinkedHashMap<>();
-        BufferedReader rulesReader = new BufferedReader(new FileReader("rules.txt"));
-        BufferedReader accountsReader = new BufferedReader(new FileReader("accounts.txt"));
+
+        BufferedReader rulesReader = null;
+        BufferedReader accountsReader = null;
+        try {
+            // 创建 rules.txt 文件如果它不存在
+            File rulesFile = new File("rules.txt");
+            if (!rulesFile.exists()) {
+                rulesFile.createNewFile();
+                System.out.println("[+] The current path does not contain rules.txt. Create rules.txt.");
+            }
+            rulesReader = new BufferedReader(new FileReader(rulesFile));
+
+            // 创建 accounts.txt 文件如果它不存在
+            File accountsFile = new File("accounts.txt");
+            if (!accountsFile.exists()) {
+                accountsFile.createNewFile();
+                System.out.println("[+] The current path does not contain accounts.txt. Create accounts.txt.");
+            }
+            accountsReader = new BufferedReader(new FileReader(accountsFile));
+
+            // 你的代码逻辑 ...
+        } catch (IOException e) {
+            // IO 异常处理
+            e.printStackTrace();
+        }
+
         settingInit(rulesReader, accountsReader, panel5, textField0, fofaEmail, fofaKey, buttonsMap);
         updateButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // 读取文件内容，并创建新的按钮
                 try {
-                    BufferedReader reader = new BufferedReader(new FileReader("C:\\Users\\root\\IdeaProjects\\fofaEX\\rules.txt"));
+                    BufferedReader reader = new BufferedReader(new FileReader("rules.txt"));
                     Map<String, String> newMap = new LinkedHashMap<>();
                     String line;
                     while ((line = reader.readLine()) != null) {
