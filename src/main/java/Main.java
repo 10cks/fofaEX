@@ -307,6 +307,12 @@ public class Main {
     public static void main(String[] args) throws ClassNotFoundException, UnsupportedLookAndFeelException, InstantiationException, IllegalAccessException, FileNotFoundException {
 
         JFrame jFrame = new JFrame("fofaEX");
+        jFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        // 创建 CardLayout 布局管理器
+        CardLayout cardLayout = new CardLayout();
+        jFrame.setLayout(cardLayout);
+
 
         // 设置外观风格
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -689,8 +695,6 @@ public class Main {
                 System.out.println("[+] The current path does not contain accounts.txt. Create accounts.txt.");
             }
             accountsReader = new BufferedReader(new FileReader(accountsFile));
-
-            // 你的代码逻辑 ...
         } catch (IOException e) {
             // IO 异常处理
             e.printStackTrace();
@@ -698,123 +702,191 @@ public class Main {
 
         settingInit(rulesReader, accountsReader, panel5, textField0, fofaEmail, fofaKey, buttonsMap);
         updateButton.addActionListener(new ActionListener() {
+
             @Override
             public void actionPerformed(ActionEvent e) {
-                // 读取文件内容，并创建新的按钮
-                try {
-                    BufferedReader reader = new BufferedReader(new FileReader(rulesPath));
-                    Map<String, String> newMap = new LinkedHashMap<>();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        line = line.trim();
 
-                        // 跳过井号注释
-                        if (line.startsWith("#")) {
-                            continue;
+                // 创建一个JPanel来包含两个输入框
+                JPanel inputPanel = new JPanel(new GridLayout(0, 2));
+                inputPanel.add(new JLabel("键名:"));
+                JTextField nameField = new JTextField(10);
+                inputPanel.add(nameField);
+                inputPanel.add(new JLabel("键值:"));
+                JTextField valueField = new JTextField(10);
+                inputPanel.add(valueField);
+
+
+                // 弹出自定义对话框
+                int result = JOptionPane.showConfirmDialog(null, inputPanel, "请输入键名和键值",
+                        JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+                // 当用户点击OK时处理输入
+                if (result == JOptionPane.OK_OPTION) {
+                    String keyName = nameField.getText().trim();
+                    String keyValue = valueField.getText().trim();
+
+                    // 验证输入是否非空
+                    if (!keyName.isEmpty() && !keyValue.isEmpty()) {
+
+                        // 将键名和键值以"键名":{键值}的形式保存在rule.txt的最后一行
+                        try (BufferedWriter writer = new BufferedWriter(new FileWriter(rulesPath, true))) {
+                            writer.write("\"" + keyName + "\":{" + keyValue + "}");
+                            writer.newLine(); // Ensure the new entry is on a new line
+                        } catch (IOException addError) {
+                            addError.printStackTrace();
+                            JOptionPane.showMessageDialog(null, "无法写入文件", "错误", JOptionPane.ERROR_MESSAGE);
                         }
 
-                        if (line.startsWith("\"") && line.contains("{") && line.contains("}")) {
-                            String[] parts = line.split(":", 2);
-
-                            String key = parts[0].substring(1, parts[0].length() - 1).trim();
-
-                            String value = parts[1].substring(1, parts[1].length() - 2).trim();
-                            newMap.put(key, value);
-                        }
-                    }
-                    reader.close();
-
-                    // 配置文件删除按钮
-                    Iterator<Map.Entry<String, JButton>> iterator = buttonsMap.entrySet().iterator();
-                    while (iterator.hasNext()) {
-                        Map.Entry<String, JButton> entry = iterator.next();
-                        if (!newMap.containsKey(entry.getKey())) {
-                            panel5.remove(entry.getValue());
-                            iterator.remove();
-                        }
-                    }
-
-                    // 配置文件更新并新增按钮
-                    for (Map.Entry<String, String> entry : newMap.entrySet()) {
-                        JButton existingButton = buttonsMap.get(entry.getKey());
-                        if (existingButton == null) {
-                            // 新按钮
-                            JButton newButton = new JButton(entry.getKey());
-                            newButton.setActionCommand(entry.getValue());
-                            newButton.setToolTipText(entry.getValue()); // 设置按钮的 ToolTip 为键值，悬浮显示
-                            newButton.setFocusPainted(false); // 添加这一行来取消焦点边框的绘制
-                            newButton.setFocusable(false);  // 禁止了按钮获取焦点，因此按钮不会在被点击后显示为"激活"或"选中"的状态
-                            newButton.addActionListener(actionEvent -> {
-                                if (newButton.getForeground() != Color.RED) {
-                                    // 如果文本为提示文字，则清空文本
-                                    if (textField0.getText().contains("fofaEX: FOFA Extension")) {
-                                        textField0.setText("");
-                                    }
-                                    textField0.setText(textField0.getText() + " " + newButton.getActionCommand());
-                                    newButton.setForeground(Color.RED);
-                                    newButton.setFont(newButton.getFont().deriveFont(Font.BOLD)); // 设置字体为粗体
-                                } else {
-                                    textField0.setText(textField0.getText().replace(" " + newButton.getActionCommand(), ""));
-                                    newButton.setForeground(null);
-                                    newButton.setFont(null);
-                                    // 如果为空则设置 prompt
-                                    if (textField0.getText().isEmpty()) {
-                                        textField0.setText("fofaEX: FOFA Extension");
-                                        textField0.setForeground(Color.GRAY);
-                                        // 将光标放在开头
-                                        textField0.setCaretPosition(0);
-
-                                    }
+                        // 添加右键菜单功能
+                        try {
+                            BufferedReader reader = new BufferedReader(new FileReader(rulesPath));
+                            Map<String, String> newMap = new LinkedHashMap<>();
+                            String line;
+                            while ((line = reader.readLine()) != null) {
+                                line = line.trim();
+                                // 跳过井号注释
+                                if (line.startsWith("#")) {
+                                    continue;
                                 }
-                            });
+                                if (line.startsWith("\"") && line.contains("{") && line.contains("}")) {
+                                    String[] parts = line.split(":", 2);
 
-                            // 添加右键单击事件的处理
-                            newButton.addMouseListener(new MouseAdapter() {
-                                @Override
-                                public void mousePressed(MouseEvent e) {
-                                    if (SwingUtilities.isRightMouseButton(e)) {
-                                        // 在这里处理右键单击事件
-                                        JPopupMenu popupMenu = new JPopupMenu();
-                                        JMenuItem deleteItem = new JMenuItem("删除");
-                                        deleteItem.addActionListener(actionEvent -> {
-                                            // 在这里处理删除操作
-                                            int dialogResult = JOptionPane.showConfirmDialog(panel5,
-                                                    "是否删除?", "删除确认",
-                                                    JOptionPane.YES_NO_OPTION,
-                                                    JOptionPane.QUESTION_MESSAGE);
-                                            if (dialogResult == JOptionPane.YES_OPTION) {
-                                                // 确认删除操作
-                                                panel5.remove(newButton);
-                                                buttonsMap.remove(entry.getKey());
-                                                panel5.revalidate();
-                                                panel5.repaint();
-                                                // 从文件中删除
-                                                removeButtonAndLineFromFile(entry.getKey(), rulesPath);
+                                    String key = parts[0].substring(1, parts[0].length() - 1).trim();
+
+                                    String value = parts[1].substring(1, parts[1].length() - 2).trim();
+                                    newMap.put(key, value);
+                                }
+                            }
+                            reader.close();
+                            // 配置文件更新并新增按钮
+                            for (Map.Entry<String, String> entry : newMap.entrySet()) {
+                                JButton existingButton = buttonsMap.get(entry.getKey());
+                                if (existingButton == null) {
+                                    // 新按钮
+                                    JButton newButton = new JButton(entry.getKey());
+                                    newButton.setActionCommand(entry.getValue());
+                                    newButton.setToolTipText(entry.getValue()); // 设置按钮的 ToolTip 为键值，悬浮显示
+                                    newButton.setFocusPainted(false); // 添加这一行来取消焦点边框的绘制
+                                    newButton.setFocusable(false);  // 禁止了按钮获取焦点，因此按钮不会在被点击后显示为"激活"或"选中"的状态
+                                    newButton.addActionListener(actionEvent -> {
+                                        if (newButton.getForeground() != Color.RED) {
+                                            // 如果文本为提示文字，则清空文本
+                                            if (textField0.getText().contains("fofaEX: FOFA Extension")) {
+                                                textField0.setText("");
                                             }
-                                        });
+                                            textField0.setText(textField0.getText() + " " + newButton.getActionCommand());
+                                            newButton.setForeground(Color.RED);
+                                            newButton.setFont(newButton.getFont().deriveFont(Font.BOLD)); // 设置字体为粗体
+                                        } else {
+                                            textField0.setText(textField0.getText().replace(" " + newButton.getActionCommand(), ""));
+                                            newButton.setForeground(null);
+                                            newButton.setFont(null);
+                                            // 如果为空则设置 prompt
+                                            if (textField0.getText().isEmpty()) {
+                                                textField0.setText("fofaEX: FOFA Extension");
+                                                textField0.setForeground(Color.GRAY);
+                                                // 将光标放在开头
+                                                textField0.setCaretPosition(0);
 
-                                        popupMenu.add(deleteItem);
-                                        popupMenu.show(e.getComponent(), e.getX(), e.getY());
-                                    }
+                                            }
+                                        }
+                                    });
+
+                                    // 添加右键单击事件的处理
+                                    newButton.addMouseListener(new MouseAdapter() {
+                                        @Override
+                                        public void mousePressed(MouseEvent e) {
+                                            if (SwingUtilities.isRightMouseButton(e)) {
+                                                // 在这里处理右键单击事件
+                                                JPopupMenu popupMenu = new JPopupMenu();
+                                                JMenuItem deleteItem = new JMenuItem("删除");
+                                                JMenuItem editItem = new JMenuItem("修改");
+                                                deleteItem.addActionListener(actionEvent -> {
+                                                    // 在这里处理删除操作
+                                                    int dialogResult = JOptionPane.showConfirmDialog(panel5,
+                                                            "是否删除?", "删除确认",
+                                                            JOptionPane.YES_NO_OPTION,
+                                                            JOptionPane.QUESTION_MESSAGE);
+                                                    if (dialogResult == JOptionPane.YES_OPTION) {
+                                                        // 确认删除操作
+                                                        panel5.remove(newButton);
+                                                        panel5.remove(Integer.parseInt(entry.getKey()));
+                                                        panel5.revalidate();
+                                                        panel5.repaint();
+                                                        // 从文件中删除
+                                                        removeButtonAndLineFromFile(entry.getKey(), rulesPath);
+                                                    }
+                                                });
+
+                                                editItem.addActionListener(actionEvent -> {
+                                                    // 获取当前按钮的名称和对应的JButton对象
+                                                    String oldName = entry.getKey();
+                                                    JButton buttonToUpdate = newButton; // 确保newButton是当前要修改的按钮的引用
+
+                                                    // 创建一个JPanel来包含两个输入框
+                                                    JPanel panel = new JPanel();
+                                                    panel.add(new JLabel("键名:"));
+                                                    JTextField nameField = new JTextField(newButton.getText());
+                                                    panel.add(nameField);
+                                                    panel.add(new JLabel("键值:"));
+                                                    JTextField valueField = new JTextField(buttonToUpdate.getActionCommand());
+                                                    panel.add(valueField);
+
+                                                    // 弹出自定义对话框
+                                                    int result = JOptionPane.showConfirmDialog(panel5, panel, "修改配置",
+                                                            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+                                                    // 当用户点击OK时处理输入
+                                                    if (result == JOptionPane.OK_OPTION) {
+                                                        String newName = nameField.getText().trim();
+                                                        String newValue = valueField.getText().trim();
+
+                                                        // 验证输入是否已变更且非空
+                                                        if (!newName.isEmpty() && !newValue.isEmpty()) {
+                                                            // 修改按钮名称和键值
+                                                            updateButtonNameAndValue(oldName, newName, newValue, buttonToUpdate, buttonsMap, rulesPath);
+
+                                                            // 更新界面
+                                                            panel5.revalidate();
+                                                            panel5.repaint();
+                                                        }
+                                                    }
+                                                });
+
+                                                popupMenu.add(editItem);
+                                                popupMenu.add(deleteItem);
+
+                                                popupMenu.show(e.getComponent(), e.getX(), e.getY());
+
+                                                popupMenu.add(deleteItem);
+                                                popupMenu.show(e.getComponent(), e.getX(), e.getY());
+                                            }
+                                        }
+                                    });
+
+
+                                    panel5.add(newButton);
+                                    buttonsMap.put(entry.getKey(), newButton);
+                                } else {
+                                    // This is an existing button
+                                    existingButton.setActionCommand(entry.getValue());
+                                    existingButton.setText(entry.getKey()); // Update button text
                                 }
-                            });
+                            }
 
-                            panel5.add(newButton);
-                            buttonsMap.put(entry.getKey(), newButton);
-                        } else {
-                            // This is an existing button
-                            existingButton.setActionCommand(entry.getValue());
-                            existingButton.setText(entry.getKey()); // Update button text
+                            panel5.revalidate();
+                            panel5.repaint();
+                        } catch (IOException ioException) {
+                            ioException.printStackTrace();
                         }
-
-
+                        // 更新界面
+                        panel5.revalidate();
+                        panel5.repaint();
                     }
-
-                    panel5.revalidate();
-                    panel5.repaint();
-                } catch (IOException ioException) {
-                    ioException.printStackTrace();
                 }
+
+                // 读取文件内容，并创建新的按钮
+
             }
         });
 
@@ -2051,11 +2123,37 @@ public class Main {
                                 });
 
                                 editItem.addActionListener(actionEvent -> {
-                                    // 弹出输入对话框，初始值设置为当前按钮名称
-                                    String newName = JOptionPane.showInputDialog(initPanel, "修改按钮名称:", entry.getKey());
-                                    if (newName != null && !newName.equals(entry.getKey()) && !newName.trim().isEmpty()) {
-                                        // 修改按钮名称和映射表中的对应关系
-                                        updateButtonName(entry.getKey(), newName.trim(), newButton, initButtonsMap, rulesPath);
+                                    // 获取当前按钮的名称和对应的JButton对象
+                                    String oldName = entry.getKey();
+                                    JButton buttonToUpdate = newButton; // 确保newButton是当前要修改的按钮的引用
+
+                                    // 创建一个JPanel来包含两个输入框
+                                    JPanel panel = new JPanel();
+                                    panel.add(new JLabel("键名:"));
+                                    JTextField nameField = new JTextField(newButton.getText());
+                                    panel.add(nameField);
+                                    panel.add(new JLabel("键值:"));
+                                    JTextField valueField = new JTextField(buttonToUpdate.getActionCommand());
+                                    panel.add(valueField);
+
+                                    // 弹出自定义对话框
+                                    int result = JOptionPane.showConfirmDialog(initPanel, panel, "修改配置",
+                                            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+                                    // 当用户点击OK时处理输入
+                                    if (result == JOptionPane.OK_OPTION) {
+                                        String newName = nameField.getText().trim();
+                                        String newValue = valueField.getText().trim();
+
+                                        // 验证输入是否已变更且非空
+                                        if (!newName.isEmpty() && !newValue.isEmpty()) {
+                                            // 修改按钮名称和键值
+                                            updateButtonNameAndValue(oldName, newName, newValue, buttonToUpdate, initButtonsMap, rulesPath);
+
+                                            // 更新界面
+                                            initPanel.revalidate();
+                                            initPanel.repaint();
+                                        }
                                     }
                                 });
 
@@ -2087,9 +2185,10 @@ public class Main {
     }
 
     // 按钮修改
-    public static void updateButtonName(String oldName, String newName, JButton buttonToUpdate, Map<String, JButton> buttonsMap, String filePath) {
-        // 更新按钮名称
+    public static void updateButtonNameAndValue(String oldName, String newName, String newValue, JButton buttonToUpdate, Map<String, JButton> buttonsMap, String filePath) {
+        // 更新按钮名称和命令
         buttonToUpdate.setText(newName);
+        buttonToUpdate.setActionCommand(newValue);
         buttonsMap.remove(oldName);
         buttonsMap.put(newName, buttonToUpdate);
 
@@ -2103,9 +2202,10 @@ public class Main {
             String currentLine;
 
             while ((currentLine = reader.readLine()) != null) {
+                // 检查当前行是否包含旧键名
                 if (currentLine.trim().startsWith(lineToReplace)) {
-                    // 替换旧行为新行
-                    currentLine = currentLine.replace(oldName, newName);
+                    // 替换整行为新键名和新键值
+                    currentLine = "\"" + newName + "\":{" + newValue + "},";
                 }
                 writer.write(currentLine + System.getProperty("line.separator"));
             }
