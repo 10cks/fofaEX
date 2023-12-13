@@ -7,6 +7,8 @@ import java.awt.event.*;
 import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import javax.swing.BorderFactory;
@@ -15,9 +17,8 @@ import javax.swing.event.*;
 import java.awt.Color;
 import java.util.List;
 
-import com.r4v3zn.fofa.core.client.FofaClient;
-import com.r4v3zn.fofa.core.client.FofaConstants;
-import com.r4v3zn.fofa.core.client.FofaSearch;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -39,6 +40,7 @@ import static java.awt.BorderLayout.*;
 
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+import org.apache.commons.codec.binary.Base64;
 
 public class Main {
 
@@ -313,7 +315,6 @@ public class Main {
         CardLayout cardLayout = new CardLayout();
         jFrame.setLayout(cardLayout);
 
-
         // 设置外观风格
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 
@@ -443,6 +444,9 @@ public class Main {
         // 创建"搜索设置"菜单项
         JMenu configureMenu = new JMenu("查询设置");
         JMenuItem configureMenuItem = new JMenuItem("默认查询数量");
+
+        configureMenu.add(configureMenuItem);
+        menuBar.add(configureMenu);
         configureMenuItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -463,12 +467,22 @@ public class Main {
         });
 
 
-        configureMenu.add(configureMenuItem);
-        menuBar.add(configureMenu);
+        JMenu labMenu = new JMenu("实验功能");
+        JMenuItem iconHashlabMenuItem = new JMenuItem("iconHash 计算");
+        labMenu.add(iconHashlabMenuItem);
+        menuBar.add(labMenu);
+
+        iconHashlabMenuItem.addActionListener((ActionEvent event) -> {
+            EventQueue.invokeLater(() -> {
+                IconHashCalculator calculator = new IconHashCalculator();
+                calculator.setVisible(true);
+            });
+        });
 
         // 创建"关于"菜单项
         JMenu aboutMenu = new JMenu("关于");
         JMenuItem aboutMenuItem = new JMenuItem("关于项目");
+
         aboutMenu.add(aboutMenuItem);
         menuBar.add(aboutMenu);
 
@@ -671,7 +685,7 @@ public class Main {
         JPanel panel9 = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
 
         // 创建"更新规则"按钮
-        JButton updateButton = new JButton("♻");
+        JButton updateButton = new JButton("➕");
         updateButton.setFocusPainted(false);
         updateButton.setFocusable(false);
         // 新增一个LinkedHashMap，用于存储按钮的键名和键值
@@ -707,7 +721,7 @@ public class Main {
             public void actionPerformed(ActionEvent e) {
 
                 // 创建一个JPanel来包含两个输入框
-                JPanel inputPanel = new JPanel(new GridLayout(0, 2));
+                JPanel inputPanel = new JPanel(new GridLayout(4, 4));
                 inputPanel.add(new JLabel("键名:"));
                 JTextField nameField = new JTextField(10);
                 inputPanel.add(nameField);
@@ -717,7 +731,7 @@ public class Main {
 
 
                 // 弹出自定义对话框
-                int result = JOptionPane.showConfirmDialog(null, inputPanel, "请输入键名和键值",
+                int result = JOptionPane.showConfirmDialog(null, inputPanel, "新增按键",
                         JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
                 // 当用户点击OK时处理输入
@@ -802,7 +816,7 @@ public class Main {
                                                 JMenuItem deleteItem = new JMenuItem("删除");
                                                 JMenuItem editItem = new JMenuItem("修改");
                                                 deleteItem.addActionListener(actionEvent -> {
-                                                    // 在这里处理删除操作
+                                                    // 删除：在这里处理删除操作
                                                     int dialogResult = JOptionPane.showConfirmDialog(panel5,
                                                             "是否删除?", "删除确认",
                                                             JOptionPane.YES_NO_OPTION,
@@ -810,7 +824,6 @@ public class Main {
                                                     if (dialogResult == JOptionPane.YES_OPTION) {
                                                         // 确认删除操作
                                                         panel5.remove(newButton);
-                                                        panel5.remove(Integer.parseInt(entry.getKey()));
                                                         panel5.revalidate();
                                                         panel5.repaint();
                                                         // 从文件中删除
@@ -824,7 +837,8 @@ public class Main {
                                                     JButton buttonToUpdate = newButton; // 确保newButton是当前要修改的按钮的引用
 
                                                     // 创建一个JPanel来包含两个输入框
-                                                    JPanel panel = new JPanel();
+                                                    JPanel panel = new JPanel(new GridLayout(4, 4));
+
                                                     panel.add(new JLabel("键名:"));
                                                     JTextField nameField = new JTextField(newButton.getText());
                                                     panel.add(nameField);
@@ -1103,22 +1117,6 @@ public class Main {
         }
         button.addActionListener(new ActionListener() {
 
-            // 基于 fofaSearch SDK
-            public List<String> processSearchResult(String query, String searchType) throws Exception {
-
-                String domain = urlField.getText().trim();
-                String email = emailField.getText().trim();
-                String key = keyField.getText().trim();
-
-                FofaConstants.BASE_URL = domain;
-                FofaClient fofaClient = new FofaClient(email, key);
-                FofaSearch fofaSearch = new FofaSearch(fofaClient);
-
-                String rawData = fofaSearch.all(query, searchType).getResults().toString();
-                String[] trimmedData = rawData.substring(1, rawData.length() - 1).split(", ");
-                return Arrays.asList(trimmedData);
-            }
-
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
 
@@ -1166,9 +1164,6 @@ public class Main {
 
                         long startTime = System.nanoTime();
                         try {
-                            // 调用 SDK
-                            FofaConstants.BASE_URL = domain;
-                            FofaClient fofaClient = new FofaClient(email, key);
 
                             String query = grammar;
                             if (query.equals("fofaEX: FOFA Extension")) {
@@ -1929,11 +1924,11 @@ public class Main {
         JScrollPane scrollPane = new JScrollPane(table);
 
 
-        if (scrollPaneMark) {
-            scrollPane.setPreferredSize(new Dimension(800, 380)); // 设置滚动窗格的首选大小
-        } else {
-            scrollPane.setPreferredSize(new Dimension(800, 530)); // 设置滚动窗格的首选大小
-        }
+//        if (scrollPaneMark) {
+//            scrollPane.setPreferredSize(new Dimension(800, 350)); // 设置滚动窗格的首选大小
+//        } else {
+//            scrollPane.setPreferredSize(new Dimension(800, 50)); // 设置滚动窗格的首选大小
+//        }
 
         table.setRowHeight(24); // 设置表格的行高
         table.setFillsViewportHeight(true);
@@ -2128,7 +2123,7 @@ public class Main {
                                     JButton buttonToUpdate = newButton; // 确保newButton是当前要修改的按钮的引用
 
                                     // 创建一个JPanel来包含两个输入框
-                                    JPanel panel = new JPanel();
+                                    JPanel panel = new JPanel(new GridLayout(4, 4));
                                     panel.add(new JLabel("键名:"));
                                     JTextField nameField = new JTextField(newButton.getText());
                                     panel.add(nameField);
@@ -2384,4 +2379,5 @@ public class Main {
         }
         return trueMarks;
     }
+
 }
