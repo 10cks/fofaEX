@@ -58,6 +58,20 @@ https://baidu.com/ 或者 https://baidu.com/favicon.ico 来计算图标哈希值
 
 ![image](https://github.com/10cks/fofaEX/assets/47177550/d0e3c7dd-b733-4bb3-8dd3-889b5e8af4f9)
 
+## 翻页功能及搜索计时
 
+右下角统计当前表格数据与全部数据占比，显示当前页面数及本次搜索耗时。
+
+![image](https://github.com/10cks/fofaEX/assets/47177550/65705cba-a8e1-494b-9444-b6a68b5bcb89)
+
+## 关于项目
+
+目前项目还在开发中，有很多 idea 还在逐步实现。后续打算该平台集成第三方工具来进行一键化操作，也欢迎各位师傅提出想法与建议。
+
+## 致谢
+
+本人编程能力很差，Java 更是一窍不通，在编程过程中有很多师傅帮了我答疑解惑，也加速了项目的开发，在此非常感谢下面的各位师傅的帮助：
+
+[Mechoy](https://github.com/Mechoy) [XinCaoZ](https://github.com/XinCaoZ) [ha1yu](https://github.com/ha1yu) [wavesky](https://github.com/wave-to) [gh0stkey](https://github.com/gh0stkey/HaE)
 
 
