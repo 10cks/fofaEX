@@ -1,4 +1,4 @@
-![image](https://github.com/10cks/fofaEX/assets/47177550/81e14ca9-477b-43f4-ab8d-683aaab6eb6f)
+![image](https://github.com/10cks/fofaEX/assets/47177550/4baead1c-b329-48d4-ab31-a5975057abcd)
 
 
 ## 简介
