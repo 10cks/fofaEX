@@ -13,6 +13,19 @@ FOFA EX 是一款基于 fofa api 的图形化工具，在基础上集成了 fofa
 
 ![image](https://github.com/10cks/fofaEX/assets/47177550/b1c91436-e8e7-463f-ac6d-4ea2ef737604)
 
+## 启动方式
+
+该程序使用 Java11 编写：
+
+```
+java -jar .\fofaEX.jar
+```
+
+如存在乱码，请使用编码启动：
+```
+java "-Dfile.encoding=UTF-8" -jar .\fofaEX.jar
+```
+
 ## 账户设置
 
 客户端需输入邮箱与key，第一次登录后保存账户会将配置文件生成在本地 accounts.txt 文件中：
@@ -73,5 +86,11 @@ https://baidu.com/ 或者 https://baidu.com/favicon.ico 来计算图标哈希值
 本人编程能力很差，Java 更是一窍不通，在编程过程中有很多师傅帮了我答疑解惑，也加速了项目的开发，在此非常感谢下面的各位师傅的帮助：
 
 [Mechoy](https://github.com/Mechoy) [XinCaoZ](https://github.com/XinCaoZ) [ha1yu](https://github.com/ha1yu) [wavesky](https://github.com/wave-to) [gh0stkey](https://github.com/gh0stkey/HaE)
+
+## 参考链接
+
+https://github.com/fofapro/fofa_view
+
+https://github.com/wgpsec/fofa_viewer
 
 
