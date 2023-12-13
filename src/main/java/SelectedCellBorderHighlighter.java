@@ -4,7 +4,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 
 public class SelectedCellBorderHighlighter extends DefaultTableCellRenderer {
-    private static final Border SELECTED_BORDER = BorderFactory.createLineBorder(new Color(201, 79, 79), 2);
+    private static final Border SELECTED_BORDER = BorderFactory.createLineBorder(new Color(201, 79, 79), 3);
     private static final Border UNSELECTED_BORDER = BorderFactory.createEmptyBorder(1, 1, 1, 1);
 
     @Override

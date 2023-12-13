@@ -82,9 +82,14 @@
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
-            <version>4.9.1</version> <!-- 注意：使用最新的版本 -->
+            <version>4.9.1</version>
         </dependency>
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.14.1</version> <!-- Check for the latest version on https://mvnrepository.com/artifact/org.jsoup/jsoup -->
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-compiler-plugin -->
 
     </dependencies>
-
 </project>

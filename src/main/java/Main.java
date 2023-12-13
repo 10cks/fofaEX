@@ -8,7 +8,6 @@ import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import javax.swing.BorderFactory;
@@ -17,8 +16,6 @@ import javax.swing.event.*;
 import java.awt.Color;
 import java.util.List;
 
-import com.google.common.hash.HashFunction;
-import com.google.common.hash.Hashing;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -40,7 +37,6 @@ import static java.awt.BorderLayout.*;
 
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
-import org.apache.commons.codec.binary.Base64;
 
 public class Main {
 
@@ -118,7 +114,7 @@ public class Main {
     private static JMenuItem itemOpenLink = new JMenuItem("打开链接");
     static JMenuItem itemCopy = new JMenuItem("复制");
 
-    private static JMenuItem itemSearch = new JMenuItem("搜索");
+    private static JMenuItem itemSearch = new JMenuItem("表格搜索");
 
     static TableCellRenderer highlightRenderer = new HighlightRenderer();
     private static TableCellRenderer defaultRenderer;
@@ -239,6 +235,8 @@ public class Main {
 
         // 创建一个新的JDialog
         JDialog searchDialog = new JDialog((Frame) null, "搜索", false); // false表示非模态对话框
+        searchDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE); // 点击关闭按钮时释放窗口资源
+
         searchDialog.setLayout(new FlowLayout());
         searchDialog.setAlwaysOnTop(true);
         JLabel label = new JLabel("输入搜索内容：");
@@ -310,7 +308,12 @@ public class Main {
 
         JFrame jFrame = new JFrame("fofaEX");
         jFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
+        try{
+            URL resource = Main.class.getResource("icon.png");
+            jFrame.setIconImage((new ImageIcon(resource).getImage())); //给Frame设置图标
+        }catch(Exception e){
+            System.out.println(e);
+        }
         // 创建 CardLayout 布局管理器
         CardLayout cardLayout = new CardLayout();
         jFrame.setLayout(cardLayout);
@@ -469,7 +472,9 @@ public class Main {
 
         JMenu labMenu = new JMenu("实验功能");
         JMenuItem iconHashlabMenuItem = new JMenuItem("iconHash 计算");
+        JMenuItem freeGetMenuItem = new JMenuItem("低速模式（暂未开放）");
         labMenu.add(iconHashlabMenuItem);
+        labMenu.add(freeGetMenuItem);
         menuBar.add(labMenu);
 
         iconHashlabMenuItem.addActionListener((ActionEvent event) -> {
@@ -495,7 +500,7 @@ public class Main {
                         "<html><body>" +
                                 "<b>fofa EX:</b><br>" +
                                 "Project: <a href='https://github.com/10cks/fofaEX'>https://github.com/10cks/fofaEX</a><br>" +
-                                "Author: BWNER<br>" +
+                                "Author: bwner@OverSpace<br>" +
                                 "version: 1.0<br>" +
                                 "Update: 2023.12.11" +
                                 "</body></html>"

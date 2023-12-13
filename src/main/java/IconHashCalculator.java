@@ -13,9 +13,14 @@ import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.HashMap;
+
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
+import org.jsoup.Jsoup;
 
 public class IconHashCalculator extends JFrame {
 
@@ -41,8 +46,10 @@ public class IconHashCalculator extends JFrame {
         setAlwaysOnTop(true); // 这一行将窗体设置为始终置顶
 
         urlField = new JTextField(20);
+
+        JPanel firstRow = new JPanel();
         calculateButton = new JButton("计算");
-        copyButton = new JButton("复制到剪贴板");
+        copyButton = new JButton("复制");
 
         calculateButton.setFocusPainted(false); // 添加这一行来取消焦点边框的绘制
         calculateButton.setFocusable(false);  // 禁止了按钮获取焦点，因此按钮不会在被点击后显示为"激活"或"选中"的状态
@@ -51,16 +58,28 @@ public class IconHashCalculator extends JFrame {
         copyButton.setFocusable(false);  // 禁止了按钮获取焦点，因此按钮不会在被点击后显示为"激活"或"选中"的状态
 
         resultArea = new JTextArea();
+        resultArea.setLineWrap(true); // 设置自动换行
+        resultArea.setWrapStyleWord(true); // 设置换行不分割单词
         resultArea.setEditable(false);
 
         calculateButton.addActionListener(this::performCalculation);
         copyButton.addActionListener(this::copyToClipboard);
 
+        // 创建第一行的面板
+        firstRow.add(new JLabel("URL:"));
+        firstRow.add(urlField);
+        firstRow.add(calculateButton);
+        firstRow.add(copyButton);
+
+        // 创建第二行的面板
+        JPanel secondRow = new JPanel();
+        secondRow.add(new JLabel("可直接使用: http://xxx.xxx.xxx/"));
+
         JPanel panel = new JPanel();
-        panel.add(new JLabel("URL:"));
-        panel.add(urlField);
-        panel.add(calculateButton);
-        panel.add(copyButton);
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        // 将行面板添加到主面板
+        panel.add(firstRow);
+        panel.add(secondRow);
 
         add(panel, BorderLayout.NORTH);
         add(new JScrollPane(resultArea), BorderLayout.CENTER);
@@ -109,32 +128,87 @@ public class IconHashCalculator extends JFrame {
         StringSelection selection = new StringSelection(result);
         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, selection);
     }
+
     private static final OkHttpClient unsafeClient = createUnsafeOkHttpClient();
+
     public static HashMap<String, String> getFaviconHash(String url) {
         HashMap<String, String> result = new HashMap<>();
-        Request request = new Request.Builder()
-                .url(url)
-                .header("User-Agent", ua[(new SecureRandom()).nextInt(ua.length)]) // 确保ua数组已定义且有效
-                .build();
+        String faviconUrl;
 
-        try (Response response = unsafeClient.newCall(request).execute()) {
-            if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
+        if (!url.endsWith("/favicon.ico")) {
+            faviconUrl = url + "/favicon.ico";
+        } else {
+            faviconUrl = url;
+        }
+        // 第一步：提取根目录下图标
 
-            byte[] bytes = response.body().bytes();
-            if (bytes.length == 0) {
-                result.put("code", "error");
-                result.put("msg", "Empty response body");
-                return result;
+        try {
+            Request faviconRequest = new Request.Builder()
+                    .url(faviconUrl)
+                    .header("User-Agent", ua[(new SecureRandom()).nextInt(ua.length)])
+                    .build();
+
+            try (Response faviconResponse = unsafeClient.newCall(faviconRequest).execute()) {
+                if (faviconResponse.isSuccessful()) {
+                    byte[] bytes = faviconResponse.body().bytes();
+                    String encoded = Base64.getMimeEncoder().encodeToString(bytes);
+                    String hash = getIconHash(encoded);
+                    result.put("msg", "icon_hash=\"" + hash + "\"");
+                    return result;
+                }
             }
 
-            String encoded = Base64.getMimeEncoder().encodeToString(bytes);
-            String hash = getIconHash(encoded);
-            result.put("msg", "icon_hash=\"" + hash + "\"");
-            return result;
+            // 第二步：如果根目录下不存在图标，访问网站，获取html页面，获取head中的 link标签的ico 路径
+            Request pageRequest = new Request.Builder()
+                    .url(url)
+                    .header("User-Agent", ua[(new SecureRandom()).nextInt(ua.length)])
+                    .build();
+
+            try (Response pageResponse = unsafeClient.newCall(pageRequest).execute()) {
+                if (!pageResponse.isSuccessful()) throw new IOException("Unexpected code " + pageResponse);
+
+                Document doc = Jsoup.parse(pageResponse.body().string());
+                Elements icons = doc.head().select("link[href~=.+\\.(ico|png)]");
+                if (!icons.isEmpty()) {
+                    String iconHref = icons.attr("href");
+                    // Resolve the absolute URL if necessary
+                    iconHref = resolveUrl(url, iconHref);
+                    // Fetch the favicon using the URL from the <link> tag
+                    Request iconRequest = new Request.Builder()
+                            .url(iconHref)
+                            .header("User-Agent", ua[(new SecureRandom()).nextInt(ua.length)])
+                            .build();
+                    try (Response iconResponse = unsafeClient.newCall(iconRequest).execute()) {
+                        if (!iconResponse.isSuccessful()) throw new IOException("Unexpected code " + iconResponse);
+                        byte[] iconBytes = iconResponse.body().bytes();
+                        String encodedIcon = Base64.getMimeEncoder().encodeToString(iconBytes);
+                        String hash = getIconHash(encodedIcon);
+                        result.put("msg", "icon_hash=\"" + hash + "\"");
+                        return result;
+                    }
+                } else {
+                    throw new IOException("No favicon found");
+                }
+            }
         } catch (IOException e) {
             result.put("code", "error");
             result.put("msg", e.getMessage());
             return result;
+        }
+    }
+
+    //    这个 resolveUrl 函数用于将相对 URL 转换为绝对 URL。在处理 HTML 文档中的链接时特别有用，
+    //    因为 HTML 元素中的 href 属性可能包含绝对路径、相对路径或协议相对路径（以 // 开头）。
+    //    这个函数确保无论原始 href 是何种形式，都能得到 favicon 的绝对 URL
+    private static String resolveUrl(String baseUrl, String relativeUrl) {
+        if (relativeUrl.startsWith("http")) {
+            return relativeUrl;
+        } else if (relativeUrl.startsWith("//")) {
+            return "http:" + relativeUrl;
+        } else if (relativeUrl.startsWith("/")) {
+            return baseUrl + relativeUrl;
+        } else {
+            return baseUrl + "/" + relativeUrl;
         }
     }
 
@@ -148,7 +222,7 @@ public class IconHashCalculator extends JFrame {
 
     private static final OkHttpClient createUnsafeOkHttpClient() {
         try {
-            final TrustManager[] trustAllCerts = new TrustManager[] {
+            final TrustManager[] trustAllCerts = new TrustManager[]{
                     new X509TrustManager() {
                         @Override
                         public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) {
@@ -173,7 +247,7 @@ public class IconHashCalculator extends JFrame {
             final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
 
             OkHttpClient.Builder builder = new OkHttpClient.Builder();
-            builder.sslSocketFactory(sslSocketFactory, (X509TrustManager)trustAllCerts[0]);
+            builder.sslSocketFactory(sslSocketFactory, (X509TrustManager) trustAllCerts[0]);
             builder.hostnameVerifier((hostname, session) -> true);
 
             return builder.build();
