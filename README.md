@@ -25,6 +25,7 @@ FOFA EX 是一款基于 fofa api 的图形化工具，在基础上集成了 fofa
 
 
 ## API 搜索功能
+
 当前已提供以下 api 搜索功能（部分功能取决与当前账户权限）：
 ```
 ip,port,protocol,country,country_name,region,city,longitude,latitude,as_number,as_organization,host,domain,os,server,icp,
@@ -43,6 +44,19 @@ fofa api 官方链接：https://fofa.info/api
 用户可实时新增、编辑、删除按钮，按钮配置文件保存在当前目录 rules.txt 文件中。
 
 ![image](https://github.com/10cks/fofaEX/assets/47177550/979ba680-98a4-403d-84be-af0f096b829c)
+
+## iconHash 计算
+
+可通过直接输入：
+https://baidu.com/ 或者 https://baidu.com/favicon.ico 来计算图标哈希值：
+
+![image](https://github.com/10cks/fofaEX/assets/47177550/601744d2-2fef-4930-8ec5-969bcbb50835)
+
+## 表格操作
+
+当前表格中，右键集成了部分功能，其他功能将后续更新。
+
+![image](https://github.com/10cks/fofaEX/assets/47177550/d0e3c7dd-b733-4bb3-8dd3-889b5e8af4f9)
 
 
 
