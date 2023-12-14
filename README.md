@@ -83,7 +83,7 @@ https://baidu.com/ 或者 https://baidu.com/favicon.ico 来计算图标哈希值
 
 ## 致谢
 
-本人编程能力很差，Java 更是一窍不通，在编程过程中有很多师傅帮了我答疑解惑，也加速了项目的开发，在此非常感谢下面的各位师傅的帮助：
+在开发中有很多师傅帮了我答疑解惑，加速了项目的开发，在此非常感谢下面的各位师傅的帮助：
 
 [Mechoy](https://github.com/Mechoy) [XinCaoZ](https://github.com/XinCaoZ) [ha1yu](https://github.com/ha1yu) [wavesky](https://github.com/wave-to) [gh0stkey](https://github.com/gh0stkey/HaE)
 
