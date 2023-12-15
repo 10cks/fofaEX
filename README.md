@@ -1,14 +1,96 @@
-# FOFA EX
-
-![image](https://github.com/10cks/fofaEX/assets/47177550/a0ff2910-e3eb-4b2c-abdc-7c9d967a3407)
+![image](https://github.com/10cks/fofaEX/assets/47177550/4baead1c-b329-48d4-ab31-a5975057abcd)
 
 
-# 简介
+![](https://badgen.net/static/license/MIT/green/?icon=github)
+![](https://badgen.net/static/language/Java/green?icon=github)
+![](https://badgen.net/static/category/fofa-client/blue/)
+![](https://badgen.net/static/category/redteam-tool/blue/)
 
-Fofa EX 是一款基于 Java Swing 编写的 fofa 图形化客户端，将 fofa api 进行简化操作，搜索结果可实时预览，可编辑、可搜索、可导出；可自定义便捷语法，一键输入自定义语法；支持翻页功能，支持自定义查询条目数量功能，支持iconHash计算功能；
+## 简介
+
+FOFA EX 是一款基于 fofa api 实现的简洁美观的 Java 客户端，集成了 fofa 官方的四十个 api 接口，增加搜索数量调整、翻页、iconHash生成、搜索耗时统计、当前用户个人账户信息查询等功能，查询结果可实施编辑与表内搜索，可进行导出；
+增加快捷语法编辑记录功能，可将收录的语法进行保存与快捷输入；右键支持当前搜索结果一键打开链接等功能。
+
+![image](https://github.com/10cks/fofaEX/assets/47177550/b1c91436-e8e7-463f-ac6d-4ea2ef737604)
+
+## 运行
+
+该程序使用 Java11 编写，[最新发布版本点击下载](https://github.com/10cks/fofaEX/files/13661841/fofaEX_v1_0.zip)：
+
+```
+java -jar .\fofaEX.jar
+```
+
+如存在乱码，请使用编码启动：
+```
+java "-Dfile.encoding=UTF-8" -jar .\fofaEX.jar
+```
+
+## 账户设置
+
+客户端需输入邮箱与key，第一次登录后保存账户会将配置文件生成在本地 accounts.txt 文件中：
+
+![image](https://github.com/10cks/fofaEX/assets/47177550/89c472c1-3330-4147-89b1-ae21b35aba9e)
+
+检查账户功能可查看当前账户信息（会员显示点数为"-1"是正常现象）：
+
+![image](https://github.com/10cks/fofaEX/assets/47177550/1742229e-a585-491d-8f24-544eb8e15f3b)
 
 
+## API 搜索功能
 
-# 启动方式
+当前已提供以下 api 搜索功能（部分功能取决与当前账户权限）：
+```
+ip,port,protocol,country,country_name,region,city,longitude,latitude,as_number,as_organization,host,domain,os,server,icp,
+title,jarm,header,banner,base_protocol,link,certs_issuer_org,certs_issuer_cn,certs_subject_org,certs_subject_cn,tls_ja3s,
+tls_version,product,product_category,version,lastupdatetime,cname,icon_hash,certs_valid,cname_domain,body,icon,fid,structinfo
+```
+默认使用常用的7个选项，可进行勾选或取消：
 
-`java "-Dfile.encoding=UTF-8" -jar .\fofaEX.jar`
+![image](https://github.com/10cks/fofaEX/assets/47177550/bea065ab-2d66-4397-b79e-aab986f61535)
+
+fofa api 官方链接：https://fofa.info/api
+
+## 快捷输入功能
+
+按钮单击为快速输入，输入后显示为红色高亮；再次点击则撤回输入，颜色恢复。
+用户可实时新增、编辑、删除按钮，按钮配置文件保存在当前目录 rules.txt 文件中。
+
+![image](https://github.com/10cks/fofaEX/assets/47177550/979ba680-98a4-403d-84be-af0f096b829c)
+
+## iconHash 计算
+
+可通过直接输入：
+https://baidu.com/ 或者 https://baidu.com/favicon.ico 来计算图标哈希值：
+
+![image](https://github.com/10cks/fofaEX/assets/47177550/601744d2-2fef-4930-8ec5-969bcbb50835)
+
+## 表格操作
+
+当前表格中，右键集成了部分功能，其他功能将后续更新。
+
+![image](https://github.com/10cks/fofaEX/assets/47177550/d0e3c7dd-b733-4bb3-8dd3-889b5e8af4f9)
+
+## 翻页功能及搜索计时
+
+右下角统计当前表格数据与全部数据占比，显示当前页面数及本次搜索耗时。
+
+![image](https://github.com/10cks/fofaEX/assets/47177550/65705cba-a8e1-494b-9444-b6a68b5bcb89)
+
+## 关于项目
+
+目前项目还在开发中，有很多 idea 还在逐步实现。后续打算该平台集成第三方工具来进行一键化操作，也欢迎各位师傅提出想法与建议。
+
+## 致谢
+
+在开发中有很多师傅帮了我答疑解惑，加速了项目的开发，在此非常感谢下面的各位师傅的帮助：
+
+[Mechoy](https://github.com/Mechoy) [XinCaoZ](https://github.com/XinCaoZ) [ha1yu](https://github.com/ha1yu) [wavesky](https://github.com/wave-to) [gh0stkey](https://github.com/gh0stkey/HaE)
+
+## 参考链接
+
+https://github.com/fofapro/fofa_view
+
+https://github.com/wgpsec/fofa_viewer
+
+
