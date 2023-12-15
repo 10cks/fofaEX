@@ -7,9 +7,6 @@
 ![](https://badgen.net/github/forks/10cks/fofaEX)
 ![](https://badgen.net/github/release/10cks/fofaEX/stable)
 
-![](https://badgen.net/static/category/fofa-client/red/)
-![](https://badgen.net/static/category/redteam-tool/red/)
-
 ## 简介
 
 FOFA EX 是一款基于 fofa api 实现的简洁美观的 Java 客户端，集成了 fofa 官方的四十个 api 接口，增加搜索数量调整、翻页、iconHash生成、搜索耗时统计、当前用户个人账户信息查询等功能，查询结果可实施编辑与表内搜索，可进行导出；
