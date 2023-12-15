@@ -5,8 +5,10 @@
 ![](https://badgen.net/github/releases/10cks/fofaEX/github/releases/)
 ![](https://badgen.net/github/stars/10cks/fofaEX)
 ![](https://badgen.net/github/forks/10cks/fofaEX)
-![](https://badgen.net/static/category/fofa-client/blue/)
-![](https://badgen.net/static/category/redteam-tool/blue/)
+![](https://badgen.net/github/release/10cks/fofaEX/stable)
+
+![](https://badgen.net/static/category/fofa-client/red/)
+![](https://badgen.net/static/category/redteam-tool/red/)
 
 ## 简介
 
