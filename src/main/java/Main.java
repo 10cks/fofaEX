@@ -28,12 +28,14 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONException;
 import org.json.JSONObject;
+import plugins.FofaPlugin;
 
 import javax.swing.table.*;
 import javax.swing.text.Document;
 import javax.swing.undo.UndoManager;
 
 import static java.awt.BorderLayout.*;
+import static plugins.FofaPlugin.loadFileIntoTable;
 
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -115,6 +117,8 @@ public class Main {
     static JMenuItem itemCopy = new JMenuItem("复制");
 
     private static JMenuItem itemSearch = new JMenuItem("表格搜索");
+
+    private static File lastOpenedPath; // 添加一个成员变量来保存上次打开的文件路径
 
     static TableCellRenderer highlightRenderer = new HighlightRenderer();
     private static TableCellRenderer defaultRenderer;
@@ -473,9 +477,11 @@ public class Main {
         JMenu labMenu = new JMenu("实验功能");
         JMenuItem iconHashlabMenuItem = new JMenuItem("iconHash 计算");
         JMenuItem freeGetMenuItem = new JMenuItem("低速模式（暂未开放）");
+        JMenuItem openFileMenuItem = new JMenuItem("打开文件");
         labMenu.add(iconHashlabMenuItem);
         labMenu.add(freeGetMenuItem);
         menuBar.add(labMenu);
+        labMenu.add(openFileMenuItem);
 
         iconHashlabMenuItem.addActionListener((ActionEvent event) -> {
             EventQueue.invokeLater(() -> {
@@ -483,6 +489,37 @@ public class Main {
                 calculator.setVisible(true);
             });
         });
+
+        freeGetMenuItem.addActionListener((ActionEvent event) -> {
+            EventQueue.invokeLater(() -> {
+                FofaPlugin.main();
+            });
+        });
+
+        openFileMenuItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (table == null) {
+                    table = new JTable();
+                }
+
+                JFileChooser fileChooser = new JFileChooser();
+                // 如果存在上次打开的路径，则设置文件选择器的当前目录
+                if (lastOpenedPath != null) {
+                    fileChooser.setCurrentDirectory(lastOpenedPath);
+                }
+
+                if (fileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+                    File file = fileChooser.getSelectedFile();
+                    // 更新 lastOpenedPath 为当前选择的文件或文件夹
+                    lastOpenedPath = fileChooser.getCurrentDirectory();
+                    // 调用方法来处理文件
+                    loadFileIntoTable(file, table);
+                }
+            }
+        });
+
+
 
         // 创建"关于"菜单项
         JMenu aboutMenu = new JMenu("关于");
@@ -541,7 +578,11 @@ public class Main {
         JTextField textField0 = createTextFieldFofa("fofaEX: FOFA Extension");
 
         // 创建数据表
-        table = new JTable();
+        if (table == null) {
+            table = new JTable();
+        }
+        // 初始化 table 右键
+        initializeTable();
 
         textField0.addKeyListener(new KeyAdapter() {
             @Override
@@ -593,7 +634,6 @@ public class Main {
                 }
             }
         });
-
 
         textField0.getDocument().addDocumentListener(new DocumentListener() {
             @Override
@@ -689,7 +729,7 @@ public class Main {
 
         JPanel panel9 = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
 
-        // 创建"更新规则"按钮
+        // 创建"更新规则"按钮 创建"新增"按钮
         JButton updateButton = new JButton("➕");
         updateButton.setFocusPainted(false);
         updateButton.setFocusable(false);
@@ -746,10 +786,10 @@ public class Main {
 
                     // 验证输入是否非空
                     if (!keyName.isEmpty() && !keyValue.isEmpty()) {
-
                         // 将键名和键值以"键名":{键值}的形式保存在rule.txt的最后一行
                         try (BufferedWriter writer = new BufferedWriter(new FileWriter(rulesPath, true))) {
-                            writer.write("\"" + keyName + "\":{" + keyValue + "}");
+                            System.out.println(keyValue);
+                            writer.write("\"" + keyName + "\":{" + keyValue + "},");
                             writer.newLine(); // Ensure the new entry is on a new line
                         } catch (IOException addError) {
                             addError.printStackTrace();
@@ -1012,8 +1052,7 @@ public class Main {
         addRuleBox(panel3, "fid", newValue -> fidMark = newValue, fidMark);
         addRuleBox(panel3, "structinfo", newValue -> structinfoMark = newValue, structinfoMark);
 
-        // 初始化 table 右键
-        initializeTable();
+
         // 设置全局边框：创建一个带有指定的空白边框的新面板，其中指定了上、左、下、右的边距
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 

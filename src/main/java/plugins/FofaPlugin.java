@@ -1,10 +1,19 @@
 package plugins;
 
+import org.json.JSONObject;
+
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Map;
 
 public class FofaPlugin {
 
@@ -26,9 +35,9 @@ public class FofaPlugin {
         JTextArea resultArea = new JTextArea(10, 50);
 
         // 设置自动换行
-        resultArea.setLineWrap(true);
+        //resultArea.setLineWrap(true);
         // 设置断行不断字
-        resultArea.setWrapStyleWord(true);
+        resultArea.setWrapStyleWord(false);
 
         panel.add(new JLabel("Command:"));
         panel.add(commandField);
@@ -59,18 +68,23 @@ public class FofaPlugin {
 
     private void executeCommand(String command, JTextArea resultArea) {
         try {
-            // 启动进程
-            process = Runtime.getRuntime().exec(command);
-            writer = new PrintWriter(process.getOutputStream());
-
-            // 创建线程来处理输出流，确保使用 UTF-8 编码
+            // 使用 ProcessBuilder 替代 Runtime.exec
+            ProcessBuilder builder = new ProcessBuilder(command.split("\\s+"));
+            builder.redirectErrorStream(true); // 合并标准错误和标准输出
+            process = builder.start();
+            // writer = new PrintWriter(new OutputStreamWriter(process.getOutputStream(), StandardCharsets.UTF_8), true);
+            Charset systemCharset = Charset.defaultCharset(); // 获取系统默认字符集
+            writer = new PrintWriter(new OutputStreamWriter(process.getOutputStream(), systemCharset), true);
+            // 处理输出流
             Thread outputThread = new Thread(() -> {
+//                try (BufferedReader reader = new BufferedReader(
+//                        new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
                 try (BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(process.getInputStream(), StandardCharsets.ISO_8859_1))) {
+                        new InputStreamReader(process.getInputStream(), systemCharset))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
                         final String lineCopy = line;
-                        SwingUtilities.invokeLater(() -> { // 使用 SwingUtilities.invokeLater 来安全更新 UI
+                        SwingUtilities.invokeLater(() -> {
                             resultArea.append(lineCopy + "\n");
                         });
                     }
@@ -80,7 +94,7 @@ public class FofaPlugin {
                     });
                 } finally {
                     try {
-                        process.waitFor(); // 等待进程结束
+                        process.waitFor();
                     } catch (InterruptedException ex) {
                         SwingUtilities.invokeLater(() -> {
                             resultArea.append("Process was interrupted: " + ex.getMessage() + "\n");
@@ -92,13 +106,59 @@ public class FofaPlugin {
                 }
             });
 
-            // 启动处理输出的线程
             outputThread.start();
+
         } catch (Exception ex) {
             resultArea.setText("Error executing command: " + ex.getMessage());
         }
     }
 
+    public static void loadFileIntoTable(File file, JTable table) {
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(file));
+            String line;
+            List<Map<String, String>> data = new ArrayList<>();
+
+            // Read the file line by line and parse each line as a JSON object
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (!line.isEmpty()) {
+                    JSONObject jsonObject = new JSONObject(line);
+                    Map<String, String> map = new LinkedHashMap<>();
+                    jsonObject.keys().forEachRemaining(key -> {
+                        map.put(key, jsonObject.get(key).toString());
+                    });
+                    data.add(map);
+                }
+            }
+            reader.close();
+
+            // Assuming all json objects have the same keys, get column names from the first object
+            // Ensure column names are in the order they were in JSON
+            Vector<String> columnNames = new Vector<>();
+            if (!data.isEmpty()) {
+                columnNames.addAll(data.get(0).keySet());
+            }
+
+            // Prepare data for the table model
+            Vector<Vector<String>> dataVector = new Vector<>();
+            for (Map<String, String> datum : data) {
+                Vector<String> row = new Vector<>();
+                for (String columnName : columnNames) {
+                    row.add(datum.get(columnName));
+                }
+                dataVector.add(row);
+            }
+
+            // Set the model for the table
+            DefaultTableModel model = new DefaultTableModel(dataVector, columnNames);
+            table.setModel(model);
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(null, "File reading error", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
     public static void main() {
         // 创建类的实例并调用方法
         FofaPlugin plugin = new FofaPlugin();
