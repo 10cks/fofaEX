@@ -90,6 +90,10 @@
             <version>1.14.1</version> <!-- Check for the latest version on https://mvnrepository.com/artifact/org.jsoup/jsoup -->
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-compiler-plugin -->
-
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.10.1</version>
+        </dependency>
     </dependencies>
 </project>

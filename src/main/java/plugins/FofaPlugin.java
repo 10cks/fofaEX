@@ -15,6 +15,11 @@ import java.util.stream.Collectors;
 import java.util.ArrayList;
 import java.util.Map;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import java.util.Vector;
+
 public class FofaPlugin {
 
     private Process process;
@@ -117,40 +122,40 @@ public class FofaPlugin {
         try {
             BufferedReader reader = new BufferedReader(new FileReader(file));
             String line;
-            List<Map<String, String>> data = new ArrayList<>();
+            List<Map<String, Object>> data = new ArrayList<>();
+            Vector<String> columnNames = new Vector<>();
+            boolean columnsDefined = false;
 
-            // Read the file line by line and parse each line as a JSON object
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
                 if (!line.isEmpty()) {
-                    JSONObject jsonObject = new JSONObject(line);
-                    Map<String, String> map = new LinkedHashMap<>();
-                    jsonObject.keys().forEachRemaining(key -> {
-                        map.put(key, jsonObject.get(key).toString());
-                    });
+                    JsonObject jsonObject = JsonParser.parseString(line).getAsJsonObject();
+                    Map<String, Object> map = new LinkedHashMap<>();
+
+                    for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
+                        String key = entry.getKey();
+                        Object value = entry.getValue().getAsString();
+                        map.put(key, value);
+
+                        if (!columnsDefined) {
+                            columnNames.add(key);
+                        }
+                    }
                     data.add(map);
+                    columnsDefined = true;
                 }
             }
             reader.close();
 
-            // Assuming all json objects have the same keys, get column names from the first object
-            // Ensure column names are in the order they were in JSON
-            Vector<String> columnNames = new Vector<>();
-            if (!data.isEmpty()) {
-                columnNames.addAll(data.get(0).keySet());
-            }
-
-            // Prepare data for the table model
-            Vector<Vector<String>> dataVector = new Vector<>();
-            for (Map<String, String> datum : data) {
-                Vector<String> row = new Vector<>();
+            Vector<Vector<Object>> dataVector = new Vector<>();
+            for (Map<String, Object> datum : data) {
+                Vector<Object> row = new Vector<>();
                 for (String columnName : columnNames) {
                     row.add(datum.get(columnName));
                 }
                 dataVector.add(row);
             }
 
-            // Set the model for the table
             DefaultTableModel model = new DefaultTableModel(dataVector, columnNames);
             table.setModel(model);
 
@@ -159,6 +164,7 @@ public class FofaPlugin {
             JOptionPane.showMessageDialog(null, "File reading error", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+
     public static void main() {
         // 创建类的实例并调用方法
         FofaPlugin plugin = new FofaPlugin();
