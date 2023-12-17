@@ -4,7 +4,6 @@
 ![](https://badgen.net//github/license/10cks/fofaEX)
 ![](https://badgen.net/github/releases/10cks/fofaEX/github/releases/)
 ![](https://badgen.net/github/stars/10cks/fofaEX)
-![](https://badgen.net/github/forks/10cks/fofaEX)
 ![](https://badgen.net/github/release/10cks/fofaEX/stable)
 
 ## 简介
