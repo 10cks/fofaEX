@@ -29,6 +29,8 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONException;
 import org.json.JSONObject;
 import plugins.FofaPlugin;
+import tableInit.HighlightRenderer;
+import tableInit.RightClickFunctions;
 import tableInit.SelectedCellBorderHighlighter;
 
 import javax.swing.table.*;
@@ -99,7 +101,6 @@ public class Main {
     /* 上面未完成 */
 
     private static boolean scrollPaneMark = true;
-    private static JDialog searchDialog = null;
 
     // 标记
     private static boolean exportButtonAdded = false;
@@ -126,199 +127,15 @@ public class Main {
     static TableCellRenderer highlightRenderer = new HighlightRenderer();
     private static TableCellRenderer defaultRenderer;
 
-    public static void initializeTable() {
-        // 添加菜单项到弹出菜单
-        popupMenu.add(itemOpenLink);
-        popupMenu.add(itemCopy);
-        popupMenu.add(itemSearch);
-        popupMenu.add(itemSelectColumn);
-        popupMenu.add(itemDeselectColumn);
-        defaultRenderer = table.getDefaultRenderer(Object.class);
-        // 为右键菜单项添加全选当前列监听器
-        itemSelectColumn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-
-                if (table != null) {
-                    int col = table.getSelectedColumn();
-                    if (col >= 0) {
-                        table.setColumnSelectionAllowed(true);
-                        table.setRowSelectionAllowed(false);
-                        table.clearSelection();
-                        table.addColumnSelectionInterval(col, col);
-                    }
-                }
-            }
-        });
-
-        // 为取消选择列的菜单项添加事件监听器
-        itemDeselectColumn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // 取消选择当前列
-                if (table != null) {
-                    table.clearSelection();
-                    // 恢复默认的行选择模式
-                    table.setRowSelectionAllowed(true);
-                    table.setColumnSelectionAllowed(false);
-                }
-            }
-        });
-
-
-        // 为打开链接的菜单项添加事件监听器
-        itemOpenLink.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // 执行打开链接的操作
-                if (table != null) {
-                    int selectedRow = table.getSelectedRow();
-                    int selectedCol = table.getSelectedColumn();
-                    if (selectedRow >= 0 && selectedCol >= 0) {
-                        Object cellContent = table.getValueAt(selectedRow, selectedCol);
-                        if (cellContent != null && cellContent.toString().startsWith("http")) {
-                            try {
-                                Desktop desktop = Desktop.getDesktop();
-                                URI uri = new URI(cellContent.toString());
-                                desktop.browse(uri);
-                            } catch (Exception ex) {
-                                JOptionPane.showMessageDialog(popupMenu, "无法打开链接：" + cellContent, "错误", JOptionPane.ERROR_MESSAGE);
-                            }
-                        } else {
-                            JOptionPane.showMessageDialog(popupMenu, "当前单元格不包含有效链接", "警告", JOptionPane.WARNING_MESSAGE);
-                        }
-                    }
-                }
-            }
-        });
-
-        // 为复制的菜单项添加事件监听器
-        itemCopy.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // 执行复制操作
-                if (table != null) {
-                    int[] selectedRows = table.getSelectedRows();
-                    int[] selectedColumns = table.getSelectedColumns();
-                    StringBuilder sb = new StringBuilder();
-
-                    for (int i = 0; i < selectedRows.length; i++) {
-                        for (int j = 0; j < selectedColumns.length; j++) {
-                            Object value = table.getValueAt(selectedRows[i], selectedColumns[j]);
-                            sb.append(value == null ? "" : value.toString());
-                            if (j < selectedColumns.length - 1) {
-                                sb.append("\t"); // 列之间添加制表符分隔
-                            }
-                        }
-                        if (i < selectedRows.length - 1) {
-                            sb.append("\n"); // 行之间添加换行符分隔
-                        }
-                    }
-
-                    StringSelection stringSelection = new StringSelection(sb.toString());
-                    Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-                    clipboard.setContents(stringSelection, null);
-                }
-            }
-        });
-
-        itemSearch.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                    createSearchDialog();
-            }
-        });
-    }
-
-    private static void createSearchDialog() {
-
-        // 检查对话框是否已经存在
-        if (searchDialog != null) {
-            // 对话框已经存在，可能需要将其带到前面
-            searchDialog.toFront();
-            searchDialog.requestFocus();
-            return;
-        }
-
-        // 创建一个新的JDialog
-        JDialog searchDialog = new JDialog((Frame) null, "搜索", false); // false表示非模态对话框
-        searchDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE); // 点击关闭按钮时释放窗口资源
-
-        searchDialog.setLayout(new FlowLayout());
-        searchDialog.setAlwaysOnTop(true);
-        JLabel label = new JLabel("输入搜索内容：");
-        JTextField searchField = new JTextField(20);
-        JButton searchButton = new JButton("搜索");
-        JButton closeButton = new JButton("退出高亮");
-
-        // 添加组件到对话框
-        searchDialog.add(label);
-        searchDialog.add(searchField);
-        searchDialog.add(searchButton);
-        searchDialog.add(closeButton);
-
-        // 搜索按钮监听器
-        searchButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String searchText = searchField.getText();
-                if (searchText != null && !searchText.isEmpty()) {
-                    // 执行搜索并高亮显示匹配的单元格
-                    searchTable(searchText);
-                }
-            }
-        });
-
-        // 退出按钮监听器
-        closeButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                searchDialog.dispose(); // 关闭对话框
-                resetSearch(); // 重置搜索结果
-                //searchDialog = null; // 重置searchDialog引用
-            }
-        });
-
-        // 显示对话框
-        searchDialog.pack();
-        searchDialog.setLocationRelativeTo(null); // 在屏幕中央显示
-        searchDialog.setVisible(true);
-    }
-
-    private static void searchTable(String searchText) {
-        if (!(highlightRenderer instanceof HighlightRenderer)) {
-            highlightRenderer = new HighlightRenderer();
-        }
-        // Update the search text in the highlight renderer
-        ((HighlightRenderer) highlightRenderer).setSearchText(searchText);
-
-        // Apply the highlight renderer to all columns
-        for (int col = 0; col < table.getColumnCount(); col++) {
-            table.getColumnModel().getColumn(col).setCellRenderer(highlightRenderer);
-        }
-
-        // Repaint the table to show the changes
-        table.repaint();
-    }
-
-    private static void resetSearch() {
-        // Reset the renderer to the default for all columns
-        for (int col = 0; col < table.getColumnCount(); col++) {
-            table.getColumnModel().getColumn(col).setCellRenderer(defaultRenderer);
-        }
-
-        // 退出时恢复表格颜色
-        table.repaint();
-    }
 
     public static void main(String[] args) throws ClassNotFoundException, UnsupportedLookAndFeelException, InstantiationException, IllegalAccessException, FileNotFoundException {
 
         JFrame jFrame = new JFrame("fofaEX");
         jFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        try{
+        try {
             URL resource = Main.class.getResource("icon.png");
             jFrame.setIconImage((new ImageIcon(resource).getImage())); //给Frame设置图标
-        }catch(Exception e){
+        } catch (Exception e) {
             System.out.println(e);
         }
         // 创建 CardLayout 布局管理器
@@ -341,7 +158,8 @@ public class Main {
             table = new JTable();
         }
         // 初始化 table 右键
-        initializeTable();
+        RightClickFunctions.table = table;
+        RightClickFunctions.initializeTable();
 
         textField0.addKeyListener(new KeyAdapter() {
             @Override
@@ -840,19 +658,36 @@ public class Main {
             }
         });
 
-        // 菜单栏
-
         // 创建菜单栏
         JMenuBar menuBar = new JMenuBar();
 
         // 创建"账户设置"菜单项
         JMenu settingsMenu = new JMenu("账户设置");
-
-        // 在此菜单项下可以添加更多的子菜单项，以下只是一个示例
         JMenuItem changePasswordMenuItem = new JMenuItem("FOFA API");
         settingsMenu.add(changePasswordMenuItem);
-
         menuBar.add(settingsMenu);
+
+        // 创建"搜索设置"菜单项
+        JMenu configureMenu = new JMenu("查询设置");
+        JMenuItem configureMenuItem = new JMenuItem("默认查询数量");
+        configureMenu.add(configureMenuItem);
+        menuBar.add(configureMenu);
+
+        // 创建 “实验功能” 菜单项
+        JMenu labMenu = new JMenu("实验功能");
+        JMenuItem iconHashlabMenuItem = new JMenuItem("iconHash 计算");
+        JMenuItem freeGetMenuItem = new JMenuItem("低速模式（暂未开放）");
+        JMenuItem openFileMenuItem = new JMenuItem("打开文件");
+        labMenu.add(iconHashlabMenuItem);
+        labMenu.add(freeGetMenuItem);
+        labMenu.add(openFileMenuItem);
+        menuBar.add(labMenu);
+
+        // 创建"关于"菜单项
+        JMenu aboutMenu = new JMenu("关于");
+        JMenuItem aboutMenuItem = new JMenuItem("关于项目");
+        aboutMenu.add(aboutMenuItem);
+        menuBar.add(aboutMenu);
 
         // 更改"账户设置"菜单项的事件监听
         changePasswordMenuItem.addActionListener(new ActionListener() {
@@ -965,12 +800,6 @@ public class Main {
             }
         });
 
-        // 创建"搜索设置"菜单项
-        JMenu configureMenu = new JMenu("查询设置");
-        JMenuItem configureMenuItem = new JMenuItem("默认查询数量");
-
-        configureMenu.add(configureMenuItem);
-        menuBar.add(configureMenu);
         configureMenuItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -991,15 +820,7 @@ public class Main {
         });
 
 
-        JMenu labMenu = new JMenu("实验功能");
-        JMenuItem iconHashlabMenuItem = new JMenuItem("iconHash 计算");
-        JMenuItem freeGetMenuItem = new JMenuItem("低速模式（暂未开放）");
-        JMenuItem openFileMenuItem = new JMenuItem("打开文件");
-        labMenu.add(iconHashlabMenuItem);
-        labMenu.add(freeGetMenuItem);
-        menuBar.add(labMenu);
-        labMenu.add(openFileMenuItem);
-
+        // 实验功能事件
         iconHashlabMenuItem.addActionListener((ActionEvent event) -> {
             EventQueue.invokeLater(() -> {
                 IconHashCalculator calculator = new IconHashCalculator();
@@ -1027,17 +848,13 @@ public class Main {
                     // 更新 lastOpenedPath 为当前选择的文件或文件夹
                     lastOpenedPath = fileChooser.getCurrentDirectory();
                     // 调用方法来处理文件
-                    loadFileIntoTable(file,panel6,table);
+                    loadFileIntoTable(file, panel6, table);
+                    RightClickFunctions.table = table;
+                    RightClickFunctions.initializeTable();
                 }
             }
         });
 
-        // 创建"关于"菜单项
-        JMenu aboutMenu = new JMenu("关于");
-        JMenuItem aboutMenuItem = new JMenuItem("关于项目");
-
-        aboutMenu.add(aboutMenuItem);
-        menuBar.add(aboutMenu);
 
         // 为"关于项目"菜单项添加动作监听器
         aboutMenuItem.addActionListener(new ActionListener() {
@@ -1978,23 +1795,6 @@ public class Main {
         } else {
             table.setModel(model);
         }
-
-        // 设置表格的默认渲染器
-        table.setDefaultRenderer(Object.class, new SelectedCellBorderHighlighter());
-        // 添加右键鼠标事件
-        table.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {
-                if (SwingUtilities.isRightMouseButton(e)) {
-                    int row = table.rowAtPoint(e.getPoint());
-                    int col = table.columnAtPoint(e.getPoint());
-                    if (row >= 0 && col >= 0) {
-                        // 右键显示弹出菜单
-                        popupMenu.show(e.getComponent(), e.getX(), e.getY());
-                    }
-                }
-            }
-        });
     }
 
     // 账户设置
