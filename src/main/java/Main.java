@@ -110,6 +110,8 @@ public class Main {
     private static int numberOfItems;
     private static int currentPage = 1;
     private static int sizeSetting = 10000;
+
+    private static boolean openFileMark = false;
     // 创建全局数据表
     private static JTable table;
 
@@ -849,8 +851,6 @@ public class Main {
                     lastOpenedPath = fileChooser.getCurrentDirectory();
                     // 调用方法来处理文件
                     loadFileIntoTable(file, panel6, table);
-                    RightClickFunctions.table = table;
-                    RightClickFunctions.initializeTable();
                 }
             }
         });
