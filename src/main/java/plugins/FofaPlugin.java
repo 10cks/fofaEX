@@ -1,17 +1,14 @@
 package plugins;
 
-import org.json.JSONObject;
-
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -19,6 +16,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.util.Vector;
+
+import tableInit.SelectedCellBorderHighlighter;
+
+import static java.awt.BorderLayout.CENTER;
+import static tableInit.GetjTableHeader.adjustColumnWidths;
+import static tableInit.GetjTableHeader.getjTableHeader;
 
 public class FofaPlugin {
 
@@ -118,7 +121,26 @@ public class FofaPlugin {
         }
     }
 
-    public static void loadFileIntoTable(File file, JTable table) {
+    public static void loadFileIntoTable(File file,JPanel panel, JTable table) {
+
+        // 重新设置表格头，以便新的渲染器生效
+        JTableHeader header = getjTableHeader(table);
+        table.setTableHeader(header);
+
+        adjustColumnWidths(table); // 自动调整列宽
+        JScrollPane scrollPane = new JScrollPane(table);
+
+        table.setRowHeight(24); // 设置表格的行高
+        table.setFillsViewportHeight(true);
+
+        panel.removeAll();
+        panel.add(scrollPane, CENTER);
+        panel.revalidate();
+        panel.repaint();
+
+        // 设置表格的默认渲染器
+        table.setDefaultRenderer(Object.class, new SelectedCellBorderHighlighter());
+
         try {
             BufferedReader reader = new BufferedReader(new FileReader(file));
             String line;

@@ -29,6 +29,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONException;
 import org.json.JSONObject;
 import plugins.FofaPlugin;
+import tableInit.SelectedCellBorderHighlighter;
 
 import javax.swing.table.*;
 import javax.swing.text.Document;
@@ -36,6 +37,8 @@ import javax.swing.undo.UndoManager;
 
 import static java.awt.BorderLayout.*;
 import static plugins.FofaPlugin.loadFileIntoTable;
+import static tableInit.GetjTableHeader.adjustColumnWidths;
+import static tableInit.GetjTableHeader.getjTableHeader;
 
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -324,250 +327,6 @@ public class Main {
 
         // 设置外观风格
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-
-        // 创建菜单栏
-        JMenuBar menuBar = new JMenuBar();
-
-        // 创建"账户设置"菜单项
-        JMenu settingsMenu = new JMenu("账户设置");
-
-        // 在此菜单项下可以添加更多的子菜单项，以下只是一个示例
-        JMenuItem changePasswordMenuItem = new JMenuItem("FOFA API");
-        settingsMenu.add(changePasswordMenuItem);
-
-        menuBar.add(settingsMenu);
-
-        // 更改"账户设置"菜单项的事件监听
-        changePasswordMenuItem.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // 创建新的JFrame
-                JFrame settingsFrame = new JFrame("Settings");
-
-                // 创建新的面板并添加组件
-                JPanel settingsPanel = new JPanel(new GridLayout(4, 2, 5, 5)); // 使用4行2列的GridLayout
-                settingsPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // 设置边距
-
-                JButton checkButton = new JButton("检查账户");
-                checkButton.setFocusPainted(false); // 添加这一行来取消焦点边框的绘制
-                checkButton.setFocusable(false);
-                checkButton.addActionListener(e1 -> {
-                    // 点击按钮时显示输入的数据
-                    String email = fofaEmail.getText();
-                    String key = fofaKey.getText();
-                    String fofaUrl_str = fofaUrl.getText();
-
-                    // https://fofa.info/api/v1/info/my?email=
-                    String authUrl = fofaUrl_str + "/api/v1/info/my?email=" + email + "&key=" + key;
-
-                    HttpClient httpClient = HttpClientBuilder.create().build();
-                    HttpGet request = new HttpGet(authUrl);
-
-                    try {
-                        HttpResponse response = httpClient.execute(request);
-                        HttpEntity entity = response.getEntity();
-                        String responseBody = EntityUtils.toString(entity);
-
-                        // 解析JSON数据
-                        JSONObject json = new JSONObject(responseBody);
-
-                        if (!json.getBoolean("error")) {
-                            // 账户验证有效
-                            StringBuilder output = new StringBuilder();
-                            output.append("账户验证有效\n");
-                            output.append("邮箱地址: ").append(json.getString("email")).append("\n");
-                            output.append("用户名: ").append(json.getString("username")).append("\n");
-
-                            if (json.getBoolean("isvip")) {
-                                output.append("身份权限：FOFA会员\n");
-                            } else {
-                                output.append("身份权限：普通用户\n");
-                            }
-                            ;
-                            output.append("F点数量: ").append(json.getInt("fofa_point")).append("\n");
-                            output.append("API月度剩余查询次数: ").append(json.getInt("remain_api_query")).append("\n");
-                            output.append("API月度剩余返回数量: ").append(json.getInt("remain_api_data")).append("\n");
-                            JOptionPane.showMessageDialog(null, output.toString());
-                        } else {
-                            // 账户验证无效
-                            JOptionPane.showMessageDialog(null, "账户验证无效！", "提示", JOptionPane.WARNING_MESSAGE);
-                        }
-                    } catch (IOException | JSONException ex) {
-                        ex.printStackTrace();
-                        JOptionPane.showMessageDialog(null, "发生错误，请重试！", "错误", JOptionPane.ERROR_MESSAGE);
-                    }
-                });
-
-                // 创建"保存设置"按钮
-                JButton saveSettingsButton = new JButton("保存设置");
-                saveSettingsButton.setFocusPainted(false); // 取消焦点边框的绘制
-                saveSettingsButton.setFocusable(false);
-                saveSettingsButton.addActionListener(SaveError -> {
-                    // 获取文本框中的值
-                    String emailValue = fofaEmail.getText();
-                    String keyValue = fofaKey.getText();
-
-                    // 准备写入到文件的内容
-                    String contentToWrite = "fofaEmail:" + emailValue + "\n" +
-                            "fofaKey:" + keyValue + "\n";
-
-                    File rulesFile = new File(accountsPath);
-                    try {
-                        // 如果文件不存在，则创建新文件
-                        if (!rulesFile.exists()) {
-                            rulesFile.createNewFile();
-                        }
-
-                        // 写入内容到文件，使用 try-with-resources 自动关闭 FileWriter
-                        try (FileWriter writer = new FileWriter(rulesFile, false)) {
-                            writer.write(contentToWrite);
-                            JOptionPane.showMessageDialog(null, "设置已保存。");
-                        }
-                    } catch (IOException ex) {
-                        ex.printStackTrace();
-                        JOptionPane.showMessageDialog(null, "保存设置时发生错误！", "错误", JOptionPane.ERROR_MESSAGE);
-                    }
-                });
-
-                // 添加组件到设置面板
-                settingsPanel.add(new JLabel("FOFA URL:"));
-                settingsPanel.add(fofaUrl);
-                settingsPanel.add(new JLabel("Email:"));
-                settingsPanel.add(fofaEmail);
-                settingsPanel.add(new JLabel("API Key:"));
-                settingsPanel.add(fofaKey);
-                settingsPanel.add(checkButton);
-                settingsPanel.add(saveSettingsButton);
-
-                // 添加设置面板到设置窗口，并显示设置窗口
-                settingsFrame.add(settingsPanel);
-                settingsFrame.pack();
-                settingsFrame.setLocationRelativeTo(null); // 使窗口居中显示
-                settingsFrame.setResizable(false);
-                settingsFrame.setVisible(true);
-            }
-        });
-
-        // 创建"搜索设置"菜单项
-        JMenu configureMenu = new JMenu("查询设置");
-        JMenuItem configureMenuItem = new JMenuItem("默认查询数量");
-
-        configureMenu.add(configureMenuItem);
-        menuBar.add(configureMenu);
-        configureMenuItem.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // 创建一个JTextField 初始化为 sizeSetting 的值
-                JTextField inputField = new JTextField(String.valueOf(sizeSetting));
-                int result = JOptionPane.showConfirmDialog(null, inputField,
-                        "请输入默认查询数量", JOptionPane.OK_CANCEL_OPTION);
-                if (result == JOptionPane.OK_OPTION) {
-                    try {
-                        // 尝试将输入的文本解析为整数并更新 sizeSetting
-                        sizeSetting = Integer.parseInt(inputField.getText());
-                    } catch (NumberFormatException ex) {
-                        // 输入的不是有效的整数，可以在这里处理错误
-                        JOptionPane.showMessageDialog(null, "请输入一个有效的整数值");
-                    }
-                }
-            }
-        });
-
-
-        JMenu labMenu = new JMenu("实验功能");
-        JMenuItem iconHashlabMenuItem = new JMenuItem("iconHash 计算");
-        JMenuItem freeGetMenuItem = new JMenuItem("低速模式（暂未开放）");
-        JMenuItem openFileMenuItem = new JMenuItem("打开文件");
-        labMenu.add(iconHashlabMenuItem);
-        labMenu.add(freeGetMenuItem);
-        menuBar.add(labMenu);
-        labMenu.add(openFileMenuItem);
-
-        iconHashlabMenuItem.addActionListener((ActionEvent event) -> {
-            EventQueue.invokeLater(() -> {
-                IconHashCalculator calculator = new IconHashCalculator();
-                calculator.setVisible(true);
-            });
-        });
-
-        freeGetMenuItem.addActionListener((ActionEvent event) -> {
-            EventQueue.invokeLater(() -> {
-                FofaPlugin.main();
-            });
-        });
-
-        openFileMenuItem.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (table == null) {
-                    table = new JTable();
-                }
-
-                JFileChooser fileChooser = new JFileChooser();
-                // 如果存在上次打开的路径，则设置文件选择器的当前目录
-                if (lastOpenedPath != null) {
-                    fileChooser.setCurrentDirectory(lastOpenedPath);
-                }
-
-                if (fileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-                    File file = fileChooser.getSelectedFile();
-                    // 更新 lastOpenedPath 为当前选择的文件或文件夹
-                    lastOpenedPath = fileChooser.getCurrentDirectory();
-                    // 调用方法来处理文件
-                    loadFileIntoTable(file, table);
-                }
-            }
-        });
-
-
-
-        // 创建"关于"菜单项
-        JMenu aboutMenu = new JMenu("关于");
-        JMenuItem aboutMenuItem = new JMenuItem("关于项目");
-
-        aboutMenu.add(aboutMenuItem);
-        menuBar.add(aboutMenu);
-
-        // 为"关于项目"菜单项添加动作监听器
-        aboutMenuItem.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JEditorPane editorPane = new JEditorPane("text/html", "");
-                editorPane.setText(
-                        "<html><body>" +
-                                "<b>fofa EX:</b><br>" +
-                                "Project: <a href='https://github.com/10cks/fofaEX'>https://github.com/10cks/fofaEX</a><br>" +
-                                "Author: bwner@OverSpace<br>" +
-                                "version: 1.0<br>" +
-                                "Update: 2023.12.11" +
-                                "</body></html>"
-                );
-                editorPane.setEditable(false);
-                editorPane.setOpaque(false);
-                editorPane.addHyperlinkListener(new HyperlinkListener() {
-                    @Override
-                    public void hyperlinkUpdate(HyperlinkEvent evt) {
-                        if (evt.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-                            try {
-                                Desktop.getDesktop().browse(evt.getURL().toURI());
-                            } catch (IOException | URISyntaxException ex) {
-                                JOptionPane.showMessageDialog(null,
-                                        "无法打开链接，错误: " + ex.getMessage(),
-                                        "错误",
-                                        JOptionPane.ERROR_MESSAGE);
-                            }
-                        }
-                    }
-                });
-
-                // 弹出一个包含JEditorPane的消息对话框
-                JOptionPane.showMessageDialog(null, new JScrollPane(editorPane),
-                        "关于项目", JOptionPane.PLAIN_MESSAGE);
-            }
-        });
-
-        // 在JFrame中添加菜单栏
-        jFrame.setJMenuBar(menuBar);
 
         // 刷新jf容器及其内部组件的外观
         SwingUtilities.updateComponentTreeUI(jFrame);
@@ -1080,6 +839,247 @@ public class Main {
                 textField0.requestFocusInWindow();
             }
         });
+
+        // 菜单栏
+
+        // 创建菜单栏
+        JMenuBar menuBar = new JMenuBar();
+
+        // 创建"账户设置"菜单项
+        JMenu settingsMenu = new JMenu("账户设置");
+
+        // 在此菜单项下可以添加更多的子菜单项，以下只是一个示例
+        JMenuItem changePasswordMenuItem = new JMenuItem("FOFA API");
+        settingsMenu.add(changePasswordMenuItem);
+
+        menuBar.add(settingsMenu);
+
+        // 更改"账户设置"菜单项的事件监听
+        changePasswordMenuItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // 创建新的JFrame
+                JFrame settingsFrame = new JFrame("Settings");
+
+                // 创建新的面板并添加组件
+                JPanel settingsPanel = new JPanel(new GridLayout(4, 2, 5, 5)); // 使用4行2列的GridLayout
+                settingsPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // 设置边距
+
+                JButton checkButton = new JButton("检查账户");
+                checkButton.setFocusPainted(false); // 添加这一行来取消焦点边框的绘制
+                checkButton.setFocusable(false);
+                checkButton.addActionListener(e1 -> {
+                    // 点击按钮时显示输入的数据
+                    String email = fofaEmail.getText();
+                    String key = fofaKey.getText();
+                    String fofaUrl_str = fofaUrl.getText();
+
+                    // https://fofa.info/api/v1/info/my?email=
+                    String authUrl = fofaUrl_str + "/api/v1/info/my?email=" + email + "&key=" + key;
+
+                    HttpClient httpClient = HttpClientBuilder.create().build();
+                    HttpGet request = new HttpGet(authUrl);
+
+                    try {
+                        HttpResponse response = httpClient.execute(request);
+                        HttpEntity entity = response.getEntity();
+                        String responseBody = EntityUtils.toString(entity);
+
+                        // 解析JSON数据
+                        JSONObject json = new JSONObject(responseBody);
+
+                        if (!json.getBoolean("error")) {
+                            // 账户验证有效
+                            StringBuilder output = new StringBuilder();
+                            output.append("账户验证有效\n");
+                            output.append("邮箱地址: ").append(json.getString("email")).append("\n");
+                            output.append("用户名: ").append(json.getString("username")).append("\n");
+
+                            if (json.getBoolean("isvip")) {
+                                output.append("身份权限：FOFA会员\n");
+                            } else {
+                                output.append("身份权限：普通用户\n");
+                            }
+                            ;
+                            output.append("F点数量: ").append(json.getInt("fofa_point")).append("\n");
+                            output.append("API月度剩余查询次数: ").append(json.getInt("remain_api_query")).append("\n");
+                            output.append("API月度剩余返回数量: ").append(json.getInt("remain_api_data")).append("\n");
+                            JOptionPane.showMessageDialog(null, output.toString());
+                        } else {
+                            // 账户验证无效
+                            JOptionPane.showMessageDialog(null, "账户验证无效！", "提示", JOptionPane.WARNING_MESSAGE);
+                        }
+                    } catch (IOException | JSONException ex) {
+                        ex.printStackTrace();
+                        JOptionPane.showMessageDialog(null, "发生错误，请重试！", "错误", JOptionPane.ERROR_MESSAGE);
+                    }
+                });
+
+                // 创建"保存设置"按钮
+                JButton saveSettingsButton = new JButton("保存设置");
+                saveSettingsButton.setFocusPainted(false); // 取消焦点边框的绘制
+                saveSettingsButton.setFocusable(false);
+                saveSettingsButton.addActionListener(SaveError -> {
+                    // 获取文本框中的值
+                    String emailValue = fofaEmail.getText();
+                    String keyValue = fofaKey.getText();
+
+                    // 准备写入到文件的内容
+                    String contentToWrite = "fofaEmail:" + emailValue + "\n" +
+                            "fofaKey:" + keyValue + "\n";
+
+                    File rulesFile = new File(accountsPath);
+                    try {
+                        // 如果文件不存在，则创建新文件
+                        if (!rulesFile.exists()) {
+                            rulesFile.createNewFile();
+                        }
+
+                        // 写入内容到文件，使用 try-with-resources 自动关闭 FileWriter
+                        try (FileWriter writer = new FileWriter(rulesFile, false)) {
+                            writer.write(contentToWrite);
+                            JOptionPane.showMessageDialog(null, "设置已保存。");
+                        }
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                        JOptionPane.showMessageDialog(null, "保存设置时发生错误！", "错误", JOptionPane.ERROR_MESSAGE);
+                    }
+                });
+
+                // 添加组件到设置面板
+                settingsPanel.add(new JLabel("FOFA URL:"));
+                settingsPanel.add(fofaUrl);
+                settingsPanel.add(new JLabel("Email:"));
+                settingsPanel.add(fofaEmail);
+                settingsPanel.add(new JLabel("API Key:"));
+                settingsPanel.add(fofaKey);
+                settingsPanel.add(checkButton);
+                settingsPanel.add(saveSettingsButton);
+
+                // 添加设置面板到设置窗口，并显示设置窗口
+                settingsFrame.add(settingsPanel);
+                settingsFrame.pack();
+                settingsFrame.setLocationRelativeTo(null); // 使窗口居中显示
+                settingsFrame.setResizable(false);
+                settingsFrame.setVisible(true);
+            }
+        });
+
+        // 创建"搜索设置"菜单项
+        JMenu configureMenu = new JMenu("查询设置");
+        JMenuItem configureMenuItem = new JMenuItem("默认查询数量");
+
+        configureMenu.add(configureMenuItem);
+        menuBar.add(configureMenu);
+        configureMenuItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // 创建一个JTextField 初始化为 sizeSetting 的值
+                JTextField inputField = new JTextField(String.valueOf(sizeSetting));
+                int result = JOptionPane.showConfirmDialog(null, inputField,
+                        "请输入默认查询数量", JOptionPane.OK_CANCEL_OPTION);
+                if (result == JOptionPane.OK_OPTION) {
+                    try {
+                        // 尝试将输入的文本解析为整数并更新 sizeSetting
+                        sizeSetting = Integer.parseInt(inputField.getText());
+                    } catch (NumberFormatException ex) {
+                        // 输入的不是有效的整数，可以在这里处理错误
+                        JOptionPane.showMessageDialog(null, "请输入一个有效的整数值");
+                    }
+                }
+            }
+        });
+
+
+        JMenu labMenu = new JMenu("实验功能");
+        JMenuItem iconHashlabMenuItem = new JMenuItem("iconHash 计算");
+        JMenuItem freeGetMenuItem = new JMenuItem("低速模式（暂未开放）");
+        JMenuItem openFileMenuItem = new JMenuItem("打开文件");
+        labMenu.add(iconHashlabMenuItem);
+        labMenu.add(freeGetMenuItem);
+        menuBar.add(labMenu);
+        labMenu.add(openFileMenuItem);
+
+        iconHashlabMenuItem.addActionListener((ActionEvent event) -> {
+            EventQueue.invokeLater(() -> {
+                IconHashCalculator calculator = new IconHashCalculator();
+                calculator.setVisible(true);
+            });
+        });
+
+        freeGetMenuItem.addActionListener((ActionEvent event) -> {
+            EventQueue.invokeLater(() -> {
+                FofaPlugin.main();
+            });
+        });
+
+        openFileMenuItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JFileChooser fileChooser = new JFileChooser();
+                // 如果存在上次打开的路径，则设置文件选择器的当前目录
+                if (lastOpenedPath != null) {
+                    fileChooser.setCurrentDirectory(lastOpenedPath);
+                }
+
+                if (fileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+                    File file = fileChooser.getSelectedFile();
+                    // 更新 lastOpenedPath 为当前选择的文件或文件夹
+                    lastOpenedPath = fileChooser.getCurrentDirectory();
+                    // 调用方法来处理文件
+                    loadFileIntoTable(file,panel6,table);
+                }
+            }
+        });
+
+        // 创建"关于"菜单项
+        JMenu aboutMenu = new JMenu("关于");
+        JMenuItem aboutMenuItem = new JMenuItem("关于项目");
+
+        aboutMenu.add(aboutMenuItem);
+        menuBar.add(aboutMenu);
+
+        // 为"关于项目"菜单项添加动作监听器
+        aboutMenuItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JEditorPane editorPane = new JEditorPane("text/html", "");
+                editorPane.setText(
+                        "<html><body>" +
+                                "<b>fofa EX:</b><br>" +
+                                "Project: <a href='https://github.com/10cks/fofaEX'>https://github.com/10cks/fofaEX</a><br>" +
+                                "Author: bwner@OverSpace<br>" +
+                                "version: 1.0<br>" +
+                                "Update: 2023.12.11" +
+                                "</body></html>"
+                );
+                editorPane.setEditable(false);
+                editorPane.setOpaque(false);
+                editorPane.addHyperlinkListener(new HyperlinkListener() {
+                    @Override
+                    public void hyperlinkUpdate(HyperlinkEvent evt) {
+                        if (evt.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+                            try {
+                                Desktop.getDesktop().browse(evt.getURL().toURI());
+                            } catch (IOException | URISyntaxException ex) {
+                                JOptionPane.showMessageDialog(null,
+                                        "无法打开链接，错误: " + ex.getMessage(),
+                                        "错误",
+                                        JOptionPane.ERROR_MESSAGE);
+                            }
+                        }
+                    }
+                });
+
+                // 弹出一个包含JEditorPane的消息对话框
+                JOptionPane.showMessageDialog(null, new JScrollPane(editorPane),
+                        "关于项目", JOptionPane.PLAIN_MESSAGE);
+            }
+        });
+
+        // 在JFrame中添加菜单栏
+        jFrame.setJMenuBar(menuBar);
+
     }
 
     private static JTextField createTextField(String text) {
@@ -1420,7 +1420,6 @@ public class Main {
 
 //                            currentPage = (int) FofaAPI.getValueFromJson(jsonResponse, "page");
 
-
                             queryTotalNumber = (int) FofaAPI.getValueFromJson(jsonResponse, "size");
 
                             List<String> hostShow = FofaAPI.getColumn(allShow, 0);
@@ -1640,7 +1639,6 @@ public class Main {
                     protected void done() {
                         try {
                             SearchResults searchResults = get();
-                            boolean hasData = searchResults != null && !searchResults.host.isEmpty();
                             assert searchResults != null;
                             showResultsInTable(
                                     searchResults.host,
@@ -1957,22 +1955,14 @@ public class Main {
             }
         }
         DefaultTableModel model = new DefaultTableModel(data, columnNames);
-
         table.setModel(model);
-        JTableHeader header = getjTableHeader();
 
         // 重新设置表格头，以便新的渲染器生效
+        JTableHeader header = getjTableHeader(table);
         table.setTableHeader(header);
 
         adjustColumnWidths(table); // 自动调整列宽
         JScrollPane scrollPane = new JScrollPane(table);
-
-
-//        if (scrollPaneMark) {
-//            scrollPane.setPreferredSize(new Dimension(800, 350)); // 设置滚动窗格的首选大小
-//        } else {
-//            scrollPane.setPreferredSize(new Dimension(800, 50)); // 设置滚动窗格的首选大小
-//        }
 
         table.setRowHeight(24); // 设置表格的行高
         table.setFillsViewportHeight(true);
@@ -2005,51 +1995,6 @@ public class Main {
                 }
             }
         });
-    }
-
-    private static JTableHeader getjTableHeader() {
-        JTableHeader header = table.getTableHeader();
-        // 自定义列标题的渲染器
-        header.setDefaultRenderer(new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(
-                    JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-
-                // 设置渲染器返回的组件类型为JLabel
-                JLabel headerLabel = (JLabel) super.getTableCellRendererComponent(
-                        table, value, isSelected, hasFocus, row, column);
-                // 设置背景色为灰色
-                headerLabel.setBackground(Color.GRAY);
-                // 设置文字颜色为白色
-                headerLabel.setForeground(Color.WHITE);
-                // 设置文字居中
-                headerLabel.setHorizontalAlignment(JLabel.CENTER);
-                // 设置标题加粗和大小
-                headerLabel.setFont(new Font(headerLabel.getFont().getFamily(), Font.BOLD, 15));
-                // 设置边框，其中颜色设置为白色
-                headerLabel.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, Color.WHITE));
-                // 设置数据文字大小
-                table.setFont(new Font("Serif", Font.PLAIN, 15)); // 设置数据单元格的字体和大小
-
-                return headerLabel;
-            }
-        });
-        return header;
-    }
-
-    public static void adjustColumnWidths(JTable table) {
-        TableColumnModel columnModel = table.getColumnModel();
-        for (int column = 0; column < table.getColumnCount(); column++) {
-            int width = 15; // Min width
-            for (int row = 0; row < table.getRowCount(); row++) {
-                TableCellRenderer renderer = table.getCellRenderer(row, column);
-                Component comp = table.prepareRenderer(renderer, row, column);
-                width = Math.max(comp.getPreferredSize().width + 1, width);
-            }
-            if (width > 300)
-                width = 300;
-            columnModel.getColumn(column).setPreferredWidth(width);
-        }
     }
 
     // 账户设置
