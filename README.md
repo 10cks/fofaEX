@@ -7,9 +7,10 @@
 
 ## 简介
 
-FOFA EX 是一款基于 fofa api 实现的简洁美观的 Java 客户端，集成了 fofa 官方的四十个 api 接口，增加搜索数量调整、翻页、iconHash生成、搜索耗时统计、当前用户个人账户信息查询等功能，查询结果可实施编辑与表内搜索，可进行导出；
+FOFA EX 是一款基于 fofa api 实现的简洁美观的 Java 客户端，可使用 fofa api 或使用 fofa hack 免账号获取数据。
+
+集成了 fofa 官方的四十个 api 接口，增加搜索数量调整、翻页、iconHash生成、搜索耗时统计、当前用户个人账户信息查询等功能，查询结果可实施编辑与表内搜索，可进行导出；
 增加快捷语法编辑记录功能，可将收录的语法进行保存与快捷输入；右键支持当前搜索结果一键打开链接等功能。
-后续集成fofa-hack等工具，实现免账号获取数据。
 
 [更新日志](https://github.com/10cks/fofaEX/blob/master/docs/update.md) [问题修复](https://github.com/10cks/fofaEX/blob/master/docs/issues.md) [第三方插件](https://github.com/10cks/fofaEX/blob/master/docs/plugins.md)
 
@@ -28,7 +29,7 @@ java -jar .\fofaEX.jar
 java "-Dfile.encoding=UTF-8" -jar .\fofaEX.jar
 ```
 
-## 账户设置
+## 登录模式：账户设置
 
 客户端需输入邮箱与key，第一次登录后保存账户会将配置文件生成在本地 accounts.txt 文件中：
 
@@ -37,6 +38,19 @@ java "-Dfile.encoding=UTF-8" -jar .\fofaEX.jar
 检查账户功能可查看当前账户信息（会员显示点数为"-1"是正常现象）：
 
 ![image](https://github.com/10cks/fofaEX/assets/47177550/1742229e-a585-491d-8f24-544eb8e15f3b)
+
+## 免登录模式：可突破 API 数量限制
+
+此处使用 fofa hack 作为第三方工具引入，进行图形化操作。
+
+点击 实验功能 -> 插件模式 -> fofa hack -> 运行
+
+![image](https://github.com/10cks/fofaEX/assets/47177550/902000fc-ea6a-41c0-8fb3-c23c246ece86)
+
+输入查询语法与查询数量：
+
+![image](https://github.com/10cks/fofaEX/assets/47177550/85441b6d-5fab-43e2-827e-0e6554e3f309)
+
 
 
 ## API 搜索功能
