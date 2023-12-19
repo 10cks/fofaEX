@@ -38,7 +38,6 @@ import javax.swing.text.Document;
 import javax.swing.undo.UndoManager;
 
 import static java.awt.BorderLayout.*;
-import static plugins.FofaPlugin.loadFileIntoTable;
 import static tableInit.GetjTableHeader.adjustColumnWidths;
 import static tableInit.GetjTableHeader.getjTableHeader;
 
@@ -146,6 +145,51 @@ public class Main {
 
         // 设置外观风格
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+
+        // 创建菜单栏
+        JMenuBar menuBar = new JMenuBar();
+        // 在JFrame中添加菜单栏
+        jFrame.setJMenuBar(menuBar);
+
+        // 创建"账户设置"菜单项
+        JMenu settingsMenu = new JMenu("账户设置");
+        JMenuItem changePasswordMenuItem = new JMenuItem("FOFA API");
+        settingsMenu.add(changePasswordMenuItem);
+        menuBar.add(settingsMenu);
+
+        // 创建"搜索设置"菜单项
+        JMenu configureMenu = new JMenu("查询设置");
+        JMenuItem configureMenuItem = new JMenuItem("默认查询数量");
+        configureMenu.add(configureMenuItem);
+        menuBar.add(configureMenu);
+
+        // 创建 “实验功能” 菜单项
+        JMenu labMenu = new JMenu("实验功能");
+        JMenuItem openFileMenuItem = new JMenuItem("打开文件");
+        JMenuItem iconHashLabMenuItem = new JMenuItem("iconHash 计算");
+        JMenu pluginMenu = new JMenu("插件模式");
+        JMenu fofaHackMenu = new JMenu("Fofa-Hack");
+        JMenuItem fofaHackMenuItemRun = new JMenuItem("运行");
+        JMenuItem fofaHackMenuItemSetting = new JMenuItem("设置");
+        JMenuItem fofaHackMenuItemAbout = new JMenuItem("关于");
+        JMenu dirsearchMenu = new JMenu("dirsearch");
+
+        labMenu.add(openFileMenuItem);
+        labMenu.add(iconHashLabMenuItem);
+        labMenu.add(pluginMenu);
+        pluginMenu.add(fofaHackMenu);
+        fofaHackMenu.add(fofaHackMenuItemRun);
+        fofaHackMenu.add(fofaHackMenuItemSetting);
+        fofaHackMenu.add(fofaHackMenuItemAbout);
+        pluginMenu.add(dirsearchMenu);
+        menuBar.add(labMenu);
+
+        // 创建"关于"菜单项
+        JMenu aboutMenu = new JMenu("关于");
+        JMenuItem aboutMenuItem = new JMenuItem("关于项目");
+        aboutMenu.add(aboutMenuItem);
+        menuBar.add(aboutMenu);
+
 
         // 刷新jf容器及其内部组件的外观
         SwingUtilities.updateComponentTreeUI(jFrame);
@@ -537,6 +581,9 @@ public class Main {
         panel1.add(labelIcon);
         panel2.add(subPanel1); // 搜索框 + 搜索按钮
 
+        JLabel jLabel7 = new JLabel("total lines ");
+        panel7.add(jLabel7);
+
         searchButton("◁", false, panel7, textField0, fofaEmail, fofaKey, fofaUrl, panel6, panel8, labelIcon, panel2, panel3, panel7, panel9, "left");
         searchButton("▷", false, panel7, textField0, fofaEmail, fofaKey, fofaUrl, panel6, panel8, labelIcon, panel2, panel3, panel7, panel9, "right");
 
@@ -646,6 +693,13 @@ public class Main {
         mainPanel.add(panel8);
         mainPanel.add(panel9);
 
+        // fofa 插件初始化
+        FofaPlugin.panel = panel6;
+        FofaPlugin.table = table;
+        FofaPlugin.exportPanel = panel8;
+        FofaPlugin.exportButtonAdded = false;
+        FofaPlugin.rowCountLabel = jLabel7;
+
         // 把面板添加到JFrame
         jFrame.add(mainPanel, NORTH);
         jFrame.add(buttonPanel, WEST);
@@ -659,37 +713,6 @@ public class Main {
                 textField0.requestFocusInWindow();
             }
         });
-
-        // 创建菜单栏
-        JMenuBar menuBar = new JMenuBar();
-
-        // 创建"账户设置"菜单项
-        JMenu settingsMenu = new JMenu("账户设置");
-        JMenuItem changePasswordMenuItem = new JMenuItem("FOFA API");
-        settingsMenu.add(changePasswordMenuItem);
-        menuBar.add(settingsMenu);
-
-        // 创建"搜索设置"菜单项
-        JMenu configureMenu = new JMenu("查询设置");
-        JMenuItem configureMenuItem = new JMenuItem("默认查询数量");
-        configureMenu.add(configureMenuItem);
-        menuBar.add(configureMenu);
-
-        // 创建 “实验功能” 菜单项
-        JMenu labMenu = new JMenu("实验功能");
-        JMenuItem iconHashlabMenuItem = new JMenuItem("iconHash 计算");
-        JMenuItem freeGetMenuItem = new JMenuItem("低速模式（暂未开放）");
-        JMenuItem openFileMenuItem = new JMenuItem("打开文件");
-        labMenu.add(iconHashlabMenuItem);
-        labMenu.add(freeGetMenuItem);
-        labMenu.add(openFileMenuItem);
-        menuBar.add(labMenu);
-
-        // 创建"关于"菜单项
-        JMenu aboutMenu = new JMenu("关于");
-        JMenuItem aboutMenuItem = new JMenuItem("关于项目");
-        aboutMenu.add(aboutMenuItem);
-        menuBar.add(aboutMenu);
 
         // 更改"账户设置"菜单项的事件监听
         changePasswordMenuItem.addActionListener(new ActionListener() {
@@ -823,14 +846,14 @@ public class Main {
 
 
         // 实验功能事件
-        iconHashlabMenuItem.addActionListener((ActionEvent event) -> {
+        iconHashLabMenuItem.addActionListener((ActionEvent event) -> {
             EventQueue.invokeLater(() -> {
                 IconHashCalculator calculator = new IconHashCalculator();
                 calculator.setVisible(true);
             });
         });
 
-        freeGetMenuItem.addActionListener((ActionEvent event) -> {
+        fofaHackMenuItemRun.addActionListener((ActionEvent event) -> {
             EventQueue.invokeLater(() -> {
                 FofaPlugin.main();
             });
@@ -849,8 +872,9 @@ public class Main {
                     File file = fileChooser.getSelectedFile();
                     // 更新 lastOpenedPath 为当前选择的文件或文件夹
                     lastOpenedPath = fileChooser.getCurrentDirectory();
+
                     // 调用方法来处理文件
-                    loadFileIntoTable(file, panel6, table);
+                    FofaPlugin.loadFileIntoTable(file);
                 }
             }
         });
@@ -894,8 +918,7 @@ public class Main {
             }
         });
 
-        // 在JFrame中添加菜单栏
-        jFrame.setJMenuBar(menuBar);
+
 
     }
 
