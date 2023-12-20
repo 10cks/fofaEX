@@ -37,7 +37,7 @@ java "-Dfile.encoding=UTF-8" -jar .\fofaEX.jar
 
 ![image](https://github.com/10cks/fofaEX/assets/47177550/1742229e-a585-491d-8f24-544eb8e15f3b)
 
-## 免登录模式：可突破 API 数量限制（目前仅支持 windows）
+## 免登录模式：使用第三方插件功能
 
 此处使用 fofa hack 作为第三方工具引入，进行图形化操作。
 
