@@ -28,6 +28,8 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONException;
 import org.json.JSONObject;
+import plugins.CommonExecute;
+import plugins.CommonTemplate;
 import plugins.FofaPlugin;
 import tableInit.HighlightRenderer;
 import tableInit.RightClickFunctions;
@@ -38,6 +40,7 @@ import javax.swing.text.Document;
 import javax.swing.undo.UndoManager;
 
 import static java.awt.BorderLayout.*;
+import static plugins.CommonTemplate.saveTableData;
 import static tableInit.GetjTableHeader.adjustColumnWidths;
 import static tableInit.GetjTableHeader.getjTableHeader;
 
@@ -55,6 +58,7 @@ public class Main {
     private static String accountsPath = "accounts.txt";
 
     // 设置 field 规则
+    private static boolean hostMark = true;
     private static boolean ipMark = true;
     private static boolean portMark = true;
     private static boolean protocolMark = true;
@@ -71,7 +75,7 @@ public class Main {
     private static boolean latitudeMark = false;
     private static boolean asNumberMark = false;
     private static boolean asOrganizationMark = false;
-    private static boolean hostMark = true;
+
     private static boolean osMark = false;
     private static boolean serverMark = false;
     private static boolean jarmMark = false;
@@ -128,10 +132,13 @@ public class Main {
     static TableCellRenderer highlightRenderer = new HighlightRenderer();
     private static TableCellRenderer defaultRenderer;
 
+    private static JTabbedPane tabbedPane0;
+
 
     public static void main(String[] args) throws ClassNotFoundException, UnsupportedLookAndFeelException, InstantiationException, IllegalAccessException, FileNotFoundException {
 
         JFrame jFrame = new JFrame("fofaEX");
+
         jFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         try {
             URL resource = Main.class.getResource("icon.png");
@@ -139,12 +146,14 @@ public class Main {
         } catch (Exception e) {
             System.out.println(e);
         }
+        // 设置外观风格
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         // 创建 CardLayout 布局管理器
         CardLayout cardLayout = new CardLayout();
         jFrame.setLayout(cardLayout);
 
-        // 设置外观风格
-        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        // 创建 tab 面板
+        tabbedPane0 = new JTabbedPane();
 
         // 创建菜单栏
         JMenuBar menuBar = new JMenuBar();
@@ -165,23 +174,33 @@ public class Main {
 
         // 创建 “实验功能” 菜单项
         JMenu labMenu = new JMenu("实验功能");
-        JMenuItem openFileMenuItem = new JMenuItem("打开文件");
-        JMenuItem iconHashLabMenuItem = new JMenuItem("iconHash 计算");
-        JMenu pluginMenu = new JMenu("插件模式");
-        JMenu fofaHackMenu = new JMenu("Fofa-Hack");
-        JMenuItem fofaHackMenuItemRun = new JMenuItem("运行");
-        JMenuItem fofaHackMenuItemSetting = new JMenuItem("设置");
-        JMenuItem fofaHackMenuItemAbout = new JMenuItem("关于");
-        JMenu dirsearchMenu = new JMenu("dirsearch");
+            JMenuItem openFileMenuItem = new JMenuItem("打开文件");
+            JMenuItem iconHashLabMenuItem = new JMenuItem("iconHash 计算");
+            JMenu pluginMenu = new JMenu("插件模式");
+                JMenu fofaHackMenu = new JMenu("Fofa-Hack");
+                    JMenuItem fofaHackMenuItemRun = new JMenuItem("运行");
+                    JMenuItem fofaHackMenuItemSetting = new JMenuItem("设置");
+                    JMenuItem fofaHackMenuItemAbout = new JMenuItem("关于");
+                JMenu httpXMenu = new JMenu("httpX");
+                JMenu dirsearchMenu = new JMenu("dirsearch");
 
-        labMenu.add(openFileMenuItem);
-        labMenu.add(iconHashLabMenuItem);
-        labMenu.add(pluginMenu);
-        pluginMenu.add(fofaHackMenu);
-        fofaHackMenu.add(fofaHackMenuItemRun);
-        fofaHackMenu.add(fofaHackMenuItemSetting);
-        fofaHackMenu.add(fofaHackMenuItemAbout);
-        pluginMenu.add(dirsearchMenu);
+            JMenu testMenu = new JMenu("测试模式");
+                JMenuItem focusTestItem = new JMenuItem("焦点测试");
+                JMenuItem switchToHttpxItem = new JMenuItem("跳转测试");
+
+            labMenu.add(openFileMenuItem);
+            labMenu.add(iconHashLabMenuItem);
+            labMenu.add(pluginMenu);
+                pluginMenu.add(fofaHackMenu);
+                    fofaHackMenu.add(fofaHackMenuItemRun);
+                    fofaHackMenu.add(fofaHackMenuItemSetting);
+                    fofaHackMenu.add(fofaHackMenuItemAbout);
+                pluginMenu.add(httpXMenu);
+                pluginMenu.add(dirsearchMenu);
+            labMenu.add(testMenu);
+                testMenu.add(focusTestItem);
+                testMenu.add(switchToHttpxItem);
+
         menuBar.add(labMenu);
 
         // 创建"关于"菜单项
@@ -189,7 +208,6 @@ public class Main {
         JMenuItem aboutMenuItem = new JMenuItem("关于项目");
         aboutMenu.add(aboutMenuItem);
         menuBar.add(aboutMenu);
-
 
         // 刷新jf容器及其内部组件的外观
         SwingUtilities.updateComponentTreeUI(jFrame);
@@ -318,7 +336,7 @@ public class Main {
 //
 //        JLabel labelIcon = new JLabel("<html><pre>" + asciiIcon + "</pre></html>");
         JLabel labelIcon = new JLabel(" FOFA EX");
-        labelIcon.setForeground(new Color(48, 49, 52)); // 设置文本颜色为红色
+        labelIcon.setForeground(new Color(48, 49, 52));
         Font iconFont = new Font("Times New Roman", Font.BOLD, 60);
         labelIcon.setFont(iconFont);
 
@@ -693,6 +711,11 @@ public class Main {
         mainPanel.add(panel8);
         mainPanel.add(panel9);
 
+
+        tabbedPane0.addTab("FofaEX",mainPanel);
+        CommonTemplate.addTabbedPane(tabbedPane0);
+        tabbedPane0.setTabPlacement(JTabbedPane.BOTTOM);    // 将标签放置在底部
+
         // fofa 插件初始化
         FofaPlugin.panel = panel6;
         FofaPlugin.table = table;
@@ -700,11 +723,9 @@ public class Main {
         FofaPlugin.exportButtonAdded = false;
         FofaPlugin.rowCountLabel = jLabel7;
 
-        // 把面板添加到JFrame
-        jFrame.add(mainPanel, NORTH);
-        jFrame.add(buttonPanel, WEST);
         // 设置窗口居中并显示
         jFrame.setLocationRelativeTo(null);
+        jFrame.add(tabbedPane0);;
         jFrame.setVisible(true);
 
         // 在程序运行时，使 textField0 获得焦点
@@ -879,6 +900,33 @@ public class Main {
             }
         });
 
+        // 焦点测试 点击事件：显示当前标签
+        focusTestItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int selectedIndex = tabbedPane0.getSelectedIndex();
+                if (selectedIndex != -1) {
+                    String tabTitle = tabbedPane0.getTitleAt(selectedIndex);
+                    JOptionPane.showMessageDialog(jFrame, "当前所在的标签是: " + tabTitle);
+                }
+            }
+        });
+
+        switchToHttpxItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // 遍历所有标签，查找名为 "httpx" 的标签
+//                for (int i = 0; i < tabbedPane0.getTabCount(); i++) {
+//                    if (tabbedPane0.getTitleAt(i).equals("httpx")) {
+//                        // 找到后切换到该标签
+//                        tabbedPane0.setSelectedIndex(i);
+//                        break;
+//                    }
+//                }
+                int index = tabbedPane0.indexOfTab("httpx");
+
+            }
+        });
 
         // 为"关于项目"菜单项添加动作监听器
         aboutMenuItem.addActionListener(new ActionListener() {
@@ -918,7 +966,63 @@ public class Main {
             }
         });
 
+        // 为 "fofahack 设置" 添加动作监听器
+        fofaHackMenuItemSetting.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                // 检查文件是否存在
+                File fofaHackSettingsFile = new File(".\\plugins\\fofahack\\FofaHackSetting.txt");
+                if (fofaHackSettingsFile.exists()) {
+                    // 如果文件存在，使用系统默认编辑器打开它
+                    try {
+                        Desktop.getDesktop().edit(fofaHackSettingsFile);
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                        JOptionPane.showMessageDialog(null, "无法打开配置文件！", "错误", JOptionPane.ERROR_MESSAGE);
+                    }
+                } else {
+                    // 如果文件不存在，显示弹窗
+                    JOptionPane.showMessageDialog(null, "未获取到配置文件！", "错误", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
 
+
+        // 为" fofahack 关于项目"菜单项添加动作监听器
+        fofaHackMenuItemAbout.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JEditorPane editorPane = new JEditorPane("text/html", "");
+                editorPane.setText(
+                        "<html><body>" +
+                                "<b>fofa-hack:</b><br>" +
+                                "Project: <a href='https://github.com/Cl0udG0d/Fofa-hack'>https://github.com/Cl0udG0d/Fofa-hack</a><br>" +
+                                "Author: Cl0udG0d<br>" +
+                                "version: 当前使用为修改版<br>" +
+                                "</body></html>"
+                );
+                editorPane.setEditable(false);
+                editorPane.setOpaque(false);
+                editorPane.addHyperlinkListener(new HyperlinkListener() {
+                    @Override
+                    public void hyperlinkUpdate(HyperlinkEvent evt) {
+                        if (evt.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+                            try {
+                                Desktop.getDesktop().browse(evt.getURL().toURI());
+                            } catch (IOException | URISyntaxException ex) {
+                                JOptionPane.showMessageDialog(null,
+                                        "无法打开链接，错误: " + ex.getMessage(),
+                                        "错误",
+                                        JOptionPane.ERROR_MESSAGE);
+                            }
+                        }
+                    }
+                });
+
+                // 弹出一个包含JEditorPane的消息对话框
+                JOptionPane.showMessageDialog(null, new JScrollPane(editorPane),
+                        "关于项目", JOptionPane.PLAIN_MESSAGE);
+            }
+        });
 
     }
 
@@ -1423,7 +1527,7 @@ public class Main {
                                         setComponentsEnabled(disablePanel7, true);
                                         return;
                                     }
-                                    exportTableToExcel(table);
+                                    CommonExecute.exportTableToExcel(table);
                                 }
                             });
 
@@ -1812,6 +1916,8 @@ public class Main {
         panel.revalidate();
         panel.repaint();
 
+        saveTableData(tabbedPane0);
+
         // 下面的代码将确保 table 被正确地初始化和更新
         if (table == null) {
             table = new JTable(model);
@@ -2059,50 +2165,6 @@ public class Main {
         // Rename the new file to the filename the original file had.
         if (!tempFile.renameTo(inputFile)) {
             System.out.println("Could not rename file");
-        }
-    }
-
-    private static void exportTableToExcel(JTable table) {
-        XSSFWorkbook workbook = new XSSFWorkbook();
-        XSSFSheet sheet = workbook.createSheet("Table Data");
-
-        // 创建表头
-        XSSFRow headerRow = sheet.createRow(0);
-        for (int i = 0; i < table.getColumnCount(); i++) {
-            headerRow.createCell(i).setCellValue(table.getColumnName(i));
-        }
-
-        // 写入数据行
-        for (int i = 0; i < table.getRowCount(); i++) {
-            XSSFRow dataRow = sheet.createRow(i + 1);
-            for (int j = 0; j < table.getColumnCount(); j++) {
-                Object value = table.getValueAt(i, j);
-                String text = (value == null) ? "" : value.toString(); // 检查是否为null
-                dataRow.createCell(j).setCellValue(text);
-            }
-        }
-
-        // 将工作簿保存到文件
-        try {
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
-            String timestamp = dateFormat.format(new Date());
-
-            String directoryName = "exportData";
-            File directory = new File(directoryName);
-
-            if (!directory.exists()) {
-                directory.mkdir();
-            }
-
-            String fileName = directoryName + "/TableData_" + timestamp + ".xlsx";
-            FileOutputStream output = new FileOutputStream(fileName);
-            workbook.write(output);
-            workbook.close();
-            output.close();
-            JOptionPane.showMessageDialog(null, "Export successful!\n File saved at: " + new File(fileName).getAbsolutePath(), "Success", JOptionPane.INFORMATION_MESSAGE);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(null, "Export failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 

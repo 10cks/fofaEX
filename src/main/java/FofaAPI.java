@@ -63,7 +63,7 @@ public class FofaAPI {
         String apiUrl = fofaDomain + fieldsUrl + base64Url + Base64.getEncoder().encodeToString(qbase64.getBytes()) + "&email=" + email + "&key=" + key + "&size=" + size + "&page=" + page;
         URL url = new URL(apiUrl);
 
-        System.out.println("All: " + url);
+        System.out.println("Query: " + url);
 
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");

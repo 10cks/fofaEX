@@ -6,6 +6,7 @@ import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -25,10 +26,11 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import tableInit.SelectedCellBorderHighlighter;
 
+import static java.awt.BorderLayout.CENTER;
 import static tableInit.GetjTableHeader.adjustColumnWidths;
 import static tableInit.GetjTableHeader.getjTableHeader;
 
-public class FofaPlugin {
+public class CommonExecute {
     public static boolean exportButtonAdded;
     private Process process;
     public static JPanel panel = new JPanel(); // 主面板
@@ -49,12 +51,7 @@ public class FofaPlugin {
         // 输入面板
         JPanel panel = new JPanel();
         JTextField commandField = new JTextField(50);
-        JTextField endcountField = new JTextField(10);
-        JButton executeButton = new JButton("搜索");
-        JButton chooseFileButton = new JButton("选择程序");
-
-        chooseFileButton.setFocusPainted(false);
-        chooseFileButton.setFocusable(false);
+        JButton executeButton = new JButton("执行");
         executeButton.setFocusPainted(false); // 添加这一行来取消焦点边框的绘制
         executeButton.setFocusable(false);  // 禁止了按钮获取焦点，因此按钮不会在被点击后显示为"激活"或"选中"的状态
 
@@ -65,12 +62,9 @@ public class FofaPlugin {
         // 设置断行不断字
         resultArea.setWrapStyleWord(false);
 
-        panel.add(new JLabel("查询语法："));
+        panel.add(new JLabel("Command:"));
         panel.add(commandField);
-        panel.add(new JLabel("查询数量："));
-        panel.add(endcountField);
         panel.add(executeButton);
-        //panel.add(chooseFileButton);
 
         // 结果滚动面板
         JScrollPane scrollPane = new JScrollPane(resultArea);
@@ -80,30 +74,14 @@ public class FofaPlugin {
         frame.add(panel, BorderLayout.NORTH);
         frame.add(scrollPane, BorderLayout.CENTER);
 
-        // 执行按钮点击事件
+        // 按钮点击事件
         executeButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // 清空文本区域
                 resultArea.setText("");
                 String command = commandField.getText().trim();
-                String endcount = endcountField.getText().trim();
-                executeCommand(command, endcount, resultArea);
-            }
-        });
-
-        // 选择文件按钮事件
-        chooseFileButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JFileChooser fileChooser = new JFileChooser();
-                fileChooser.setCurrentDirectory(new File(".\\plugins")); // 设置默认目录
-
-                int result = fileChooser.showOpenDialog(frame);
-                if (result == JFileChooser.APPROVE_OPTION) {
-                    File selectedFile = fileChooser.getSelectedFile();
-                    commandField.setText("\"" + selectedFile.getAbsolutePath() + "\""); // 将选定的文件路径放入命令字段
-                }
+                executeCommand(command, resultArea);
             }
         });
 
@@ -111,35 +89,8 @@ public class FofaPlugin {
         frame.setVisible(true);
     }
 
-    private void executeCommand(String searchStr, String endcount, JTextArea resultArea) {
+    private void executeCommand(String command, JTextArea resultArea) {
         try {
-
-            // 从配置文件中读取设置
-            Properties properties = new Properties();
-            properties.load(new FileInputStream("./plugins/fofahack/FofaHackSetting.txt"));
-
-            String path = properties.getProperty("Path").replace("\"", ""); // 移除引号
-            String level = properties.getProperty("level").trim();
-            String outputname = properties.getProperty("outputname").trim();
-
-            // 构建 plugins/data 的文件路径对象
-            File dataDirectory = new File("./plugins/fofahack/data");
-
-            // 检查该路径表示的目录是否存在
-            if (!dataDirectory.exists()) {
-                // 不存在，则尝试创建该目录
-                boolean wasSuccessful = dataDirectory.mkdirs(); // 使用 mkdirs 而不是 mkdir 以创建任何必需的父目录
-
-                if (wasSuccessful) {
-                    System.out.println("[+] FofaHack: The 'data' directory was created successfully.");
-                } else {
-                    System.out.println("Failed to create the 'data' directory.");
-                }
-            }
-
-            // 构建完整的命令
-            String command = String.format("%s -k %s -on %s -e %s -l %s", path, searchStr, outputname, endcount, level);
-
             ProcessBuilder builder = new ProcessBuilder(command.split("\\s+"));
             builder.redirectErrorStream(true); // 合并标准错误和标准输出
             process = builder.start();
@@ -169,41 +120,36 @@ public class FofaPlugin {
                     }
                     SwingUtilities.invokeLater(() -> {
                         resultArea.append("\n程序运行结束\n");
-                        try {
-                            if (checkMakeFile()) {
-                                System.out.println("[*] FofaHack running success.");
-                                // 导出表格
-                                JButton exportButton = new JButton("Export to Excel");
-                                exportButton.setFocusPainted(false); // 添加这一行来取消焦点边框的绘制
-                                exportButton.setFocusable(false);  // 禁止了按钮获取焦点，因此按钮不会在被点击后显示为"激活"或"选中"的状态
-
-                                if (!exportButtonAdded) {
-                                    exportPanel.add(exportButton);
-                                    exportButtonAdded = true;
-                                }
-                                exportButton.addActionListener(new ActionListener() {
-                                    @Override
-                                    public void actionPerformed(ActionEvent e) {
-                                        // 在这里检查 table 是否被初始化
-                                        if (table == null) {
-                                            JOptionPane.showMessageDialog(null, "表格没有被初始化");
-                                            return;
-                                        }
-                                        // 检查 table 是否有模型和数据
-                                        if (table.getModel() == null || table.getModel().getRowCount() <= 0) {
-                                            JOptionPane.showMessageDialog(null, "当前无数据");
-                                            return;
-                                        }
-                                        exportTableToExcel(table);
-                                    }
-                                });
+                        if (checkMakeFile()) {
+                            System.out.println("[*] FofaHack running success.");
+                            // 导出表格
+                            JButton exportButton = new JButton("Export to Excel");
+                            exportButton.setFocusPainted(false); // 添加这一行来取消焦点边框的绘制
+                            exportButton.setFocusable(false);  // 禁止了按钮获取焦点，因此按钮不会在被点击后显示为"激活"或"选中"的状态
 
 
-                            }else{
-                                JOptionPane.showMessageDialog(null, "读取数据失败", "Error", JOptionPane.ERROR_MESSAGE);
+                            if (!exportButtonAdded) {
+                                exportPanel.add(exportButton);
+                                exportButtonAdded = true;
                             }
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
+                            exportButton.addActionListener(new ActionListener() {
+                                @Override
+                                public void actionPerformed(ActionEvent e) {
+                                    // 在这里检查 table 是否被初始化
+                                    if (table == null) {
+                                        JOptionPane.showMessageDialog(null, "表格没有被初始化");
+                                        return;
+                                    }
+                                    // 检查 table 是否有模型和数据
+                                    if (table.getModel() == null || table.getModel().getRowCount() <= 0) {
+                                        JOptionPane.showMessageDialog(null, "当前无数据");
+                                        return;
+                                    }
+                                    exportTableToExcel(table);
+                                }
+                            });
+
+
                         }
                         ;
                     });
@@ -219,19 +165,12 @@ public class FofaPlugin {
         }
     }
 
-    public static boolean checkMakeFile() throws IOException {
-
-        // 从配置文件中读取设置
-        Properties properties = new Properties();
-        properties.load(new FileInputStream("./plugins/fofahack/FofaHackSetting.txt"));
-
-        String finalname = properties.getProperty("finalname").trim();
-        finalname = finalname.replace("\"", "");
-        // 在这里检查 final 文件是否存在
-        System.out.println(finalname);
-        File file = new File(finalname);
+    public static boolean checkMakeFile() {
+        // 在这里检查文件是否存在
+        File file = new File("test.txt");
         if (file.exists()) {
             loadFileIntoTable(file);
+
             return true;
         }
         return false;
@@ -279,7 +218,7 @@ public class FofaPlugin {
                         }
                         data.add(map);
                         columnsDefined = true;
-                    } catch (JsonSyntaxException ex) {
+                    }catch (JsonSyntaxException ex) {
                         ex.printStackTrace();
                         JOptionPane.showMessageDialog(null, "Execute Failed!", "JSON Error", JOptionPane.ERROR_MESSAGE);
                         return;
@@ -303,7 +242,7 @@ public class FofaPlugin {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(null, "File reading error", "Error", JOptionPane.ERROR_MESSAGE);
         }
-        // frame.dispose(); // 关闭插件窗口
+        frame.dispose(); // 关闭插件窗口
         // 更新panel和rowCountLabel
         panel.revalidate();
         panel.repaint();
@@ -313,45 +252,49 @@ public class FofaPlugin {
     public static void exportTableToExcel(JTable table) {
         XSSFWorkbook workbook = new XSSFWorkbook();
 
-        // 创建一个包含整个表的工作表
-        XSSFSheet completeSheet = workbook.createSheet("Complete Table");
+        // 第一个工作表保存全部数据
+        XSSFSheet allDataSheet = workbook.createSheet("All Data Table");
 
         // 创建表头
-        XSSFRow headerRow = completeSheet.createRow(0);
+        XSSFRow headerRow = allDataSheet.createRow(0);
         for (int i = 0; i < table.getColumnCount(); i++) {
             headerRow.createCell(i).setCellValue(table.getColumnName(i));
         }
 
-        // 写入整个表的数据
+        // 写入数据行到 "All Data Table"
         for (int i = 0; i < table.getRowCount(); i++) {
-            XSSFRow dataRow = completeSheet.createRow(i + 1);
+            XSSFRow dataRow = allDataSheet.createRow(i + 1);
             for (int j = 0; j < table.getColumnCount(); j++) {
                 Object value = table.getValueAt(i, j);
-                String text = (value == null) ? "" : value.toString();
+                String text = (value == null) ? "" : value.toString(); // 检查是否为null
                 dataRow.createCell(j).setCellValue(text);
             }
         }
 
-        // 为每一列创建单独的工作表并写入非空数据
+        // 为每一列创建一个新的Sheet
         for (int columnIndex = 0; columnIndex < table.getColumnCount(); columnIndex++) {
-            XSSFSheet sheet = workbook.createSheet(sanitizeSheetName(table.getColumnName(columnIndex)));
+            XSSFSheet sheet = workbook.createSheet(table.getColumnName(columnIndex));
+            int rowDataIndex = 0;
 
-            // 创建表头
-            XSSFRow columnHeaderRow = sheet.createRow(0);
-            columnHeaderRow.createCell(0).setCellValue(table.getColumnName(columnIndex));
+            // 写入列头
+            XSSFRow row = sheet.createRow(rowDataIndex++);
+            row.createCell(0).setCellValue(table.getColumnName(columnIndex));
 
-            // 写入该列的非空数据
-            int dataRowIndex = 1;
+            // 遍历该列的每一行数据
             for (int rowIndex = 0; rowIndex < table.getRowCount(); rowIndex++) {
                 Object value = table.getValueAt(rowIndex, columnIndex);
                 if (value != null) {
-                    XSSFRow dataRow = sheet.createRow(dataRowIndex++);
-                    dataRow.createCell(0).setCellValue(value.toString());
+                    String cellValue = value.toString().trim(); // 去除前后空白字符
+                    // 如果处理后的值不为空，写入到单元格
+                    if (!cellValue.isEmpty()) {
+                        row = sheet.createRow(rowDataIndex++);
+                        row.createCell(0).setCellValue(cellValue);
+                    }
                 }
             }
         }
 
-        // 将工作簿保存到文件
+        // 保存工作簿到文件系统
         try {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
             String timestamp = dateFormat.format(new Date());
@@ -360,24 +303,19 @@ public class FofaPlugin {
             File directory = new File(directoryName);
 
             if (!directory.exists()) {
-                directory.mkdirs(); // Use mkdirs() instead of mkdir() to create any necessary parent directories
+                directory.mkdir();
             }
 
             String fileName = directoryName + "/TableData_" + timestamp + ".xlsx";
             FileOutputStream output = new FileOutputStream(fileName);
             workbook.write(output);
-            output.close(); // Close the file output stream
-            workbook.close(); // Close the workbook
+            workbook.close();
+            output.close();
             JOptionPane.showMessageDialog(null, "Export successful!\nFile saved at: " + new File(fileName).getAbsolutePath(), "Success", JOptionPane.INFORMATION_MESSAGE);
         } catch (IOException ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(null, "Export failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
-    }
-
-    // Helper method to sanitize sheet names as per Excel sheet naming rules
-    private static String sanitizeSheetName(String name) {
-        return name.replaceAll("[\\\\*\\[\\]?/]", "");
     }
 
 
