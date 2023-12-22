@@ -943,6 +943,9 @@ public class Main {
                     boolean queryFull = !defaultCheckFullBox.isSelected();
                     jsonObject.addProperty("queryFull", queryFull);
 
+                    // 更新 setFull 的值
+                    setFull = queryFull;
+
                     // 将 jsonObject 保存到 "accounts.json" 文件中
                     try (FileWriter writer = new FileWriter(jsonFile)) {
                         Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -959,7 +962,7 @@ public class Main {
                 dialog.setVisible(true);
             }
         });
-        // 实验功能事件
+        // 图标哈希计算事件
         iconHashLabMenuItem.addActionListener((ActionEvent event) -> {
             EventQueue.invokeLater(() -> {
                 IconHashCalculator calculator = new IconHashCalculator();
@@ -2027,7 +2030,6 @@ public class Main {
                 }
                 if(accounts.get("queryFull") != null) {
                     setFull = accounts.get("queryFull").getAsBoolean();
-                    System.out.println(setFull);
                 }
             }
         } catch (IOException e) {
