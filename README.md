@@ -91,6 +91,10 @@ https://baidu.com/ 或者 https://baidu.com/favicon.ico 来计算图标哈希值
 
 作为红队工具，这个后续是一定会有的，会将更多的 API 功能以插件形式集成进 fofa EX 中。
 
+> 关于免账号登录模式
+
+适用于fofaEX的插件目前仅供内部使用。
+
 ## 致谢
 
 ###  
