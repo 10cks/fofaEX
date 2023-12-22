@@ -18,6 +18,9 @@ import java.util.List;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -166,7 +169,7 @@ public class Main {
         JMenu configureMenu = new JMenu("查询设置");
         JMenuItem configureMenuItem = new JMenuItem("默认查询数量");
         JMenuItem configureFullItem = new JMenuItem("默认查询区间");
-        JCheckBox defaultCheckFullBox = new JCheckBox("是否默认查询近一年数据？", false);
+        JCheckBox defaultCheckFullBox = new JCheckBox("是否默认仅查询近一年数据？", false);
         defaultCheckFullBox.setFocusPainted(false);
         configureMenu.add(configureMenuItem);
         configureMenu.add(configureFullItem);
@@ -381,10 +384,9 @@ public class Main {
             File rulesFile = new File(rulesPath);
             if (!rulesFile.exists()) {
                 rulesFile.createNewFile();
-                System.out.println("[+] The current path does not contain rules.txt. Create rules.txt.");
+                System.out.println("[+] The current path does not contain " + rulesPath + ". Create "+  rulesPath  +".");
             }
             rulesReader = new BufferedReader(new FileReader(rulesFile));
-
             // 创建 accounts.txt 文件如果它不存在
             accountsFile = new File(accountsPath);
             if (!accountsFile.exists()) {
@@ -798,28 +800,30 @@ public class Main {
                 saveSettingsButton.setFocusable(false);
 
                 saveSettingsButton.addActionListener(SaveError -> {
-                    // 获取文本框中的值，并保存到我们刚才创建的Settings对象中
-                    AccountSetting settings = new AccountSetting();
-                    settings.setFofaEmail(fofaEmail.getText());
-                    settings.setFofaKey(fofaKey.getText());
+                    // 准备一个 JsonObject
+                    JsonObject jsonObject = new JsonObject();
+                    File jsonFile = new File(accountsPath);
 
-                    // 创建一个Gson对象，用于序列化
-                    Gson gson = new GsonBuilder().setPrettyPrinting().create();
-                    // 将Settings对象转化为JSON字符串
-                    String contentToWrite = gson.toJson(settings);
-
-                    File rulesFile = new File(accountsPath);
-                    try {
-                        // 如果文件不存在，则创建新文件
-                        if (!rulesFile.exists()) {
-                            rulesFile.createNewFile();
+                    // 如果文件存在且其内容不为空，从中读取 JsonObject
+                    if (jsonFile.exists() && jsonFile.length() != 0) {
+                        try (FileReader reader = new FileReader(jsonFile)) {
+                            Gson gson = new Gson();
+                            jsonObject = gson.fromJson(reader, JsonObject.class);
+                        } catch (Exception ex) {
+                            // parse error handling
+                            ex.printStackTrace();
                         }
+                    }
 
-                        // 写入内容到文件，使用 try-with-resources 自动关闭 FileWriter
-                        try (FileWriter writer = new FileWriter(rulesFile, false)) {
-                            writer.write(contentToWrite);
-                            JOptionPane.showMessageDialog(null, "设置已保存。");
-                        }
+                    // 更新邮件和密钥设置
+                    jsonObject.addProperty("fofaEmail", fofaEmail.getText());
+                    jsonObject.addProperty("fofaKey", fofaKey.getText());
+
+                    // 将已更新的 jsonObject 写回到 "accounts.json" 文件
+                    try (FileWriter writer = new FileWriter(accountsPath)) {
+                        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                        gson.toJson(jsonObject, writer);
+                        JOptionPane.showMessageDialog(null, "设置已保存。");
                     } catch (IOException ex) {
                         ex.printStackTrace();
                         JOptionPane.showMessageDialog(null, "保存设置时发生错误！", "错误", JOptionPane.ERROR_MESSAGE);
@@ -849,31 +853,110 @@ public class Main {
         configureMenuItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // 创建一个JTextField 初始化为 sizeSetting 的值
                 JTextField inputField = new JTextField(String.valueOf(sizeSetting));
-                int result = JOptionPane.showConfirmDialog(null, inputField,
-                        "请输入默认查询数量", JOptionPane.OK_CANCEL_OPTION);
-                if (result == JOptionPane.OK_OPTION) {
+                JButton okButton = new JButton("保存");
+                JButton cancelButton = new JButton("取消");
+                JOptionPane optionPane = new JOptionPane(inputField,
+                        JOptionPane.PLAIN_MESSAGE, JOptionPane.DEFAULT_OPTION);
+                optionPane.setOptions(new Object[] { okButton, cancelButton });
+
+                JDialog dialog = optionPane.createDialog("请输入默认查询数量");
+                okButton.addActionListener(ev -> {
                     try {
-                        // 尝试将输入的文本解析为整数并更新 sizeSetting
                         sizeSetting = Integer.parseInt(inputField.getText());
+
+                        // 读取JSON文件
+                        JsonObject jsonObject;
+                        File jsonFile = new File(accountsPath);
+                        if (jsonFile.exists() && jsonFile.length() != 0) {
+                            try (FileReader reader = new FileReader(jsonFile)) {
+                                Gson gson = new Gson();
+                                jsonObject = gson.fromJson(reader, JsonObject.class);
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                                return;
+                            }
+                        } else {
+                            jsonObject = new JsonObject();
+                        }
+                        // 更新queryNumber并重新写入文件
+                        jsonObject.addProperty("queryNumber", sizeSetting);
+                        try (FileWriter writer = new FileWriter(accountsPath)) {
+                            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                            gson.toJson(jsonObject, writer);
+                        }
+
+                        // 显示保存成功提醒
+                        JOptionPane.showMessageDialog(null, "保存成功！");
+                        // 关闭原始对话框
+                        // dialog.dispose();
                     } catch (NumberFormatException ex) {
-                        // 输入的不是有效的整数，可以在这里处理错误
-                        JOptionPane.showMessageDialog(null, "请输入一个有效的整数值");
+                        JOptionPane.showMessageDialog(null, "请输入一个有效的整数值。");
+                    } catch (IOException ex) {
+                        // 处理文件读写异常
+                        JOptionPane.showMessageDialog(null, "发生错误，账户配置文件不存在。");
                     }
-                }
+                });
+
+                cancelButton.addActionListener(ev -> dialog.dispose());
+
+                dialog.setVisible(true);
             }
         });
 
         configureFullItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                int result = JOptionPane.showConfirmDialog(null, defaultCheckFullBox,
-                        "否默认查询", JOptionPane.OK_CANCEL_OPTION);
-                if (result == JOptionPane.OK_OPTION) {
-                    // 如果复选框选中，则设置 setFull 为 false，否则为 true
-                    setFull = !defaultCheckFullBox.isSelected();
+                JsonObject jsonObject;
+                File jsonFile = new File("accounts.json");
+
+                // 如果文件存在且其内容不为空，从中读取 JsonObject
+                if (jsonFile.exists() && jsonFile.length() != 0) {
+                    try (FileReader reader = new FileReader(jsonFile)) {
+                        Gson gson = new Gson();
+                        jsonObject = gson.fromJson(reader, JsonObject.class);
+                    } catch (Exception ex) {
+                        // 解析错误处理
+                        ex.printStackTrace();
+                        return;
+                    }
+                } else {
+                    jsonObject = new JsonObject();
                 }
+
+                // 读取 queryFull 的值，并设置复选框的选择状态
+                if (jsonObject.has("queryFull")) {
+                    defaultCheckFullBox.setSelected(!jsonObject.get("queryFull").getAsBoolean());
+                }
+
+                JButton okButton = new JButton("保存");
+                JButton cancelButton = new JButton("取消");
+                JOptionPane optionPane = new JOptionPane(defaultCheckFullBox,
+                        JOptionPane.PLAIN_MESSAGE, JOptionPane.DEFAULT_OPTION);
+                optionPane.setOptions(new Object[]{okButton, cancelButton});
+
+                JDialog dialog = optionPane.createDialog("是否默认查询区间");
+                dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+
+                okButton.addActionListener(ev -> {
+                    // 如果复选框选中，则设置 queryFull 为 false，否则为 true
+                    boolean queryFull = !defaultCheckFullBox.isSelected();
+                    jsonObject.addProperty("queryFull", queryFull);
+
+                    // 将 jsonObject 保存到 "accounts.json" 文件中
+                    try (FileWriter writer = new FileWriter(jsonFile)) {
+                        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                        gson.toJson(jsonObject, writer);
+                        JOptionPane.showMessageDialog(null, "保存成功！");
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                        JOptionPane.showMessageDialog(null, "发生错误，保存设置失败。");
+                    }
+                });
+
+                cancelButton.addActionListener(ev -> dialog.dispose());
+
+                dialog.setVisible(true);
             }
         });
         // 实验功能事件
@@ -1933,11 +2016,18 @@ public class Main {
             if (accountsFile.exists() && accountsFile.length() != 0) {
                 BufferedReader br = new BufferedReader(new FileReader(accountsFile));
                 //转换为哈希映射类型
-                Map<String, String> accounts = gson.fromJson(br, Map.class);
+                Map<String, JsonElement> accounts = gson.fromJson(br, new TypeToken<Map<String, JsonElement>>(){}.getType());
                 // 从哈希映射中获取数据并设置
                 if (accounts.get("fofaEmail") != null && accounts.get("fofaKey") != null) {
-                    fofaEmail.setText(accounts.get("fofaEmail"));
-                    fofaKey.setText(accounts.get("fofaKey"));
+                    fofaEmail.setText(accounts.get("fofaEmail").getAsString());
+                    fofaKey.setText(accounts.get("fofaKey").getAsString());
+                }
+                if (accounts.get("queryNumber") != null) {
+                    sizeSetting = accounts.get("queryNumber").getAsInt();
+                }
+                if(accounts.get("queryFull") != null) {
+                    setFull = accounts.get("queryFull").getAsBoolean();
+                    System.out.println(setFull);
                 }
             }
         } catch (IOException e) {
