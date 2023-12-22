@@ -16,13 +16,14 @@ FOFA EX 是一款基于 fofa api 实现的简洁美观的 Java 客户端，集�
 
 ## 运行
 
-该程序使用 Java11 编写，[最新发布版本点击下载](https://github.com/10cks/fofaEX/releases/download/1.0/fofaEX_v1_0.zip)：
+该程序使用 Java11 编写，
 
-```
-java -jar .\fofaEX.jar
-```
+[最新测试版本点击下载](https://github.com/10cks/fofaEX/releases/download/2.1/fofaEX_v2_1_pre.zip) [V2.1]
 
-如存在乱码，请使用编码启动：
+[最新发布版本点击下载](https://github.com/10cks/fofaEX/releases/download/1.0/fofaEX_v1_0.zip) [V1.0]
+
+
+请使用编码启动：
 ```
 java "-Dfile.encoding=UTF-8" -jar .\fofaEX.jar
 ```
