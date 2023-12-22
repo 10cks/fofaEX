@@ -37,20 +37,6 @@ java "-Dfile.encoding=UTF-8" -jar .\fofaEX.jar
 
 ![image](https://github.com/10cks/fofaEX/assets/47177550/1742229e-a585-491d-8f24-544eb8e15f3b)
 
-## 免登录模式：使用第三方插件功能
-
-此处使用 fofa hack 作为第三方工具引入，进行图形化操作。
-
-点击 实验功能 -> 插件模式 -> fofa hack -> 运行
-
-![image](https://github.com/10cks/fofaEX/assets/47177550/902000fc-ea6a-41c0-8fb3-c23c246ece86)
-
-输入查询语法与查询数量：
-
-![image](https://github.com/10cks/fofaEX/assets/47177550/85441b6d-5fab-43e2-827e-0e6554e3f309)
-
-
-
 ## API 搜索功能
 
 当前已提供以下 api 搜索功能（部分功能取决与当前账户权限）：
@@ -99,19 +85,27 @@ https://baidu.com/ 或者 https://baidu.com/favicon.ico 来计算图标哈希值
 
 > 是否支持 java8？
 
-当前版本不支持，等完成fofa-hack集成后会增加java8版本支持
+当前版本不支持，后续会增加java8版本支持
 
 > 是否支持鹰图等多平台API？
 
-作为红队工具，这个后续是一定会有的，目前之所以使用fofa，因为我只有这个账号是会员 q.q
+作为红队工具，这个后续是一定会有的，会将更多的 API 功能以插件形式集成进 fofa EX 中。
 
 ## 致谢
+
+###  
 
 在开发中有很多师傅帮了我答疑解惑，加速了项目的开发，在此非常感谢下面的各位师傅的帮助：
 
 [Mechoy](https://github.com/Mechoy) [XinCaoZ](https://github.com/XinCaoZ) [ha1yu](https://github.com/ha1yu) [wavesky](https://github.com/wave-to) [gh0stkey](https://github.com/gh0stkey/HaE)
 
-## JetBrains OS licenses
+### FOFA 共创者计划
+
+FofaEX 已加入 [FOFA 共创者计划](https://fofa.info/development)，感谢 FOFA 提供的账号支持。
+
+![](https://user-images.githubusercontent.com/40891670/209631625-f73811b0-a26a-4a42-8158-e5061464481d.png)
+
+### JetBrains OS licenses
 fofaEX had been being developed with IDEA IDE under the free JetBrains Open Source license(s) granted by JetBrains s.r.o., hence I would like to express my thanks here.
 
 ## 参考链接
