@@ -16,6 +16,8 @@ import javax.swing.event.*;
 import java.awt.Color;
 import java.util.List;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -40,7 +42,9 @@ import javax.swing.text.Document;
 import javax.swing.undo.UndoManager;
 
 import static java.awt.BorderLayout.*;
+import static java.lang.Thread.sleep;
 import static plugins.CommonTemplate.saveTableData;
+import static plugins.CommonTemplate.switchTab;
 import static tableInit.GetjTableHeader.adjustColumnWidths;
 import static tableInit.GetjTableHeader.getjTableHeader;
 
@@ -51,11 +55,11 @@ public class Main {
 
     // 创建输入框
     private static JTextField fofaUrl = createTextField("https://fofa.info");
-    private static JTextField fofaEmail = createTextField("请输入邮箱");
+    private static JTextField fofaEmail = createTextField("当前版本不需要输入邮箱");
     private static JTextField fofaKey = createTextField("请输入API key");
 
     private static String rulesPath = "rules.txt";
-    private static String accountsPath = "accounts.txt";
+    private static String accountsPath = "accounts.json";
 
     // 设置 field 规则
     private static boolean hostMark = true;
@@ -100,11 +104,7 @@ public class Main {
     private static boolean iconMark = false;
     private static boolean fidMark = false;
     private static boolean structinfoMark = false;
-
-    /* 上面未完成 */
-
     private static boolean scrollPaneMark = true;
-
     // 标记
     private static boolean exportButtonAdded = false;
     private static boolean timeAdded = false;
@@ -112,6 +112,7 @@ public class Main {
     private static int queryTotalNumber;
     private static int numberOfItems;
     private static int currentPage = 1;
+    private static boolean setFull = true;
     private static int sizeSetting = 10000;
 
     private static boolean openFileMark = false;
@@ -124,16 +125,11 @@ public class Main {
     private static JMenuItem itemDeselectColumn = new JMenuItem("取消选择整列");
     private static JMenuItem itemOpenLink = new JMenuItem("打开链接");
     static JMenuItem itemCopy = new JMenuItem("复制");
-
     private static JMenuItem itemSearch = new JMenuItem("表格搜索");
-
     private static File lastOpenedPath; // 添加一个成员变量来保存上次打开的文件路径
-
     static TableCellRenderer highlightRenderer = new HighlightRenderer();
     private static TableCellRenderer defaultRenderer;
-
     private static JTabbedPane tabbedPane0;
-
 
     public static void main(String[] args) throws ClassNotFoundException, UnsupportedLookAndFeelException, InstantiationException, IllegalAccessException, FileNotFoundException {
 
@@ -169,37 +165,38 @@ public class Main {
         // 创建"搜索设置"菜单项
         JMenu configureMenu = new JMenu("查询设置");
         JMenuItem configureMenuItem = new JMenuItem("默认查询数量");
+        JMenuItem configureFullItem = new JMenuItem("默认查询区间");
+        JCheckBox defaultCheckFullBox = new JCheckBox("是否默认查询近一年数据？", false);
+        defaultCheckFullBox.setFocusPainted(false);
         configureMenu.add(configureMenuItem);
+        configureMenu.add(configureFullItem);
         menuBar.add(configureMenu);
 
         // 创建 “实验功能” 菜单项
         JMenu labMenu = new JMenu("实验功能");
-            JMenuItem openFileMenuItem = new JMenuItem("打开文件");
-            JMenuItem iconHashLabMenuItem = new JMenuItem("iconHash 计算");
-            JMenu pluginMenu = new JMenu("插件模式");
-                JMenu fofaHackMenu = new JMenu("Fofa-Hack");
-                    JMenuItem fofaHackMenuItemRun = new JMenuItem("运行");
-                    JMenuItem fofaHackMenuItemSetting = new JMenuItem("设置");
-                    JMenuItem fofaHackMenuItemAbout = new JMenuItem("关于");
-                JMenu httpXMenu = new JMenu("httpX");
-                JMenu dirsearchMenu = new JMenu("dirsearch");
+        JMenuItem openFileMenuItem = new JMenuItem("打开文件");
+        JMenuItem iconHashLabMenuItem = new JMenuItem("iconHash 计算");
+        JMenu pluginMenu = new JMenu("插件模式");
+        JMenu fofaHackMenu = new JMenu("Fofa-Hack");
+        JMenuItem fofaHackMenuItemRun = new JMenuItem("运行");
+        JMenuItem fofaHackMenuItemSetting = new JMenuItem("设置");
+        JMenuItem fofaHackMenuItemAbout = new JMenuItem("关于");
+        CommonTemplate.addMenuItemsFromFile(pluginMenu, tabbedPane0);
 
-            JMenu testMenu = new JMenu("测试模式");
-                JMenuItem focusTestItem = new JMenuItem("焦点测试");
-                JMenuItem switchToHttpxItem = new JMenuItem("跳转测试");
+        JMenu testMenu = new JMenu("测试模式");
+        JMenuItem focusTestItem = new JMenuItem("焦点测试");
+        JMenuItem switchToHttpxItem = new JMenuItem("跳转测试");
 
-            labMenu.add(openFileMenuItem);
-            labMenu.add(iconHashLabMenuItem);
-            labMenu.add(pluginMenu);
-                pluginMenu.add(fofaHackMenu);
-                    fofaHackMenu.add(fofaHackMenuItemRun);
-                    fofaHackMenu.add(fofaHackMenuItemSetting);
-                    fofaHackMenu.add(fofaHackMenuItemAbout);
-                pluginMenu.add(httpXMenu);
-                pluginMenu.add(dirsearchMenu);
-            labMenu.add(testMenu);
-                testMenu.add(focusTestItem);
-                testMenu.add(switchToHttpxItem);
+        labMenu.add(openFileMenuItem);
+        labMenu.add(iconHashLabMenuItem);
+        //labMenu.add(pluginMenu);
+        pluginMenu.add(fofaHackMenu);
+        fofaHackMenu.add(fofaHackMenuItemRun);
+        fofaHackMenu.add(fofaHackMenuItemSetting);
+        fofaHackMenu.add(fofaHackMenuItemAbout);
+        //labMenu.add(testMenu);
+        testMenu.add(focusTestItem);
+        testMenu.add(switchToHttpxItem);
 
         menuBar.add(labMenu);
 
@@ -378,7 +375,7 @@ public class Main {
         Map<String, JButton> buttonsMap = new LinkedHashMap<>();
 
         BufferedReader rulesReader = null;
-        BufferedReader accountsReader = null;
+        File accountsFile = null;
         try {
             // 创建 rules.txt 文件如果它不存在
             File rulesFile = new File(rulesPath);
@@ -389,18 +386,17 @@ public class Main {
             rulesReader = new BufferedReader(new FileReader(rulesFile));
 
             // 创建 accounts.txt 文件如果它不存在
-            File accountsFile = new File(accountsPath);
+            accountsFile = new File(accountsPath);
             if (!accountsFile.exists()) {
                 accountsFile.createNewFile();
-                System.out.println("[+] The current path does not contain accounts.txt. Create accounts.txt.");
+                System.out.println("[+] The current path does not contain " + accountsPath + ". Create " + accountsPath + ".");
             }
-            accountsReader = new BufferedReader(new FileReader(accountsFile));
         } catch (IOException e) {
             // IO 异常处理
             e.printStackTrace();
         }
 
-        settingInit(rulesReader, accountsReader, panel5, textField0, fofaEmail, fofaKey, buttonsMap);
+        settingInit(rulesReader, accountsFile, panel5, textField0, fofaEmail, fofaKey, buttonsMap);
         updateButton.addActionListener(new ActionListener() {
 
             @Override
@@ -712,8 +708,7 @@ public class Main {
         mainPanel.add(panel9);
 
 
-        tabbedPane0.addTab("FofaEX",mainPanel);
-        CommonTemplate.addTabbedPane(tabbedPane0);
+        tabbedPane0.addTab("FofaEX", mainPanel);
         tabbedPane0.setTabPlacement(JTabbedPane.BOTTOM);    // 将标签放置在底部
 
         // fofa 插件初始化
@@ -725,7 +720,8 @@ public class Main {
 
         // 设置窗口居中并显示
         jFrame.setLocationRelativeTo(null);
-        jFrame.add(tabbedPane0);;
+        jFrame.add(tabbedPane0);
+        ;
         jFrame.setVisible(true);
 
         // 在程序运行时，使 textField0 获得焦点
@@ -800,14 +796,17 @@ public class Main {
                 JButton saveSettingsButton = new JButton("保存设置");
                 saveSettingsButton.setFocusPainted(false); // 取消焦点边框的绘制
                 saveSettingsButton.setFocusable(false);
-                saveSettingsButton.addActionListener(SaveError -> {
-                    // 获取文本框中的值
-                    String emailValue = fofaEmail.getText();
-                    String keyValue = fofaKey.getText();
 
-                    // 准备写入到文件的内容
-                    String contentToWrite = "fofaEmail:" + emailValue + "\n" +
-                            "fofaKey:" + keyValue + "\n";
+                saveSettingsButton.addActionListener(SaveError -> {
+                    // 获取文本框中的值，并保存到我们刚才创建的Settings对象中
+                    AccountSetting settings = new AccountSetting();
+                    settings.setFofaEmail(fofaEmail.getText());
+                    settings.setFofaKey(fofaKey.getText());
+
+                    // 创建一个Gson对象，用于序列化
+                    Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                    // 将Settings对象转化为JSON字符串
+                    String contentToWrite = gson.toJson(settings);
 
                     File rulesFile = new File(accountsPath);
                     try {
@@ -826,6 +825,7 @@ public class Main {
                         JOptionPane.showMessageDialog(null, "保存设置时发生错误！", "错误", JOptionPane.ERROR_MESSAGE);
                     }
                 });
+
 
                 // 添加组件到设置面板
                 settingsPanel.add(new JLabel("FOFA URL:"));
@@ -865,7 +865,17 @@ public class Main {
             }
         });
 
-
+        configureFullItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int result = JOptionPane.showConfirmDialog(null, defaultCheckFullBox,
+                        "否默认查询", JOptionPane.OK_CANCEL_OPTION);
+                if (result == JOptionPane.OK_OPTION) {
+                    // 如果复选框选中，则设置 setFull 为 false，否则为 true
+                    setFull = !defaultCheckFullBox.isSelected();
+                }
+            }
+        });
         // 实验功能事件
         iconHashLabMenuItem.addActionListener((ActionEvent event) -> {
             EventQueue.invokeLater(() -> {
@@ -904,27 +914,16 @@ public class Main {
         focusTestItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                int selectedIndex = tabbedPane0.getSelectedIndex();
-                if (selectedIndex != -1) {
-                    String tabTitle = tabbedPane0.getTitleAt(selectedIndex);
-                    JOptionPane.showMessageDialog(jFrame, "当前所在的标签是: " + tabTitle);
-                }
+                CommonTemplate.localCurrentTab(tabbedPane0);
+                CommonTemplate.addTabbedPaneFromFile(tabbedPane0);
+                // CommonTemplate.switchTab(tabbedPane0,tabName);
             }
         });
 
         switchToHttpxItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // 遍历所有标签，查找名为 "httpx" 的标签
-//                for (int i = 0; i < tabbedPane0.getTabCount(); i++) {
-//                    if (tabbedPane0.getTitleAt(i).equals("httpx")) {
-//                        // 找到后切换到该标签
-//                        tabbedPane0.setSelectedIndex(i);
-//                        break;
-//                    }
-//                }
-                int index = tabbedPane0.indexOfTab("httpx");
-
+                switchTab(tabbedPane0, "httpx");
             }
         });
 
@@ -1348,7 +1347,7 @@ public class Main {
                                 currentPage = currentPage + 1;
                             }
                             // 开始查询
-                            JSONObject jsonResponse = FofaAPI.getAllJsonResult(domain, email, key, query, fieldsTotal, sizeSetting, currentPage);
+                            JSONObject jsonResponse = FofaAPI.getAllJsonResult(domain, email, key, query, fieldsTotal, sizeSetting, currentPage, setFull);
                             // 检查错误信息
                             queryResponse.error = (boolean) FofaAPI.getValueFromJson(jsonResponse, "error");
                             queryResponse.errmsg = (String) FofaAPI.getValueFromJson(jsonResponse, "errmsg");
@@ -1927,17 +1926,19 @@ public class Main {
     }
 
     // 账户设置
-    static public void settingInit(BufferedReader rules, BufferedReader accounts, JPanel initPanel, JTextField initTextField, JTextField fofaEmail, JTextField fofaKey, Map<String, JButton> initButtonsMap) {
-
-
+    static public void settingInit(BufferedReader rules, File accountsFile, JPanel initPanel, JTextField initTextField, JTextField fofaEmail, JTextField fofaKey, Map<String, JButton> initButtonsMap) {
+        // 使用Gson
+        Gson gson = new Gson();
         try {
-            String fofaEmailLine = accounts.readLine();
-            String fofaKeyLine = accounts.readLine();
-
-            // 检查是否有内容需要解析和赋值
-            if (fofaEmailLine != null && fofaKeyLine != null) {
-                fofaEmail.setText(fofaEmailLine.split(":")[1]);
-                fofaKey.setText(fofaKeyLine.split(":")[1]);
+            if (accountsFile.exists() && accountsFile.length() != 0) {
+                BufferedReader br = new BufferedReader(new FileReader(accountsFile));
+                //转换为哈希映射类型
+                Map<String, String> accounts = gson.fromJson(br, Map.class);
+                // 从哈希映射中获取数据并设置
+                if (accounts.get("fofaEmail") != null && accounts.get("fofaKey") != null) {
+                    fofaEmail.setText(accounts.get("fofaEmail"));
+                    fofaKey.setText(accounts.get("fofaKey"));
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -2253,5 +2254,4 @@ public class Main {
         }
         return trueMarks;
     }
-
 }

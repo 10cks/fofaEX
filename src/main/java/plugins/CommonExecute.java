@@ -299,7 +299,7 @@ public class CommonExecute {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
             String timestamp = dateFormat.format(new Date());
 
-            String directoryName = "exportData";
+            String directoryName = "exportdata";
             File directory = new File(directoryName);
 
             if (!directory.exists()) {

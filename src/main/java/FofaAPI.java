@@ -49,18 +49,17 @@ public class FofaAPI {
         return results;
     }
 
-    public static JSONObject getAllJsonResult(String fofaDomain, String email, String key, String qbase64, String fieldsInput, int size, int page) throws Exception {
+    public static JSONObject getAllJsonResult(String fofaDomain, String email, String key, String qbase64, String fieldsInput, int size, int page ,boolean full) throws Exception {
 
         String base64Url = "qbase64=";
         String fieldsUrl = "/api/v1/search/all?";
-
 
         if (!(fieldsInput == null)) {
             String encodedFieldsInput = URLEncoder.encode("host,ip,port" + fieldsInput, StandardCharsets.UTF_8);
             fieldsUrl = "/api/v1/search/all?fields=" + encodedFieldsInput + "&";
         }
 
-        String apiUrl = fofaDomain + fieldsUrl + base64Url + Base64.getEncoder().encodeToString(qbase64.getBytes()) + "&email=" + email + "&key=" + key + "&size=" + size + "&page=" + page;
+        String apiUrl = fofaDomain + fieldsUrl + base64Url + Base64.getEncoder().encodeToString(qbase64.getBytes()) + "&email=" + email + "&key=" + key + "&size=" + size + "&page=" + page + "&full=" + full;
         URL url = new URL(apiUrl);
 
         System.out.println("Query: " + url);
