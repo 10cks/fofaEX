@@ -192,12 +192,12 @@ public class Main {
 
         labMenu.add(openFileMenuItem);
         labMenu.add(iconHashLabMenuItem);
-        //labMenu.add(pluginMenu);
+        labMenu.add(pluginMenu);    // 发布需要注释
         pluginMenu.add(fofaHackMenu);
         fofaHackMenu.add(fofaHackMenuItemRun);
         fofaHackMenu.add(fofaHackMenuItemSetting);
         fofaHackMenu.add(fofaHackMenuItemAbout);
-        //labMenu.add(testMenu);
+        labMenu.add(testMenu);      // 发布需要注释
         testMenu.add(focusTestItem);
         testMenu.add(switchToHttpxItem);
 

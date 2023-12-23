@@ -1,23 +1,25 @@
 package plugins;
 
+import com.google.gson.Gson;
 import net.dongliu.commons.Sys;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import javax.swing.*;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 
 import static tableInit.GetjTableHeader.adjustColumnWidths;
 import static tableInit.GetjTableHeader.getjTableHeader;
@@ -25,12 +27,13 @@ import static tableInit.GetjTableHeader.getjTableHeader;
 public class CommonTemplate {
 
     private static String pluginName = "";
+    private static String allPluginsPath = "./plugins/";
 
     // 动态新增 tab 页
     public static void addTabbedPaneFromFile(JTabbedPane tabbedPane) {
         EventQueue.invokeLater(() -> {
             //读取文件并为每一行创建一个新的标签页
-            Path file = Paths.get("./plugins/AllPlugins.txt");
+            Path file = Paths.get(allPluginsPath + "AllPlugins.json");
 
             try (BufferedReader reader = Files.newBufferedReader(file)) {
                 String line;
@@ -76,6 +79,7 @@ public class CommonTemplate {
             }
         });
     }
+
     public static JLabel addBanner(String banner) {
         JLabel labelIcon = new JLabel(banner);
         labelIcon.setForeground(new Color(48, 49, 52));
@@ -87,7 +91,7 @@ public class CommonTemplate {
     // 创建表格
     public static JTable createTable() {
         // Define column headers
-        String[] columnNames = {"Current No Data"," "};
+        String[] columnNames = {"Current No Data", " "};
         // Use the default table model
         DefaultTableModel model = new DefaultTableModel(columnNames, 0);
 
@@ -184,12 +188,13 @@ public class CommonTemplate {
             }
         });
     }
-    // 动态创建子菜单
-    public static void addMenuItemsFromFile(JMenu pluginMenu,JTabbedPane tabbedPane) {
-        EventQueue.invokeLater(() -> {
-            Path file = Paths.get("./plugins/AllPlugins.txt");
 
-            if (!Files.exists(file)) {
+    // 动态创建子菜单
+    public static void addMenuItemsFromFile(JMenu pluginMenu, JTabbedPane tabbedPane) {
+        EventQueue.invokeLater(() -> {
+            Path file = Paths.get(allPluginsPath + "AllPlugins.json");
+
+            if (!Files.exists(file)) {  // 如果不存在这个文件，则新建这个文件
                 try {
                     Files.createDirectories(file.getParent());
                     Files.createFile(file);
@@ -198,13 +203,42 @@ public class CommonTemplate {
                 }
             }
 
-            try (BufferedReader reader = Files.newBufferedReader(file)) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    String[] parts = line.split(":");
-                    if (parts.length == 2) {
+            try {
+                // Create a new Gson
+                Gson gson = new Gson();
+
+                if (Files.size(file) == 0) {
+                    System.out.println("[!] 当前无第三方插件");
+                    return;
+                }
+
+                // Read the JSON from the file into a Map
+                Map<String, Boolean> plugins = gson.fromJson(
+                        new FileReader(file.toFile()), Map.class);
+
+                // Process each plugin
+                for (Map.Entry<String, Boolean> plugin : plugins.entrySet()) {
+                    // Only process plugins that are enabled
+                    if (plugin.getValue()) {
+
+                        // 检查对应的插件的文件夹和json文件是否都存在
+                        String pluginFolderPath = allPluginsPath + plugin.getKey();
+                        String pluginJsonPath = pluginFolderPath + "/" + plugin.getKey() + "Setting.json";
+
+                        if (!Files.exists(Paths.get(pluginFolderPath))) {
+                            System.out.println("[-] 当前插件 " + plugin.getKey() + " 缺失文件夹：" + pluginFolderPath);
+                            continue;
+                        }
+
+                        if (!Files.exists(Paths.get(pluginJsonPath))) {
+                            System.out.println("[-] 当前插件 " + plugin.getKey() + " 缺失文件：" + pluginJsonPath);
+                            continue;
+                        }
+
                         // 创建插件的菜单项
-                        JMenu submenu = new JMenu(parts[0]);
+                        JMenu submenu = new JMenu(plugin.getKey());
+
+                        System.out.println("[+] 当前插件 " + plugin.getKey() + " 已加载");
 
                         // 为插件添加"运行"、"设置"、"关于"三个选项
                         JMenuItem runItem = new JMenuItem("运行");
@@ -213,14 +247,16 @@ public class CommonTemplate {
 
                         // 对菜单项添加相应的事件处理器
                         runItem.addActionListener(event -> {
-                            addPluginTab(tabbedPane, parts[0]);
-                            addPluginFrame(parts[0]);
+                            addPluginFrame(plugin.getKey()); // 弹出运行面板
+                            // addPluginTab(tabbedPane, plugin.getKey()); // 新增标签
                         });
                         settingItem.addActionListener(event -> {
                             // 这里添加设置的事件处理代码
+                            addPluginsSettingOpen(pluginJsonPath);
                         });
                         aboutItem.addActionListener(event -> {
                             // 这里添加关于的事件处理代码
+                            addPluginAbout(pluginJsonPath);
                         });
 
                         // 把菜单项添加到子菜单中
@@ -237,6 +273,7 @@ public class CommonTemplate {
             }
         });
     }
+
     // 点击运行新增 tab 页
     public static void addPluginTab(JTabbedPane tabbedPane, String pluginName) {
         //ActionListener在选择“关闭”时关闭标签页
@@ -271,6 +308,7 @@ public class CommonTemplate {
         tabbedPane.addTab(pluginName, mainPanel);
     }
 
+    // 新增插件“运行”功能面板
     public static void addPluginFrame(String frameName) {
         // 建立新的窗口Frame
         JFrame newFrame = new JFrame(frameName);
@@ -291,13 +329,79 @@ public class CommonTemplate {
         });
 
         panel.add(execButton);
-
         // 把面板添加到窗口中
         newFrame.add(panel);
-
         // 显示窗口
         newFrame.setVisible(true);
     }
+
+    // 新增插件“关于”
+    public static void addPluginAbout(String pluginJsonPath) {
+
+        try {
+            Gson gson = new Gson();
+            Map<String, Object> settingMap = gson.fromJson(
+                    new FileReader(pluginJsonPath), Map.class);
+
+            // 获取 "关于" 相关的信息
+            Map<String, String> aboutMap = (Map<String, String>) settingMap.get("About");
+            String project = aboutMap.get("Project");
+            String address = aboutMap.get("Address");
+            String author = aboutMap.get("Author");
+            String version = aboutMap.get("Version");
+            String update = aboutMap.get("Update");
+
+            JEditorPane editorPane = new JEditorPane("text/html", "");
+            editorPane.setText(
+                    "<html><body>" +
+                            "<b>Project: " + project + "</b><br>" +
+                            "Address: <a href='" + address + "'>" + address + "</a><br>" +
+                            "Author: " + author + "<br>" +
+                            "Version: " + version + "<br>" +
+                            "Update: " + update +
+                            "</body></html>"
+            );
+            editorPane.setEditable(false);
+            editorPane.setOpaque(false);
+            editorPane.addHyperlinkListener(new HyperlinkListener() {
+                @Override
+                public void hyperlinkUpdate(HyperlinkEvent evt) {
+                    if (evt.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+                        try {
+                            Desktop.getDesktop().browse(evt.getURL().toURI());
+                        } catch (IOException | URISyntaxException ex) {
+                            JOptionPane.showMessageDialog(null,
+                                    "无法打开链接，错误: " + ex.getMessage(),
+                                    "错误",
+                                    JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                }
+            });
+            // 弹出一个包含JEditorPane的消息对话框
+            JOptionPane.showMessageDialog(null, new JScrollPane(editorPane),
+                    "关于项目", JOptionPane.PLAIN_MESSAGE);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    // 打开该插件设置文件
+    public static void addPluginsSettingOpen(String pluginJsonPath){
+        File fofaHackSettingsFile = new File(pluginJsonPath);
+        if (fofaHackSettingsFile.exists()) {
+            // 如果文件存在，使用notepad打开它
+            try {
+                new ProcessBuilder("notepad", pluginJsonPath).start();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(null, "无法打开配置文件！", "错误", JOptionPane.ERROR_MESSAGE);
+            }
+        } else {
+            // 如果文件不存在，显示弹窗
+            JOptionPane.showMessageDialog(null, "未获取到配置文件！", "错误", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
 
     // 用与保存 table 数据
     private static JScrollPane findScrollPane(Container container) {
@@ -313,16 +417,18 @@ public class CommonTemplate {
         }
         return null;
     }
-    public static String localCurrentTab(JTabbedPane tabbedPane){
+
+    public static String localCurrentTab(JTabbedPane tabbedPane) {
         int selectedIndex = tabbedPane.getSelectedIndex();
-        String tabTitle ="";
+        String tabTitle = "";
         if (selectedIndex != -1) {
             tabTitle = tabbedPane.getTitleAt(selectedIndex);
-            System.out.println("当前标签："+tabTitle);
+            System.out.println("当前标签：" + tabTitle);
         }
         return tabTitle;
     }
-    public static void switchTab(JTabbedPane tabbedPane, String tabName){
+
+    public static void switchTab(JTabbedPane tabbedPane, String tabName) {
         for (int i = 0; i < tabbedPane.getTabCount(); i++) {
             if (tabbedPane.getTitleAt(i).equals(tabName)) {
                 // 找到后切换到该标签
@@ -331,6 +437,7 @@ public class CommonTemplate {
             }
         }
     }
+
     public static void main(String[] args) {
     }
 }
