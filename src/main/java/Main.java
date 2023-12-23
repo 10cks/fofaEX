@@ -889,7 +889,7 @@ public class Main {
                         // 显示保存成功提醒
                         JOptionPane.showMessageDialog(null, "保存成功！");
                         // 关闭原始对话框
-                        // dialog.dispose();
+                        dialog.dispose();
                     } catch (NumberFormatException ex) {
                         JOptionPane.showMessageDialog(null, "请输入一个有效的整数值。");
                     } catch (IOException ex) {
@@ -951,6 +951,7 @@ public class Main {
                         Gson gson = new GsonBuilder().setPrettyPrinting().create();
                         gson.toJson(jsonObject, writer);
                         JOptionPane.showMessageDialog(null, "保存成功！");
+                        dialog.dispose();
                     } catch (IOException ex) {
                         ex.printStackTrace();
                         JOptionPane.showMessageDialog(null, "发生错误，保存设置失败。");

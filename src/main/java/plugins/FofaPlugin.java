@@ -60,8 +60,6 @@ public class FofaPlugin {
 
         JTextArea resultArea = new JTextArea(10, 50);
 
-        // 设置自动换行
-        //resultArea.setLineWrap(true);
         // 设置断行不断字
         resultArea.setWrapStyleWord(false);
 

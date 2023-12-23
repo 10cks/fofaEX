@@ -130,7 +130,7 @@ public class CommonTemplate {
         }
         return null;
     }
-
+    // 保存 table 核心代码
     public static void saveTableData(JTabbedPane tabbedPane) {
         EventQueue.invokeLater(() -> {
             // 检查或创建coredata文件夹
@@ -179,7 +179,7 @@ public class CommonTemplate {
             }
 
             // 写入JSON文件
-            String filename = "coredata/" + tabName + "data.json";
+            String filename = "coredata/" + tabName + ".json";
             try (FileWriter file = new FileWriter(filename)) {
                 file.write(jsonArray.toString(4)); // 缩进为4个空格
                 System.out.println("[+] Successfully saved JSON data to " + filename);
@@ -188,8 +188,21 @@ public class CommonTemplate {
             }
         });
     }
-
-    // 动态创建子菜单
+    // 用与保存 table 数据
+    private static JScrollPane findScrollPane(Container container) {
+        for (Component comp : container.getComponents()) {
+            if (comp instanceof JScrollPane) {
+                return (JScrollPane) comp;
+            } else if (comp instanceof Container) {
+                JScrollPane scrollPane = findScrollPane((Container) comp);
+                if (scrollPane != null) {
+                    return scrollPane;
+                }
+            }
+        }
+        return null;
+    }
+    // 动态创建子菜单，核心代码
     public static void addMenuItemsFromFile(JMenu pluginMenu, JTabbedPane tabbedPane) {
         EventQueue.invokeLater(() -> {
             Path file = Paths.get(allPluginsPath + "AllPlugins.json");
@@ -247,7 +260,7 @@ public class CommonTemplate {
 
                         // 对菜单项添加相应的事件处理器
                         runItem.addActionListener(event -> {
-                            addPluginFrame(plugin.getKey()); // 弹出运行面板
+                            addPluginFrame(pluginJsonPath, plugin.getKey()); // 弹出运行面板
                             // addPluginTab(tabbedPane, plugin.getKey()); // 新增标签
                         });
                         settingItem.addActionListener(event -> {
@@ -309,31 +322,78 @@ public class CommonTemplate {
     }
 
     // 新增插件“运行”功能面板
-    public static void addPluginFrame(String frameName) {
+    public static void addPluginFrame(String pluginJsonPath, String frameName) {
         // 建立新的窗口Frame
         JFrame newFrame = new JFrame(frameName);
-        newFrame.setSize(300, 200);  // 设置窗口大小
+        newFrame.setSize(800, 600);  // 改变窗口大小，使其能容纳更多文本
         newFrame.setLocationRelativeTo(null); // 窗口位置居中
         newFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // 关闭窗口时只关闭当前窗口，不影响其他窗口
 
-        // 创建面板Panel，并添加按钮Button
-        JPanel panel = new JPanel();
+        // 创建使用BorderLayout的面板
+        JPanel panel = new JPanel(new BorderLayout());
+
+        // 创建结果显示区域，并添加到面板的Center区域
+        JTextArea resultArea = new JTextArea();
+        resultArea.setLineWrap(true);  // 设置行包装
+        resultArea.setWrapStyleWord(true);  // 设置单词包装
+        panel.add(new JScrollPane(resultArea), BorderLayout.CENTER);
+
+        // 创建新的面板用于放置按钮
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT)); // 使用FlowLayout并且指定按钮靠左对齐
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));  // 设置边距为10px
+        // 创建执行按钮，并添加到新面板
         JButton execButton = new JButton("执行");
         execButton.setFocusPainted(false); // 取消焦点边框的绘制
         execButton.setFocusable(false);
+        buttonPanel.add(execButton);
+
+        // 把新面板添加到BorderLayout的North区域
+        panel.add(buttonPanel, BorderLayout.NORTH);
+
+        // 把面板添加到窗口中
+        newFrame.add(panel);
+        // 显示窗口
+        newFrame.setVisible(true);
 
         // 向按钮添加事件处理器
         execButton.addActionListener(e -> {
-            // 这里添加按钮动作，下面代码仅作示例，实际操作需按需修改
-            System.out.println("执行按钮已按下");
+            // 这里添加按钮动作，实际操作需按需修改
+            String command = constructCommandFromJson(pluginJsonPath);
+            resultArea.setText("");
+            if (command != null) {
+                CommonExecute.executeCommand(command, resultArea);
+            } else {
+                JOptionPane.showMessageDialog(null, "无法构造命令", "错误", JOptionPane.ERROR_MESSAGE);
+            }
         });
 
-        panel.add(execButton);
         // 把面板添加到窗口中
         newFrame.add(panel);
         // 显示窗口
         newFrame.setVisible(true);
     }
+
+
+    private static String constructCommandFromJson(String pluginJsonPath) {
+        Gson gson = new Gson();
+        try {
+            Map<String, Object> jsonMap = gson.fromJson(new FileReader(pluginJsonPath), Map.class);
+            Map<String, Object> runMap = (Map<String, Object>)jsonMap.get("Run");
+            String path = (String)runMap.get("Path");
+            Map<String, String> paramsMap = (Map<String, String>)runMap.get("Params");
+
+            StringBuilder commandBuilder = new StringBuilder(path);
+            for (Map.Entry<String, String> entry : paramsMap.entrySet()) {
+                commandBuilder.append(" ").append(entry.getKey()).append(" ").append(entry.getValue());
+            }
+            return commandBuilder.toString();
+
+        } catch (FileNotFoundException ex) {
+            ex.printStackTrace();
+            return null;
+        }
+    }
+
 
     // 新增插件“关于”
     public static void addPluginAbout(String pluginJsonPath) {
@@ -402,21 +462,6 @@ public class CommonTemplate {
         }
     }
 
-
-    // 用与保存 table 数据
-    private static JScrollPane findScrollPane(Container container) {
-        for (Component comp : container.getComponents()) {
-            if (comp instanceof JScrollPane) {
-                return (JScrollPane) comp;
-            } else if (comp instanceof Container) {
-                JScrollPane scrollPane = findScrollPane((Container) comp);
-                if (scrollPane != null) {
-                    return scrollPane;
-                }
-            }
-        }
-        return null;
-    }
 
     public static String localCurrentTab(JTabbedPane tabbedPane) {
         int selectedIndex = tabbedPane.getSelectedIndex();

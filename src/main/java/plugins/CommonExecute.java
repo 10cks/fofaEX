@@ -32,12 +32,12 @@ import static tableInit.GetjTableHeader.getjTableHeader;
 
 public class CommonExecute {
     public static boolean exportButtonAdded;
-    private Process process;
+    private static Process process;
     public static JPanel panel = new JPanel(); // 主面板
     public static JPanel exportPanel = new JPanel(); // 主面板
     public static JTable table = new JTable(); // 表格
     public static JLabel rowCountLabel = new JLabel();
-    private PrintWriter writer;
+    private static PrintWriter writer;
     private static JFrame frame; // 使frame成为类的成员变量，以便可以在任意地方访问
 
     public void fofaPlugin() {
@@ -89,12 +89,14 @@ public class CommonExecute {
         frame.setVisible(true);
     }
 
-    private void executeCommand(String command, JTextArea resultArea) {
+    static void executeCommand(String command, JTextArea resultArea) {
         try {
             ProcessBuilder builder = new ProcessBuilder(command.split("\\s+"));
             builder.redirectErrorStream(true); // 合并标准错误和标准输出
             process = builder.start();
-            writer = new PrintWriter(new OutputStreamWriter(process.getOutputStream(), StandardCharsets.UTF_8), true);
+            // 关闭进程的输出流
+            process.getOutputStream().close();
+
             // 处理输出流
             Thread outputThread = new Thread(() -> {
                 try (BufferedReader reader = new BufferedReader(
@@ -120,38 +122,6 @@ public class CommonExecute {
                     }
                     SwingUtilities.invokeLater(() -> {
                         resultArea.append("\n程序运行结束\n");
-                        if (checkMakeFile()) {
-                            System.out.println("[*] FofaHack running success.");
-                            // 导出表格
-                            JButton exportButton = new JButton("Export to Excel");
-                            exportButton.setFocusPainted(false); // 添加这一行来取消焦点边框的绘制
-                            exportButton.setFocusable(false);  // 禁止了按钮获取焦点，因此按钮不会在被点击后显示为"激活"或"选中"的状态
-
-
-                            if (!exportButtonAdded) {
-                                exportPanel.add(exportButton);
-                                exportButtonAdded = true;
-                            }
-                            exportButton.addActionListener(new ActionListener() {
-                                @Override
-                                public void actionPerformed(ActionEvent e) {
-                                    // 在这里检查 table 是否被初始化
-                                    if (table == null) {
-                                        JOptionPane.showMessageDialog(null, "表格没有被初始化");
-                                        return;
-                                    }
-                                    // 检查 table 是否有模型和数据
-                                    if (table.getModel() == null || table.getModel().getRowCount() <= 0) {
-                                        JOptionPane.showMessageDialog(null, "当前无数据");
-                                        return;
-                                    }
-                                    exportTableToExcel(table);
-                                }
-                            });
-
-
-                        }
-                        ;
                     });
                 }
             });
