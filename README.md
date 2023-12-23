@@ -27,7 +27,7 @@ FOFA EX 是一款基于 fofa api 实现的简洁美观的 Java 客户端，集�
 
 ## 运行
 
-该程序使用 Java11 编写，
+该程序使用 Java11 编写，请使用最新测试版，正式版3.0将引用插件模式，预计2024年一月中旬上线：
 
 [最新测试版本点击下载](https://github.com/10cks/fofaEX/releases/download/2.1/fofaEX_v2_1_pre.zip) [V2.1]
 
