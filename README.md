@@ -41,7 +41,7 @@ java "-Dfile.encoding=UTF-8" -jar .\fofaEX.jar
 
 ## 登录模式：账户设置
 
-客户端需输入邮箱与key，第一次登录后保存账户会将配置文件生成在本地 accounts.txt 文件中：
+客户端需输入邮箱与key，第一次登录后保存账户会将配置文件生成在本地 accounts.txt 文件中（当前fofa输入key就可以调用API，无需设置邮箱）：
 
 ![image](https://github.com/10cks/fofaEX/assets/47177550/89c472c1-3330-4147-89b1-ae21b35aba9e)
 
