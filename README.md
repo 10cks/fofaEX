@@ -14,6 +14,17 @@ FOFA EX 是一款基于 fofa api 实现的简洁美观的 Java 客户端，集�
 
 ![image](https://github.com/10cks/fofaEX/assets/47177550/b1c91436-e8e7-463f-ac6d-4ea2ef737604)
 
+## 优势
+
+1. 更多的默认数据查询：默认查询全部数据（fofa_viewer 仅默认查询近一年数据）
+
+![image](https://github.com/10cks/fofaEX/assets/47177550/787106c1-7238-4531-8ab4-77de1d58f1d6)
+
+2. 快捷保存查询语法，便于HW或SRC挖掘
+3. 全部 API 接口的支持，界面可选择接口显示范围
+4. 查询结果在线编辑导出，后续会为右键添加更多新功能
+5. 可自动化调用第三方插件，目前持续开发中
+
 ## 运行
 
 该程序使用 Java11 编写，
