@@ -4,9 +4,7 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
-import java.awt.event.*;
 import java.io.*;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -26,7 +24,6 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import tableInit.SelectedCellBorderHighlighter;
 
-import static java.awt.BorderLayout.CENTER;
 import static tableInit.GetjTableHeader.adjustColumnWidths;
 import static tableInit.GetjTableHeader.getjTableHeader;
 
@@ -39,68 +36,17 @@ public class CommonExecute {
     public static JLabel rowCountLabel = new JLabel();
     private static PrintWriter writer;
     private static JFrame frame; // 使frame成为类的成员变量，以便可以在任意地方访问
-
-    public void fofaPlugin() {
-        // 创建基础的窗口框架
-        frame = new JFrame("Fofa Hack");
-        frame.setSize(800, 600);
-        frame.setLocationRelativeTo(null); // 居中
-        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // 插件关闭主程序不关闭
-        frame.setLayout(new BorderLayout());
-
-        // 输入面板
-        JPanel panel = new JPanel();
-        JTextField commandField = new JTextField(50);
-        JButton executeButton = new JButton("执行");
-        executeButton.setFocusPainted(false); // 添加这一行来取消焦点边框的绘制
-        executeButton.setFocusable(false);  // 禁止了按钮获取焦点，因此按钮不会在被点击后显示为"激活"或"选中"的状态
-
-        JTextArea resultArea = new JTextArea(10, 50);
-
-        // 设置自动换行
-        //resultArea.setLineWrap(true);
-        // 设置断行不断字
-        resultArea.setWrapStyleWord(false);
-
-        panel.add(new JLabel("Command:"));
-        panel.add(commandField);
-        panel.add(executeButton);
-
-        // 结果滚动面板
-        JScrollPane scrollPane = new JScrollPane(resultArea);
-        resultArea.setEditable(false);
-
-        // 添加面板和滚动面板到窗口框架
-        frame.add(panel, BorderLayout.NORTH);
-        frame.add(scrollPane, BorderLayout.CENTER);
-
-        // 按钮点击事件
-        executeButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // 清空文本区域
-                resultArea.setText("");
-                String command = commandField.getText().trim();
-                executeCommand(command, resultArea);
-            }
-        });
-
-        // 显示窗口
-        frame.setVisible(true);
-    }
-
-    static void executeCommand(String command, JTextArea resultArea) {
+    private static Process runningProcess = null;
+    static int executeCommand(String command, JTextArea resultArea) {
         try {
             ProcessBuilder builder = new ProcessBuilder(command.split("\\s+"));
-            builder.redirectErrorStream(true); // 合并标准错误和标准输出
-            process = builder.start();
-            // 关闭进程的输出流
-            process.getOutputStream().close();
+            builder.redirectErrorStream(true);
+            runningProcess = builder.start();
+            runningProcess.getOutputStream().close();
 
-            // 处理输出流
             Thread outputThread = new Thread(() -> {
                 try (BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                        new InputStreamReader(runningProcess.getInputStream(), StandardCharsets.UTF_8))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
                         final String lineCopy = line;
@@ -114,7 +60,7 @@ public class CommonExecute {
                     });
                 } finally {
                     try {
-                        process.waitFor();
+                        runningProcess.waitFor();
                     } catch (InterruptedException ex) {
                         SwingUtilities.invokeLater(() -> {
                             resultArea.append("Process was interrupted: " + ex.getMessage() + "\n");
@@ -130,9 +76,9 @@ public class CommonExecute {
 
         } catch (Exception ex) {
             resultArea.setText("Error executing command: " + ex.getMessage());
-            // 在这里弹出“执行失败”的警告窗口
             JOptionPane.showMessageDialog(null, "Execution failed", "Error", JOptionPane.ERROR_MESSAGE);
         }
+        return 0;
     }
 
     public static boolean checkMakeFile() {

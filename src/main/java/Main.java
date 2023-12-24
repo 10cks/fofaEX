@@ -1002,7 +1002,6 @@ public class Main {
             @Override
             public void actionPerformed(ActionEvent e) {
                 CommonTemplate.localCurrentTab(tabbedPane0);
-                CommonTemplate.addTabbedPaneFromFile(tabbedPane0);
                 // CommonTemplate.switchTab(tabbedPane0,tabName);
             }
         });

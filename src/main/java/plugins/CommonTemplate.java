@@ -1,7 +1,7 @@
 package plugins;
 
-import com.google.gson.Gson;
-import net.dongliu.commons.Sys;
+import com.google.gson.*;
+import com.google.gson.stream.JsonReader;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -16,11 +16,17 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.*;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.Vector;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import static java.awt.BorderLayout.CENTER;
 import static tableInit.GetjTableHeader.adjustColumnWidths;
 import static tableInit.GetjTableHeader.getjTableHeader;
 
@@ -29,56 +35,8 @@ public class CommonTemplate {
     private static String pluginName = "";
     private static String allPluginsPath = "./plugins/";
 
-    // 动态新增 tab 页
-    public static void addTabbedPaneFromFile(JTabbedPane tabbedPane) {
-        EventQueue.invokeLater(() -> {
-            //读取文件并为每一行创建一个新的标签页
-            Path file = Paths.get(allPluginsPath + "AllPlugins.json");
-
-            try (BufferedReader reader = Files.newBufferedReader(file)) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    String[] parts = line.split(":");
-                    if (parts.length == 2) {
-                        String pluginName = parts[0]; //获取插件名称
-
-                        //ActionListener在选择“关闭”时关闭标签页
-                        ActionListener closeListener = event -> tabbedPane.removeTabAt(tabbedPane.indexOfTab(pluginName));
-
-                        JPanel panel1 = new JPanel(); //创建面板
-                        JPanel panel2 = new JPanel(); //创建面板
-                        panel1.add(addBanner(pluginName), BorderLayout.NORTH);
-                        panel2.add(new JScrollPane(createTable()), BorderLayout.CENTER); //添加表格到中心
-
-                        JPanel mainPanel = new JPanel();
-                        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
-                        mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
-                        mainPanel.add(panel1);
-                        mainPanel.add(panel2);
-
-                        //为标签添加了一个鼠标监听器，显示弹出菜单以关闭标签页
-                        mainPanel.addMouseListener(new MouseAdapter() {
-                            public void mousePressed(MouseEvent e) {
-                                if (SwingUtilities.isRightMouseButton(e)) {
-                                    JPopupMenu menu = new JPopupMenu();
-                                    JMenuItem closeItem = new JMenuItem("关闭");
-                                    closeItem.addActionListener(closeListener);
-                                    menu.add(closeItem);
-                                    menu.show(e.getComponent(), e.getX(), e.getY());
-                                }
-                            }
-                        });
-
-                        //添加标签页
-                        tabbedPane.addTab(pluginName, mainPanel);
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-    }
+    private static Process runningProcess = null;
+    static AtomicBoolean wasManuallyStopped = new AtomicBoolean(false);
 
     public static JLabel addBanner(String banner) {
         JLabel labelIcon = new JLabel(banner);
@@ -86,35 +44,6 @@ public class CommonTemplate {
         Font iconFont = new Font("Times New Roman", Font.BOLD, 60);
         labelIcon.setFont(iconFont);
         return labelIcon;
-    }
-
-    // 创建表格
-    public static JTable createTable() {
-        // Define column headers
-        String[] columnNames = {"Current No Data", " "};
-        // Use the default table model
-        DefaultTableModel model = new DefaultTableModel(columnNames, 0);
-
-        //  columnNames: 这是一个Object数组，它包含了将要显示在JTable表头的列名。这些列名将成为表格的列标题。
-        //  rowCount: 这是一个整数，它指定了模型在初始化时应该有多少行。这个数值为0意味着表格将以零行开始，你可以在之后根据需要动态地添加行。
-
-        JTable table = new JTable(model);
-
-        JTableHeader header = getjTableHeader(table);
-        table.setTableHeader(header);
-        adjustColumnWidths(table);
-        table.setRowHeight(24);
-        table.setFillsViewportHeight(true);
-
-        return table;
-    }
-
-    public static void addMenuModel(String banner) {
-        JLabel labelIcon = new JLabel(banner);
-        labelIcon.setForeground(new Color(48, 49, 52));
-        Font iconFont = new Font("Times New Roman", Font.BOLD, 60);
-        labelIcon.setFont(iconFont);
-
     }
 
     // 在给定面板中查找 JTable
@@ -130,6 +59,7 @@ public class CommonTemplate {
         }
         return null;
     }
+
     // 保存 table 核心代码
     public static void saveTableData(JTabbedPane tabbedPane) {
         EventQueue.invokeLater(() -> {
@@ -188,6 +118,7 @@ public class CommonTemplate {
             }
         });
     }
+
     // 用与保存 table 数据
     private static JScrollPane findScrollPane(Container container) {
         for (Component comp : container.getComponents()) {
@@ -202,6 +133,7 @@ public class CommonTemplate {
         }
         return null;
     }
+
     // 动态创建子菜单，核心代码
     public static void addMenuItemsFromFile(JMenu pluginMenu, JTabbedPane tabbedPane) {
         EventQueue.invokeLater(() -> {
@@ -260,8 +192,7 @@ public class CommonTemplate {
 
                         // 对菜单项添加相应的事件处理器
                         runItem.addActionListener(event -> {
-                            addPluginFrame(pluginJsonPath, plugin.getKey()); // 弹出运行面板
-                            // addPluginTab(tabbedPane, plugin.getKey()); // 新增标签
+                            addPluginFrame(pluginJsonPath, plugin.getKey(), tabbedPane); // 弹出运行面板
                         });
                         settingItem.addActionListener(event -> {
                             // 这里添加设置的事件处理代码
@@ -288,21 +219,44 @@ public class CommonTemplate {
     }
 
     // 点击运行新增 tab 页
-    public static void addPluginTab(JTabbedPane tabbedPane, String pluginName) {
+    public static void addPluginTab(JTabbedPane tabbedPane, String pluginName, String pluginJsonPath) {
+        // 检查标签是否已经存在
+        if (tabbedPane.indexOfTab(pluginName) != -1) {
+            int existingTabIndex = tabbedPane.indexOfTab(pluginName);
+            tabbedPane.removeTabAt(existingTabIndex);
+        }
         //ActionListener在选择“关闭”时关闭标签页
         ActionListener closeListener = event -> tabbedPane.removeTabAt(tabbedPane.indexOfTab(pluginName));
 
         JPanel panel1 = new JPanel(); //创建面板
         JPanel panel2 = new JPanel(); //创建面板
         panel1.add(addBanner(pluginName), BorderLayout.NORTH);
-        panel2.add(new JScrollPane(createTable()), BorderLayout.CENTER); //添加表格到中心
+        // 创建表格
+        JTable table = createTableFromJson(pluginJsonPath);
+
+        // 重新设置表格头，以便新的渲染器生效
+        JTableHeader header = getjTableHeader(table);
+        table.setTableHeader(header);
+        adjustColumnWidths(table); // 自动调整列宽
+        JScrollPane scrollPane = new JScrollPane(table);
+        table.setRowHeight(24); // 设置表格的行高
+        table.setFillsViewportHeight(true);
+        adjustColumnWidths(table);
+        panel2.add(scrollPane, BorderLayout.CENTER);
 
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
 
         mainPanel.add(panel1);
         mainPanel.add(panel2);
+
+        mainPanel.removeAll();
+        mainPanel.add(scrollPane, CENTER);
+
+        mainPanel.revalidate();
+        mainPanel.repaint();
+
 
         //为标签添加了一个鼠标监听器，显示弹出菜单以关闭标签页
         mainPanel.addMouseListener(new MouseAdapter() {
@@ -320,9 +274,59 @@ public class CommonTemplate {
         //添加标签页
         tabbedPane.addTab(pluginName, mainPanel);
     }
+    public static JTable createTableFromJson(String configFilePath) {
+        // 创建Gson实例
+        Gson gson = new Gson();
+        String outputFilePath;
+        String[] columnNames;
+
+        // 读取并解析配置文件
+        try {
+            JsonReader configReader = new JsonReader(new FileReader(configFilePath));
+            JsonObject configObject = gson.fromJson(configReader, JsonObject.class);
+            JsonObject runObject = configObject.getAsJsonObject("Run");
+
+            // 解析OutputFile路径以及OutputTarget列名称
+            outputFilePath = runObject.get("OutputFile").getAsString();
+            JsonArray outputTarget = runObject.getAsJsonArray("OutputTarget");
+            columnNames = new String[outputTarget.size()];
+            for (int i = 0; i < outputTarget.size(); i++) {
+                columnNames[i] = outputTarget.get(i).getAsString();
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return null;
+        }
+
+        // 从OutputFile文件路径读取内容，并创建表格模型
+        DefaultTableModel model = new DefaultTableModel(columnNames, 0);
+        try {
+            Reader outputReader = new FileReader(outputFilePath);
+            JsonStreamParser parser = new JsonStreamParser(outputReader);
+
+            while (parser.hasNext()) {
+                JsonObject object = parser.next().getAsJsonObject();
+                Vector<String> row = new Vector<String>();
+                for (int i = 0; i < columnNames.length; i++) {
+                    if (object.has(columnNames[i])) {
+                        JsonElement element = object.get(columnNames[i]);
+                        row.add(element.isJsonNull() ? "" : element.getAsString());
+                    } else {
+                        row.add(""); // 对应的列值为空
+                    }
+                }
+                model.addRow(row);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        // 使用模型创建表格
+        JTable table = new JTable(model);
+        return table;
+    }
 
     // 新增插件“运行”功能面板
-    public static void addPluginFrame(String pluginJsonPath, String frameName) {
+    public static void addPluginFrame(String pluginJsonPath, String frameName, JTabbedPane tabbedPane) {
         // 建立新的窗口Frame
         JFrame newFrame = new JFrame(frameName);
         newFrame.setSize(800, 600);  // 改变窗口大小，使其能容纳更多文本
@@ -347,6 +351,12 @@ public class CommonTemplate {
         execButton.setFocusable(false);
         buttonPanel.add(execButton);
 
+        // 创建“停止”按钮
+        JButton stopButton = new JButton("停止");
+        stopButton.setFocusPainted(false);
+        stopButton.setFocusable(false);
+        buttonPanel.add(stopButton);
+
         // 把新面板添加到BorderLayout的North区域
         panel.add(buttonPanel, BorderLayout.NORTH);
 
@@ -355,15 +365,31 @@ public class CommonTemplate {
         // 显示窗口
         newFrame.setVisible(true);
 
-        // 向按钮添加事件处理器
+        // 运行按钮添加事件
         execButton.addActionListener(e -> {
             // 这里添加按钮动作，实际操作需按需修改
             String command = constructCommandFromJson(pluginJsonPath);
+            // 清屏
             resultArea.setText("");
             if (command != null) {
-                CommonExecute.executeCommand(command, resultArea);
+                try {
+                    // 解析设置文件，运行InputTarget部分
+                    parseJsonAndWriteFile(pluginJsonPath);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+                executeCommand(command, resultArea, tabbedPane, frameName, pluginJsonPath); // 执行命令并显示结果
+
             } else {
                 JOptionPane.showMessageDialog(null, "无法构造命令", "错误", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        // 停止按钮
+        stopButton.addActionListener(e -> {
+            if (runningProcess != null) {
+                wasManuallyStopped.set(true);  // 设置被手动停止的标志
+                runningProcess.destroy();
+                runningProcess = null;
             }
         });
 
@@ -373,14 +399,13 @@ public class CommonTemplate {
         newFrame.setVisible(true);
     }
 
-
     private static String constructCommandFromJson(String pluginJsonPath) {
         Gson gson = new Gson();
         try {
             Map<String, Object> jsonMap = gson.fromJson(new FileReader(pluginJsonPath), Map.class);
-            Map<String, Object> runMap = (Map<String, Object>)jsonMap.get("Run");
-            String path = (String)runMap.get("Path");
-            Map<String, String> paramsMap = (Map<String, String>)runMap.get("Params");
+            Map<String, Object> runMap = (Map<String, Object>) jsonMap.get("Run");
+            String path = (String) runMap.get("Path");
+            Map<String, String> paramsMap = (Map<String, String>) runMap.get("Params");
 
             StringBuilder commandBuilder = new StringBuilder(path);
             for (Map.Entry<String, String> entry : paramsMap.entrySet()) {
@@ -393,7 +418,6 @@ public class CommonTemplate {
             return null;
         }
     }
-
 
     // 新增插件“关于”
     public static void addPluginAbout(String pluginJsonPath) {
@@ -445,8 +469,9 @@ public class CommonTemplate {
             e.printStackTrace();
         }
     }
+
     // 打开该插件设置文件
-    public static void addPluginsSettingOpen(String pluginJsonPath){
+    public static void addPluginsSettingOpen(String pluginJsonPath) {
         File fofaHackSettingsFile = new File(pluginJsonPath);
         if (fofaHackSettingsFile.exists()) {
             // 如果文件存在，使用notepad打开它
@@ -480,6 +505,91 @@ public class CommonTemplate {
                 tabbedPane.setSelectedIndex(i);
                 break;
             }
+        }
+    }
+
+    // 文件流操作：去空保存，完成 InputFile InputTarget 部分
+    private static void parseJsonAndWriteFile(String jsonFilePath) throws IOException {
+        Gson gson = new Gson();
+
+        Map<String, Object> jsonMap;
+        try (Reader reader = new FileReader(jsonFilePath)) {
+            jsonMap = gson.fromJson(reader, Map.class);
+        }
+        if (jsonMap == null) {
+            return;
+        }
+        Map<String, Object> runMap = (Map<String, Object>) jsonMap.get("Run");
+        Map<String, String> paramsMap = (Map<String, String>) runMap.get("Params");
+
+        String selectParam = ((Map<String, String>) runMap.get("InputTarget")).get("selectParam");
+        String inputFile = (String) runMap.get("InputFile");
+        String selectColumn = ((Map<String, String>) runMap.get("InputTarget")).get("selectColumn");
+
+        List<LinkedHashMap<String, Object>> records;
+        try (Reader reader = new FileReader(inputFile)) {
+            records = gson.fromJson(reader, List.class);
+        }
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(paramsMap.get(selectParam)))) {
+            for (Map<String, Object> record : records) {
+                String url = (String) record.get(selectColumn);
+                if (url != null && !url.isEmpty()) {
+                    writer.write(url);
+                    writer.newLine();
+                }
+            }
+        }
+    }
+
+    static void executeCommand(String command, JTextArea resultArea, JTabbedPane tabbedPane, String tabName, String pluginJsonPath) {
+        try {
+            ProcessBuilder builder = new ProcessBuilder(command.split("\\s+"));
+            builder.redirectErrorStream(true);
+            runningProcess = builder.start();
+            runningProcess.getOutputStream().close();
+
+            Thread outputThread = new Thread(() -> {
+                Process currentProcess = runningProcess; // 创建Process的局部副本
+                try (BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(currentProcess.getInputStream(), StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        final String lineCopy = line;
+                        SwingUtilities.invokeLater(() -> {
+                            resultArea.append(lineCopy + "\n");
+                        });
+                    }
+                } catch (IOException e) {
+                    SwingUtilities.invokeLater(() -> {
+                        resultArea.append("Error reading output: " + e.getMessage() + "\n");
+                    });
+                } finally {
+                    try {
+                        currentProcess.waitFor(); // 使用局部副本而不是runningProcess
+                    } catch (InterruptedException ex) {
+                        SwingUtilities.invokeLater(() -> {
+                            resultArea.append("Process was interrupted: " + ex.getMessage() + "\n");
+                        });
+                    }
+                    SwingUtilities.invokeLater(() -> {
+                        if (wasManuallyStopped.get()) {
+                            resultArea.append("\n程序被手动停止\n");
+                        } else {
+                            resultArea.append("\n程序运行结束\n");
+                            addPluginTab(tabbedPane, tabName, pluginJsonPath); // 新增标签
+                            switchTab(tabbedPane, tabName);
+                        }
+                        wasManuallyStopped.set(false); // 重置状态
+                    });
+                }
+            });
+
+            outputThread.start();
+
+        } catch (Exception ex) {
+            resultArea.setText("Error executing command: " + ex.getMessage());
+            JOptionPane.showMessageDialog(null, "Execution failed", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
