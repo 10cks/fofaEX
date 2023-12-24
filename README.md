@@ -104,6 +104,9 @@ https://baidu.com/ 或者 https://baidu.com/favicon.ico 来计算图标哈希值
 
 ![image](https://github.com/10cks/fofaEX/assets/47177550/1d0d4513-0168-4154-9dce-e28905826f4e)
 
+![image](https://github.com/10cks/fofaEX/assets/47177550/7e8ab7b6-dafe-4244-9dd6-a762963d2bd4)
+
+
 
 ## 插件模式
 
