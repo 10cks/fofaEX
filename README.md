@@ -98,6 +98,13 @@ https://baidu.com/ 或者 https://baidu.com/favicon.ico 来计算图标哈希值
 
 ![image](https://github.com/10cks/fofaEX/assets/47177550/65705cba-a8e1-494b-9444-b6a68b5bcb89)
 
+## 导出功能
+
+导出excel表会以“全部数据sheet+各列去空sheet”的形式放在一个表中，方便第三方工具直接使用数据：
+
+![image](https://github.com/10cks/fofaEX/assets/47177550/1d0d4513-0168-4154-9dce-e28905826f4e)
+
+
 ## 插件模式
 
 当前集成了 httpX 插件（windows平台），目录结构为：
