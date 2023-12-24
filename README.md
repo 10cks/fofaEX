@@ -108,10 +108,8 @@ https://baidu.com/ 或者 https://baidu.com/favicon.ico 来计算图标哈希值
 ├── plugins
 │   ├── AllPlugins.json
 │   └── httpx
-│       ├── HttpX.json
 │       ├── httpx.exe
-│       ├── httpxSetting.json
-│       └── input.txt
+│       └── httpxSetting.json
 ├── rules.txt
 └── run.bat
 ```
