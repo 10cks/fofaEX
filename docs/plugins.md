@@ -2,3 +2,4 @@
 
 - [x] fofa-hack
 - [x] httpX
+- [x] nuclei
