@@ -174,6 +174,13 @@ httpxSetting.json 设置 httpX 的运行配置：（配置文件名需要为：�
 
 PS：coredata 目录为核心交换文件目录，此功能后续会进行使用，目前请忽略。
 
+mac 使用插件：
+```
+需要去https://github.com/projectdiscovery/httpx官网下载对应的mac包，替换plugins/httpx 文件夹下的 httpx.exe文件，接着修改httpxSetting.json文件中的Path参数为"./plugins/httpx/httpx"即可。
+记得给 mac 的httpx 对应运行权限，
+该功能已经过mac测试，可以正常使用。
+```
+
 ## 关于项目
 
 目前项目还在开发中，有很多 idea 还在逐步实现。后续打算该平台集成第三方工具来进行一键化操作，也欢迎各位师傅提出想法与建议。
