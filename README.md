@@ -7,8 +7,9 @@
 
 ## 简介
 
-FOFA EX 是一款基于 fofa api 实现的简洁美观的 Java 客户端，集成了 fofa 官方的四十个 api 接口，增加搜索数量调整、翻页、iconHash生成、搜索耗时统计、当前用户个人账户信息查询等功能，查询结果可实施编辑与表内搜索，可进行导出；
-增加快捷语法编辑记录功能，可将收录的语法进行保存与快捷输入；右键支持当前搜索结果一键打开链接等功能。
+FOFA EX 是一款基于fofa api实现的红队综合利用工具，可基于模板进行插件加载，目前集成了httpX可进行fofa搜索结果一键探活，支持nuclei一键扫描。
+
+集成了 fofa 官方的四十个 api 接口，增加搜索数量调整、翻页、iconHash生成、搜索耗时统计、当前用户个人账户信息查询等功能，查询结果可实施编辑与表内搜索，可进行导出； 增加快捷语法编辑记录功能，可将收录的语法进行保存与快捷输入；右键支持当前搜索结果一键打开链接等功能。点击加入 [内测群](https://github.com/10cks/fofaEX/blob/master/README.md#%E5%AD%A6%E4%B9%A0%E4%BA%A4%E6%B5%81) 学习交流与问题反馈。
 
 [更新日志](https://github.com/10cks/fofaEX/blob/master/docs/update.md) [问题修复](https://github.com/10cks/fofaEX/blob/master/docs/issues.md) [第三方插件](https://github.com/10cks/fofaEX/blob/master/docs/plugins.md)
 
@@ -23,15 +24,23 @@ FOFA EX 是一款基于 fofa api 实现的简洁美观的 Java 客户端，集�
 2. 快捷保存查询语法，便于HW或SRC挖掘
 3. 全部 API 接口的支持，界面可选择接口显示范围
 4. 查询结果在线编辑导出，后续会为右键添加更多新功能
-5. 可自动化调用第三方插件，目前持续开发中
+5. 可自动化调用第三方插件，目前持续开发中：当前展示为 httpX 一键探活 fofa 搜索结果，可通过设置plugins/httpxSetting.json来设置导出选项：
+
+![image](https://github.com/10cks/fofaEX/assets/47177550/52cdea65-ea84-4235-96d1-228d6de46d7e)
+
+运行 httpX 会自动弹出单独的运行结果面板：
+
+![image](https://github.com/10cks/fofaEX/assets/47177550/07491450-3c1c-4e8c-b19a-04c99c8cf8c6)
 
 ## 运行
 
-该程序使用 Java11 编写，请使用最新测试版，正式版3.0将引用插件模式，预计2024年1月中旬上线：
+该程序使用 Java11 编写，V2.2已使用插件模式可进行一键探活：
+
+[最新发布版本点击下载](https://github.com/10cks/fofaEX/releases/download/2.2/fofaEX_v2_2.zip) [V2.2]
 
 [最新测试版本点击下载](https://github.com/10cks/fofaEX/releases/download/2.1/fofaEX_v2_1_pre.zip) [V2.1]
 
-[最新发布版本点击下载](https://github.com/10cks/fofaEX/releases/download/1.0/fofaEX_v1_0.zip) [V1.0]
+
 
 
 请使用编码启动：
@@ -89,6 +98,89 @@ https://baidu.com/ 或者 https://baidu.com/favicon.ico 来计算图标哈希值
 
 ![image](https://github.com/10cks/fofaEX/assets/47177550/65705cba-a8e1-494b-9444-b6a68b5bcb89)
 
+## 导出功能
+
+导出excel表会以“全部数据sheet+各列去空sheet”的形式放在一个表中，方便第三方工具直接使用数据：
+
+![image](https://github.com/10cks/fofaEX/assets/47177550/1d0d4513-0168-4154-9dce-e28905826f4e)
+
+![image](https://github.com/10cks/fofaEX/assets/47177550/7e8ab7b6-dafe-4244-9dd6-a762963d2bd4)
+
+
+
+## 插件模式
+
+当前集成了 httpX 插件（windows平台），目录结构为：
+
+```
+.
+├── fofaEX.jar
+├── plugins
+│   ├── AllPlugins.json
+│   └── httpx
+│       ├── httpx.exe
+│       └── httpxSetting.json
+├── rules.txt
+└── run.bat
+```
+
+AllPlugins.json 设置插件开关，false 关闭插件，true 打开插件：
+
+```
+{
+    "dirsearch":false,
+    "httpx":true
+}
+```
+
+httpxSetting.json 设置 httpX 的运行配置：（配置文件名需要为：插件名 + Setting.json，插件名需要与 AllPlugins.json 中的一致）
+
+```
+{
+    "Run":{
+        "Path":"./plugins/httpx/httpx.exe",
+        "Params":{
+            "-duc":"",
+            "-l":"./plugins/httpx/input.txt",
+            "-status-code":"",
+            "-o":"./plugins/httpx/HttpX.json",
+            "-nc":"",
+            "-j":""
+        },
+        "InputFile":"./coredata/FofaEX.json",
+        "InputTarget":{
+            "selectParam":"-l",
+            "selectColumn":"link"
+        },
+        "OutputFile":"./plugins/httpx/HttpX.json",
+        "OutputTarget":["url","port","title","status_code"]
+    },
+    "About":{
+        "Project": "httpX",
+        "Address": "https://github.com/projectdiscovery/httpx",
+        "Author": "ProjectDiscovery",
+        "Version": "v1.3.7",
+        "Update": "2023.11.13"
+    }
+}
+```
+
+1. "Path" 指定程序路径
+2. "Params" 指定程序运行默认参数
+3. "InputFile" 指定 fofaEX 使用 API 查到的数据
+4. "InputTarget"：从 FofaEX.json 中提取出link列保存到./plugins/httpx/input.txt中，作为httpX的输入
+5. "OutputFile" 指定 httpX 运行后产生文件保存的位置
+6. "OutputTarget" 指定 fofaEX 在插件页面所展示的列内容
+
+PS：coredata 目录为核心交换文件目录，此功能后续会进行使用，目前请忽略。
+
+mac 使用插件：
+```
+需要去https://github.com/projectdiscovery/httpx官网下载对应的mac包，替换plugins/httpx 文件夹下的 httpx.exe文件，接着修改httpxSetting.json文件中的Path参数为"./plugins/httpx/httpx"即可。
+记得给 mac 的httpx 对应运行权限，
+该功能已经过mac测试，可以正常使用。
+```
+
 ## 关于项目
 
 目前项目还在开发中，有很多 idea 还在逐步实现。后续打算该平台集成第三方工具来进行一键化操作，也欢迎各位师傅提出想法与建议。
@@ -106,6 +198,13 @@ https://baidu.com/ 或者 https://baidu.com/favicon.ico 来计算图标哈希值
 > 关于免账号登录模式
 
 适用于fofaEX的插件目前仅供内部使用。
+
+## 学习交流
+
+扫描二维码备注“加群”，进入 fofaEX 内测群，可体验更多有趣功能。
+
+![image](https://github.com/10cks/fofaEX/assets/47177550/a0646ad7-c1e8-4a3b-b654-6ca8e49be54c)
+
 
 ## 致谢
 
