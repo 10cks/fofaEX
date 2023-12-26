@@ -4,6 +4,7 @@ import com.google.gson.*;
 import com.google.gson.stream.JsonReader;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import tableInit.RightClickFunctions;
 
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
@@ -11,6 +12,7 @@ import javax.swing.event.HyperlinkListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -29,6 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static java.awt.BorderLayout.CENTER;
 import static tableInit.GetjTableHeader.adjustColumnWidths;
 import static tableInit.GetjTableHeader.getjTableHeader;
+import static tableInit.RightClickFunctions.popupMenu;
 
 public class CommonTemplate {
 
@@ -44,20 +47,6 @@ public class CommonTemplate {
         Font iconFont = new Font("Times New Roman", Font.BOLD, 60);
         labelIcon.setFont(iconFont);
         return labelIcon;
-    }
-
-    // 在给定面板中查找 JTable
-    public static JTable findTableInPanel(JPanel panel) {
-        for (Component comp : panel.getComponents()) {
-            if (comp instanceof JScrollPane) {
-                JScrollPane scrollPane = (JScrollPane) comp;
-                JViewport viewport = scrollPane.getViewport();
-                if (viewport.getView() instanceof JTable) {
-                    return (JTable) viewport.getView();
-                }
-            }
-        }
-        return null;
     }
 
     // 保存 table 核心代码
@@ -228,35 +217,32 @@ public class CommonTemplate {
         //ActionListener在选择“关闭”时关闭标签页
         ActionListener closeListener = event -> tabbedPane.removeTabAt(tabbedPane.indexOfTab(pluginName));
 
-        JPanel panel1 = new JPanel(); //创建面板
-        JPanel panel2 = new JPanel(); //创建面板
-        panel1.add(addBanner(pluginName), BorderLayout.NORTH);
         // 创建表格
         JTable table = createTableFromJson(pluginJsonPath);
+        // 清理可能已经添加的菜单项
+        // 初始化 table 右键
+        RightClickFunctions.table = table;
+        RightClickFunctions.initializeTable();
 
         // 重新设置表格头，以便新的渲染器生效
         JTableHeader header = getjTableHeader(table);
         table.setTableHeader(header);
-        adjustColumnWidths(table); // 自动调整列宽
-        JScrollPane scrollPane = new JScrollPane(table);
-        table.setRowHeight(24); // 设置表格的行高
-        table.setFillsViewportHeight(true);
+        // 自动调整列宽
         adjustColumnWidths(table);
-        panel2.add(scrollPane, BorderLayout.CENTER);
+        JScrollPane scrollPane = new JScrollPane(table);
+        // 设置表格的行高
+        table.setRowHeight(24);
+        table.setFillsViewportHeight(true);
 
         JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        mainPanel.setLayout(new BorderLayout());  // 修改你的mainPanel的布局为 BorderLayout
         mainPanel.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
 
-        mainPanel.add(panel1);
-        mainPanel.add(panel2);
+        JPanel panel1 = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
 
-        mainPanel.removeAll();
-        mainPanel.add(scrollPane, CENTER);
+        mainPanel.add(scrollPane, BorderLayout.CENTER); // 把 scrollPane 添加到 BorderLayout.CENTER
 
-        mainPanel.revalidate();
-        mainPanel.repaint();
-
+        saveTableData(tabbedPane);
 
         //为标签添加了一个鼠标监听器，显示弹出菜单以关闭标签页
         mainPanel.addMouseListener(new MouseAdapter() {
@@ -271,6 +257,32 @@ public class CommonTemplate {
             }
         });
 
+        // 导出表格
+        JButton exportButton = new JButton("Export to Excel");
+        exportButton.setFocusPainted(false); // 添加这一行来取消焦点边框的绘制
+        exportButton.setFocusable(false);  // 禁止了按钮获取焦点，因此按钮不会在被点击后显示为"激活"或"选中"的状态
+
+        panel1.add(exportButton);
+        exportButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // 在这里检查 table 是否被初始化
+                if (table == null) {
+                    JOptionPane.showMessageDialog(null, "表格没有被初始化");
+                    return;
+                }
+                // 检查 table 是否有模型和数据
+                if (table.getModel() == null || table.getModel().getRowCount() <= 0) {
+                    JOptionPane.showMessageDialog(null, "当前无数据");
+                    return;
+                }
+                CommonExecute.exportTableToExcel(table);
+            }
+        });
+
+        mainPanel.add(panel1,BorderLayout.PAGE_END);
+        mainPanel.revalidate();
+        mainPanel.repaint();
         //添加标签页
         tabbedPane.addTab(pluginName, mainPanel);
     }

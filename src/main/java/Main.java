@@ -197,7 +197,7 @@ public class Main {
         fofaHackMenu.add(fofaHackMenuItemRun);
         fofaHackMenu.add(fofaHackMenuItemSetting);
         fofaHackMenu.add(fofaHackMenuItemAbout);
-        labMenu.add(testMenu);      // 发布需要注释
+        //labMenu.add(testMenu);      // 发布需要注释
         testMenu.add(focusTestItem);
         testMenu.add(switchToHttpxItem);
 

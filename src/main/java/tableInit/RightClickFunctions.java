@@ -5,10 +5,7 @@ import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.io.File;
 import java.net.URI;
 
@@ -18,17 +15,15 @@ public class RightClickFunctions {
     private static JMenuItem itemSelectColumn = new JMenuItem("选择当前整列");
     private static JMenuItem itemDeselectColumn = new JMenuItem("取消选择整列");
     private static JMenuItem itemOpenLink = new JMenuItem("打开链接");
-    static JMenuItem itemCopy = new JMenuItem("复制");
-
+    static JMenuItem itemCopy = new JMenuItem("复制当前单元格");
     private static JMenuItem itemSearch = new JMenuItem("表格搜索");
-
     private static File lastOpenedPath; // 添加一个成员变量来保存上次打开的文件路径
-
     static TableCellRenderer highlightRenderer = new HighlightRenderer();
     private static TableCellRenderer defaultRenderer;
 
     public static JTable table;
-
+    // 检查对话框是否已经存在
+    private static JDialog searchDialog = null;
     public static void initializeTable() {
         // 添加菜单项到弹出菜单
         popupMenu.add(itemOpenLink);
@@ -83,8 +78,6 @@ public class RightClickFunctions {
                 }
             }
         });
-
-
         // 为打开链接的菜单项添加事件监听器
         itemOpenLink.addActionListener(new ActionListener() {
             @Override
@@ -152,61 +145,63 @@ public class RightClickFunctions {
 
     private static void createSearchDialog() {
 
-        // 检查对话框是否已经存在
-        JDialog searchDialog = null;
-
         if (searchDialog != null) {
             // 对话框已经存在，可能需要将其带到前面
             searchDialog.toFront();
             searchDialog.requestFocus();
-            return;
-        }
+        }else{
+            // 创建一个新的JDialog
+            searchDialog = new JDialog((Frame) null, "搜索", false);
+            searchDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE); // 点击关闭按钮时释放窗口资源
 
-        // 创建一个新的JDialog
-        searchDialog = new JDialog((Frame) null, "搜索", false);
-        searchDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE); // 点击关闭按钮时释放窗口资源
+            searchDialog.setLayout(new FlowLayout());
+            searchDialog.setAlwaysOnTop(true);
+            JLabel label = new JLabel("输入搜索内容：");
+            JTextField searchField = new JTextField(20);
+            JButton searchButton = new JButton("搜索");
+            JButton closeButton = new JButton("退出高亮");
 
-        searchDialog.setLayout(new FlowLayout());
-        searchDialog.setAlwaysOnTop(true);
-        JLabel label = new JLabel("输入搜索内容：");
-        JTextField searchField = new JTextField(20);
-        JButton searchButton = new JButton("搜索");
-        JButton closeButton = new JButton("退出高亮");
+            // 添加组件到对话框
+            searchDialog.add(label);
+            searchDialog.add(searchField);
+            searchDialog.add(searchButton);
+            searchDialog.add(closeButton);
 
-        // 添加组件到对话框
-        searchDialog.add(label);
-        searchDialog.add(searchField);
-        searchDialog.add(searchButton);
-        searchDialog.add(closeButton);
+            // 显示对话框
+            searchDialog.pack();
+            searchDialog.setLocationRelativeTo(null); // 在屏幕中央显示
+            searchDialog.setVisible(true);
 
-        // 搜索按钮监听器
-        searchButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String searchText = searchField.getText();
-                if (searchText != null && !searchText.isEmpty()) {
-                    // 执行搜索并高亮显示匹配的单元格
-                    searchTable(searchText);
+            // 搜索按钮监听器
+            searchButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String searchText = searchField.getText();
+                    if (searchText != null && !searchText.isEmpty()) {
+                        // 执行搜索并高亮显示匹配的单元格
+                        searchTable(searchText);
+                    }
                 }
-            }
-        });
-
-        // 退出按钮监听器
-        JDialog finalSearchDialog = searchDialog;
-
-        closeButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                finalSearchDialog.dispose(); // 关闭对话框
-                resetSearch(); // 重置搜索结果
-                //searchDialog = null; // 重置searchDialog引用
-            }
-        });
-
-        // 显示对话框
-        searchDialog.pack();
-        searchDialog.setLocationRelativeTo(null); // 在屏幕中央显示
-        searchDialog.setVisible(true);
+            });
+            // 退出按钮监听器
+            JDialog finalSearchDialog = searchDialog;
+            closeButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    finalSearchDialog.dispose(); // 关闭对话框
+                    resetSearch(); // 重置搜索结果
+                    searchDialog = null; // 重置searchDialog引用
+                }
+            });
+            // 设置窗口关闭监听器
+            searchDialog.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    super.windowClosing(e);
+                    searchDialog = null; // 窗口关闭时重置searchDialog引用
+                }
+            });
+        }
     }
 
     private static void searchTable(String searchText) {
@@ -230,7 +225,6 @@ public class RightClickFunctions {
         for (int col = 0; col < table.getColumnCount(); col++) {
             table.getColumnModel().getColumn(col).setCellRenderer(defaultRenderer);
         }
-
         // 退出时恢复表格颜色
         table.repaint();
     }
