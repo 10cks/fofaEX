@@ -11,7 +11,22 @@ FOFA EX 是一款基于fofa api实现的红队综合利用工具，可基于模�
 
 集成了 fofa 官方的四十个 api 接口，增加搜索数量调整、翻页、iconHash生成、搜索耗时统计、当前用户个人账户信息查询等功能，查询结果可实施编辑与表内搜索，可进行导出； 增加快捷语法编辑记录功能，可将收录的语法进行保存与快捷输入；右键支持当前搜索结果一键打开链接等功能。点击加入 [内测群](https://github.com/10cks/fofaEX/blob/master/README.md#%E5%AD%A6%E4%B9%A0%E4%BA%A4%E6%B5%81) 学习交流与问题反馈。
 
-[+] 支持 java 版本：java8、java11、java17
+## 启动
+
+[+] 支持 java 版本：java8、java11
+
+该程序使用 Java11 编写，V2.2已使用插件模式可进行一键探活：
+
+[java11：最新发布版本点击下载](https://github.com/10cks/fofaEX/releases/download/2.2/fofaEX_v2_2.zip) [V2.2]
+
+[java 8：最新发布版本点击下载](https://github.com/10cks/fofaEX/releases/download/java8_v2.2/fofaEX_v2_2_java8.zip) [V2.2]
+
+[最新测试版本点击下载](https://github.com/10cks/fofaEX/releases/download/2.1/fofaEX_v2_1_pre.zip) [V2.1]
+
+手动运行请使用编码启动：
+```
+java "-Dfile.encoding=UTF-8" -jar .\fofaEX.jar
+```
 
 [更新日志](https://github.com/10cks/fofaEX/blob/master/docs/update.md) [问题修复](https://github.com/10cks/fofaEX/blob/master/docs/issues.md) [第三方插件](https://github.com/10cks/fofaEX/blob/master/docs/plugins.md)
 
@@ -33,24 +48,6 @@ FOFA EX 是一款基于fofa api实现的红队综合利用工具，可基于模�
 运行 httpX 会自动弹出单独的运行结果面板：
 
 ![image](https://github.com/10cks/fofaEX/assets/47177550/07491450-3c1c-4e8c-b19a-04c99c8cf8c6)
-
-## 运行
-
-该程序使用 Java11 编写，V2.2已使用插件模式可进行一键探活：
-
-[java11：最新发布版本点击下载](https://github.com/10cks/fofaEX/releases/download/2.2/fofaEX_v2_2.zip) [V2.2]
-
-[java 8：最新发布版本点击下载](https://github.com/10cks/fofaEX/releases/download/java8_v2.2/fofaEX_v2_2_java8.zip) [V2.2]
-
-[最新测试版本点击下载](https://github.com/10cks/fofaEX/releases/download/2.1/fofaEX_v2_1_pre.zip) [V2.1]
-
-
-
-
-请使用编码启动：
-```
-java "-Dfile.encoding=UTF-8" -jar .\fofaEX.jar
-```
 
 ## 登录模式：账户设置
 
