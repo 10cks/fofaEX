@@ -19,10 +19,22 @@ public class GetjTableHeader {
                 // 设置渲染器返回的组件类型为JLabel
                 JLabel headerLabel = (JLabel) super.getTableCellRendererComponent(
                         table, value, isSelected, hasFocus, row, column);
+
+                // 检查排序键是否与当前列匹配
+                if(table.getRowSorter() != null) {
+                    java.util.List<? extends RowSorter.SortKey> sortKeys = table.getRowSorter().getSortKeys();
+
+                    if (sortKeys.size() > 0 && sortKeys.get(0).getColumn() == table.convertColumnIndexToView(column)) {
+                        headerLabel.setFont(headerLabel.getFont().deriveFont(Font.BOLD));
+                        headerLabel.setForeground(Color.CYAN);
+                    } else {
+                        headerLabel.setFont(headerLabel.getFont().deriveFont(Font.PLAIN));
+                        headerLabel.setForeground(Color.WHITE);
+                    }
+                }
+
                 // 设置背景色为灰色
                 headerLabel.setBackground(Color.GRAY);
-                // 设置文字颜色为白色
-                headerLabel.setForeground(Color.WHITE);
                 // 设置文字居中
                 headerLabel.setHorizontalAlignment(JLabel.CENTER);
                 // 设置标题加粗和大小

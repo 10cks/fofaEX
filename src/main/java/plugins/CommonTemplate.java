@@ -51,7 +51,7 @@ public class CommonTemplate {
         return labelIcon;
     }
 
-    // 保存 table 核心代码
+    // 保存 table 核心代码到对应 json 文件中
     public static void saveTableData(JTabbedPane tabbedPane) {
         EventQueue.invokeLater(() -> {
             // 检查或创建coredata文件夹

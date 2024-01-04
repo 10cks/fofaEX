@@ -4,6 +4,8 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
@@ -211,12 +213,34 @@ public class CommonExecute {
         }
 
         // 保存工作簿到文件系统
+//        try {
+//            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
+//            String timestamp = dateFormat.format(new Date());
+//
+//            String directoryName = "exportdata";
+//            File directory = new File(directoryName);
+//
+//            if (!directory.exists()) {
+//                directory.mkdir();
+//            }
+//
+//            String fileName = directoryName + "/TableData_" + timestamp + ".xlsx";
+//            FileOutputStream output = new FileOutputStream(fileName);
+//            workbook.write(output);
+//            workbook.close();
+//            output.close();
+//            JOptionPane.showMessageDialog(null, "Export successful!\nFile saved at: " + new File(fileName).getAbsolutePath(), "Success", JOptionPane.INFORMATION_MESSAGE);
+//        } catch (IOException ex) {
+//            ex.printStackTrace();
+//            JOptionPane.showMessageDialog(null, "Export failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+//        }
+        // 保存工作簿到文件系统
         try {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
             String timestamp = dateFormat.format(new Date());
 
             String directoryName = "exportdata";
-            File directory = new File(directoryName);
+            final File directory = new File(directoryName);
 
             if (!directory.exists()) {
                 directory.mkdir();
@@ -224,10 +248,56 @@ public class CommonExecute {
 
             String fileName = directoryName + "/TableData_" + timestamp + ".xlsx";
             FileOutputStream output = new FileOutputStream(fileName);
+
             workbook.write(output);
             workbook.close();
             output.close();
-            JOptionPane.showMessageDialog(null, "Export successful!\nFile saved at: " + new File(fileName).getAbsolutePath(), "Success", JOptionPane.INFORMATION_MESSAGE);
+
+            final JDialog dialog = new JDialog();
+            dialog.setTitle("Export Successful");
+            dialog.setLayout(new BorderLayout());
+
+            JLabel label = new JLabel("Export successful!\nFile saved at: " +
+                    new File(fileName).getAbsolutePath());
+            label.setHorizontalAlignment(JLabel.CENTER);
+            label.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+            JPanel panel = new JPanel();
+            panel.setLayout(new FlowLayout());
+
+            JButton openDirectoryButton = new JButton("打开目录");
+            openDirectoryButton.setFocusPainted(false);
+            openDirectoryButton.setFocusable(false);
+            openDirectoryButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    try {
+                        Desktop.getDesktop().open(directory);
+                        dialog.dispose();
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            });
+
+            JButton okButton = new JButton("确定");
+            okButton.setFocusPainted(false);
+            okButton.setFocusable(false);
+            okButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    dialog.dispose();
+                }
+            });
+
+            panel.add(openDirectoryButton);
+            panel.add(okButton);
+
+            dialog.add(label, BorderLayout.CENTER);
+            dialog.add(panel, BorderLayout.SOUTH);
+            dialog.pack();
+            dialog.setLocationRelativeTo(null);  // Center dialog
+            dialog.setVisible(true);
         } catch (IOException ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(null, "Export failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
