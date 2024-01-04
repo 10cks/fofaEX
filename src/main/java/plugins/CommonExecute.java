@@ -211,29 +211,6 @@ public class CommonExecute {
                 }
             }
         }
-
-        // 保存工作簿到文件系统
-//        try {
-//            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
-//            String timestamp = dateFormat.format(new Date());
-//
-//            String directoryName = "exportdata";
-//            File directory = new File(directoryName);
-//
-//            if (!directory.exists()) {
-//                directory.mkdir();
-//            }
-//
-//            String fileName = directoryName + "/TableData_" + timestamp + ".xlsx";
-//            FileOutputStream output = new FileOutputStream(fileName);
-//            workbook.write(output);
-//            workbook.close();
-//            output.close();
-//            JOptionPane.showMessageDialog(null, "Export successful!\nFile saved at: " + new File(fileName).getAbsolutePath(), "Success", JOptionPane.INFORMATION_MESSAGE);
-//        } catch (IOException ex) {
-//            ex.printStackTrace();
-//            JOptionPane.showMessageDialog(null, "Export failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-//        }
         // 保存工作簿到文件系统
         try {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
@@ -257,7 +234,7 @@ public class CommonExecute {
             dialog.setTitle("Export Successful");
             dialog.setLayout(new BorderLayout());
 
-            JLabel label = new JLabel("Export successful!\nFile saved at: " +
+            JLabel label = new JLabel("File saved at: " +
                     new File(fileName).getAbsolutePath());
             label.setHorizontalAlignment(JLabel.CENTER);
             label.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
