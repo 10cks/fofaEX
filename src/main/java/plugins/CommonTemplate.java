@@ -11,6 +11,8 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -322,7 +324,22 @@ public class CommonTemplate {
                 for (int i = 0; i < columnNames.length; i++) {
                     if (object.has(columnNames[i])) {
                         JsonElement element = object.get(columnNames[i]);
-                        row.add(element.isJsonNull() ? "" : element.getAsString());
+                        // 检查是否为JsonArray
+                        if (element.isJsonArray()) {
+                            StringBuilder sb = new StringBuilder();
+                            JsonArray array = element.getAsJsonArray();
+                            for (int j = 0; j < array.size(); j++) {
+                                sb.append(array.get(j).getAsString());
+                                // 不在最后一个元素后加逗号和空格
+                                if (j < array.size() - 1) {
+                                    sb.append(", ");
+                                }
+                            }
+                            row.add(sb.toString());
+                        } else {
+                            // 如果不是数组，就像原来一样处理
+                            row.add(element.isJsonNull() ? "" : element.getAsString());
+                        }
                     } else {
                         row.add(""); // 对应的列值为空
                     }
@@ -334,6 +351,9 @@ public class CommonTemplate {
         }
         // 使用模型创建表格
         JTable table = new JTable(model);
+        // 创建一个TableRowSorter并将其设置为表格
+        TableRowSorter<TableModel> sorter = new TableRowSorter<>(model);
+        table.setRowSorter(sorter);
         return table;
     }
 

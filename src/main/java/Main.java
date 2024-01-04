@@ -1023,8 +1023,9 @@ public class Main {
                                 "<b>fofa EX:</b><br>" +
                                 "Project: <a href='https://github.com/10cks/fofaEX'>https://github.com/10cks/fofaEX</a><br>" +
                                 "Author: bwner@OverSpace<br>" +
-                                "version: 1.0<br>" +
-                                "Update: 2023.12.11" +
+                                "Version: 2.2<br>" +
+                                "JDK Version: 11.0.5<br>" +
+                                "Update: 2023.12.11<br>" +
                                 "</body></html>"
                 );
                 editorPane.setEditable(false);
@@ -1995,6 +1996,10 @@ public class Main {
 
         table.setRowHeight(24); // 设置表格的行高
         table.setFillsViewportHeight(true);
+
+        // 创建一个TableRowSorter并将其设置为表格
+        TableRowSorter<TableModel> sorter = new TableRowSorter<>(model);
+        table.setRowSorter(sorter);
 
         panel.removeAll();
         panel.add(scrollPane, CENTER);
