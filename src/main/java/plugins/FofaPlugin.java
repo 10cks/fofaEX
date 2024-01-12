@@ -13,13 +13,10 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 
 import java.util.Vector;
 
-import com.google.gson.JsonSyntaxException;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -136,7 +133,7 @@ public class FofaPlugin {
             }
 
             // 构建完整的命令
-            String command = String.format("%s -k %s -on %s -e %s -l %s", path, searchStr, outputname, endcount, level);
+            String command = String.format("%s -k %s -on %s -e %s -l %s -o json", path, searchStr, outputname, endcount, level);
 
             ProcessBuilder builder = new ProcessBuilder(command.split("\\s+"));
             builder.redirectErrorStream(true); // 合并标准错误和标准输出
@@ -254,42 +251,30 @@ public class FofaPlugin {
         table.setDefaultRenderer(Object.class, new SelectedCellBorderHighlighter());
 
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            String line;
-            List<Map<String, Object>> data = new ArrayList<>();
-            Vector<String> columnNames = new Vector<>();
-            boolean columnsDefined = false;
+            JsonArray jsonArray = JsonParser.parseReader(reader).getAsJsonArray();
+            Vector<String> columnNames = null;
+            Vector<Vector<Object>> dataVector = new Vector<>();
 
-            while ((line = reader.readLine()) != null) {
-                line = line.trim();
-                if (!line.isEmpty()) {
-                    try {
-                        JsonObject jsonObject = JsonParser.parseString(line).getAsJsonObject();
-                        Map<String, Object> map = new LinkedHashMap<>();
+            for (JsonElement element : jsonArray) {
+                JsonObject jsonObject = element.getAsJsonObject();
+                Map<String, Object> map = new LinkedHashMap<>();
+                Vector<Object> row = new Vector<>();
 
-                        for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
-                            String key = entry.getKey();
-                            Object value = entry.getValue().getAsString();
-                            map.put(key, value);
-
-                            if (!columnsDefined) {
-                                columnNames.add(key);
-                            }
-                        }
-                        data.add(map);
-                        columnsDefined = true;
-                    } catch (JsonSyntaxException ex) {
-                        ex.printStackTrace();
-                        JOptionPane.showMessageDialog(null, "Execute Failed!", "JSON Error", JOptionPane.ERROR_MESSAGE);
-                        return;
+                if (columnNames == null) {
+                    columnNames = new Vector<>();
+                    for (String key : jsonObject.keySet()) {
+                        columnNames.add(key);
                     }
                 }
-            }
 
-            Vector<Vector<Object>> dataVector = new Vector<>();
-            for (Map<String, Object> datum : data) {
-                Vector<Object> row = new Vector<>();
                 for (String columnName : columnNames) {
-                    row.add(datum.get(columnName));
+                    if (jsonObject.get(columnName) != null) {
+                        map.put(columnName, jsonObject.get(columnName).getAsString());
+                        row.add(jsonObject.get(columnName).getAsString());
+                    } else {
+                        map.put(columnName, null);
+                        row.add(null);
+                    }
                 }
                 dataVector.add(row);
             }
@@ -297,10 +282,11 @@ public class FofaPlugin {
             DefaultTableModel model = new DefaultTableModel(dataVector, columnNames);
             table.setModel(model);
 
-        } catch (IOException ex) {
+        } catch (IOException | JsonSyntaxException ex) {
             ex.printStackTrace();
-            JOptionPane.showMessageDialog(null, "File reading error", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Execute Failed!", "JSON Error", JOptionPane.ERROR_MESSAGE);
         }
+
         // frame.dispose(); // 关闭插件窗口
         // 更新panel和rowCountLabel
         panel.revalidate();
