@@ -1,14 +1,10 @@
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
 import java.io.*;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import javax.swing.BorderFactory;
 import javax.swing.event.*;
@@ -28,17 +24,13 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
-import org.apache.poi.xssf.usermodel.XSSFRow;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONException;
 import org.json.JSONObject;
 import plugins.CommonExecute;
 import plugins.CommonTemplate;
-import plugins.FofaPlugin;
+import plugins.FofaHack;
 import tableInit.HighlightRenderer;
 import tableInit.RightClickFunctions;
-import tableInit.SelectedCellBorderHighlighter;
 
 import javax.swing.table.*;
 import javax.swing.text.Document;
@@ -714,11 +706,11 @@ public class Main {
         tabbedPane0.setTabPlacement(JTabbedPane.BOTTOM);    // 将标签放置在底部
 
         // fofa 插件初始化
-        FofaPlugin.panel = panel6;
-        FofaPlugin.table = table;
-        FofaPlugin.exportPanel = panel8;
-        FofaPlugin.exportButtonAdded = false;
-        FofaPlugin.rowCountLabel = jLabel7;
+        FofaHack.panel = panel6;
+        FofaHack.table = table;
+        FofaHack.exportPanel = panel8;
+        FofaHack.exportButtonAdded = false;
+        FofaHack.rowCountLabel = jLabel7;
 
         // 设置窗口居中并显示
         jFrame.setLocationRelativeTo(null);
@@ -973,7 +965,7 @@ public class Main {
 
         fofaHackMenuItemRun.addActionListener((ActionEvent event) -> {
             EventQueue.invokeLater(() -> {
-                FofaPlugin.main();
+                FofaHack.main();
             });
         });
 
@@ -992,7 +984,7 @@ public class Main {
                     lastOpenedPath = fileChooser.getCurrentDirectory();
 
                     // 调用方法来处理文件
-                    FofaPlugin.loadFileIntoTable(file);
+                    FofaHack.loadFileIntoTable(file);
                 }
             }
         });

@@ -30,142 +30,8 @@ import static tableInit.GetjTableHeader.adjustColumnWidths;
 import static tableInit.GetjTableHeader.getjTableHeader;
 
 public class CommonExecute {
-    public static boolean exportButtonAdded;
-    private static Process process;
-    public static JPanel panel = new JPanel(); // 主面板
-    public static JPanel exportPanel = new JPanel(); // 主面板
+
     public static JTable table = new JTable(); // 表格
-    public static JLabel rowCountLabel = new JLabel();
-    private static PrintWriter writer;
-    private static JFrame frame; // 使frame成为类的成员变量，以便可以在任意地方访问
-    private static Process runningProcess = null;
-    static int executeCommand(String command, JTextArea resultArea) {
-        try {
-            ProcessBuilder builder = new ProcessBuilder(command.split("\\s+"));
-            builder.redirectErrorStream(true);
-            runningProcess = builder.start();
-            runningProcess.getOutputStream().close();
-
-            Thread outputThread = new Thread(() -> {
-                try (BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(runningProcess.getInputStream(), StandardCharsets.UTF_8))) {
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        final String lineCopy = line;
-                        SwingUtilities.invokeLater(() -> {
-                            resultArea.append(lineCopy + "\n");
-                        });
-                    }
-                } catch (IOException e) {
-                    SwingUtilities.invokeLater(() -> {
-                        resultArea.append("Error reading output: " + e.getMessage() + "\n");
-                    });
-                } finally {
-                    try {
-                        runningProcess.waitFor();
-                    } catch (InterruptedException ex) {
-                        SwingUtilities.invokeLater(() -> {
-                            resultArea.append("Process was interrupted: " + ex.getMessage() + "\n");
-                        });
-                    }
-                    SwingUtilities.invokeLater(() -> {
-                        resultArea.append("\n程序运行结束\n");
-                    });
-                }
-            });
-
-            outputThread.start();
-
-        } catch (Exception ex) {
-            resultArea.setText("Error executing command: " + ex.getMessage());
-            JOptionPane.showMessageDialog(null, "Execution failed", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-        return 0;
-    }
-
-    public static boolean checkMakeFile() {
-        // 在这里检查文件是否存在
-        File file = new File("test.txt");
-        if (file.exists()) {
-            loadFileIntoTable(file);
-
-            return true;
-        }
-        return false;
-    }
-
-    public static void loadFileIntoTable(File file) {
-
-        // 重新设置表格头，以便新的渲染器生效
-        JTableHeader header = getjTableHeader(table);
-        table.setTableHeader(header);
-
-        adjustColumnWidths(table); // 自动调整列宽
-        JScrollPane scrollPane = new JScrollPane(table);
-
-        table.setRowHeight(24); // 设置表格的行高
-        table.setFillsViewportHeight(true);
-
-        panel.removeAll();
-        panel.add(scrollPane, BorderLayout.CENTER);
-
-        // 设置表格的默认渲染器
-        table.setDefaultRenderer(Object.class, new SelectedCellBorderHighlighter());
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            String line;
-            List<Map<String, Object>> data = new ArrayList<>();
-            Vector<String> columnNames = new Vector<>();
-            boolean columnsDefined = false;
-
-            while ((line = reader.readLine()) != null) {
-                line = line.trim();
-                if (!line.isEmpty()) {
-                    try {
-                        JsonObject jsonObject = JsonParser.parseString(line).getAsJsonObject();
-                        Map<String, Object> map = new LinkedHashMap<>();
-
-                        for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
-                            String key = entry.getKey();
-                            Object value = entry.getValue().getAsString();
-                            map.put(key, value);
-
-                            if (!columnsDefined) {
-                                columnNames.add(key);
-                            }
-                        }
-                        data.add(map);
-                        columnsDefined = true;
-                    }catch (JsonSyntaxException ex) {
-                        ex.printStackTrace();
-                        JOptionPane.showMessageDialog(null, "Execute Failed!", "JSON Error", JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                }
-            }
-
-            Vector<Vector<Object>> dataVector = new Vector<>();
-            for (Map<String, Object> datum : data) {
-                Vector<Object> row = new Vector<>();
-                for (String columnName : columnNames) {
-                    row.add(datum.get(columnName));
-                }
-                dataVector.add(row);
-            }
-
-            DefaultTableModel model = new DefaultTableModel(dataVector, columnNames);
-            table.setModel(model);
-
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(null, "File reading error", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-        frame.dispose(); // 关闭插件窗口
-        // 更新panel和rowCountLabel
-        panel.revalidate();
-        panel.repaint();
-        rowCountLabel.setText("Total Rows: " + table.getRowCount() + " ");
-    }
 
     public static void exportTableToExcel(JTable table) {
         XSSFWorkbook workbook = new XSSFWorkbook();
@@ -281,10 +147,9 @@ public class CommonExecute {
         }
     }
 
-
     public static void main() {
         // 创建类的实例并调用方法
-        FofaPlugin plugin = new FofaPlugin();
-        plugin.fofaPlugin();
+        FofaHack plugin = new FofaHack();
+        plugin.fofaHack();
     }
 }
