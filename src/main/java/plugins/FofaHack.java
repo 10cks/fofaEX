@@ -119,7 +119,6 @@ public class FofaHack {
 
             // 构建 plugins/data 的文件路径对象
             File dataDirectory = new File("./plugins/fofahack/data");
-
             // 检查该路径表示的目录是否存在
             if (!dataDirectory.exists()) {
                 // 不存在，则尝试创建该目录
@@ -131,7 +130,6 @@ public class FofaHack {
                     System.out.println("Failed to create the 'data' directory.");
                 }
             }
-
             // 构建完整的命令
             String command = String.format("%s -k %s -on %s -e %s -l %s -o json", path, searchStr, outputname, endcount, level);
 
@@ -171,7 +169,6 @@ public class FofaHack {
                                 JButton exportButton = new JButton("Export to Excel");
                                 exportButton.setFocusPainted(false); // 添加这一行来取消焦点边框的绘制
                                 exportButton.setFocusable(false);  // 禁止了按钮获取焦点，因此按钮不会在被点击后显示为"激活"或"选中"的状态
-
                                 if (!exportButtonAdded) {
                                     exportPanel.add(exportButton);
                                     exportButtonAdded = true;
@@ -192,21 +189,16 @@ public class FofaHack {
                                         exportTableToExcel(table);
                                     }
                                 });
-
-
-                            }else{
-                                JOptionPane.showMessageDialog(null, "读取数据失败", "Error", JOptionPane.ERROR_MESSAGE);
+                            } else {
+                               JOptionPane.showMessageDialog(null, "读取数据失败", "Error", JOptionPane.ERROR_MESSAGE);
                             }
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
-                        ;
                     });
                 }
             });
-
             outputThread.start();
-
         } catch (Exception ex) {
             resultArea.setText("Error executing command: " + ex.getMessage());
             // 在这里弹出“执行失败”的警告窗口
@@ -215,18 +207,28 @@ public class FofaHack {
     }
 
     public static boolean checkMakeFile() throws IOException {
-
         // 从配置文件中读取设置
         Properties properties = new Properties();
         properties.load(new FileInputStream("./plugins/fofahack/FofaHackSetting.txt"));
 
-        String finalname = properties.getProperty("finalname").trim();
-        finalname = finalname.replace("\"", "");
-        // 在这里检查 final 文件是否存在
-        System.out.println(finalname);
-        File file = new File(finalname);
-        if (file.exists()) {
-            loadFileIntoTable(file);
+        String outputname = properties.getProperty("outputname").trim(); // 获取配置文件 outputname 的值
+        outputname = outputname.replace("\"", "") + ".json"; // 去除其前后的空格和双引号
+
+        String finalname = properties.getProperty("finalname").trim(); // 获取配置文件 finalname 的值
+        finalname = finalname.replace("\"", ""); // 去除其前后的空格和双引号
+
+        File outputFile = new File(outputname);
+        File finalFile = new File(finalname);
+
+        if (finalFile.exists()) {
+            loadFileIntoTable(finalFile);
+            // 在这里检查 final 文件是否存在
+            System.out.println(finalname + " 加载完成");
+            return true;
+        } else if (outputFile.exists()) {
+            loadFileIntoTable(outputFile);
+            // 在这里检查 output 文件是否存在
+            System.out.println(outputname + " 加载完成");
             return true;
         }
         return false;
@@ -292,7 +294,7 @@ public class FofaHack {
         }
 
         // frame.dispose(); // 关闭插件窗口
-        // 更新panel和rowCountLabel
+        // 更新 panel 和 rowCountLabel
         panel.revalidate();
         panel.repaint();
         rowCountLabel.setText("Total Rows: " + table.getRowCount() + " ");
