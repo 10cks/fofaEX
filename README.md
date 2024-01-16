@@ -17,7 +17,7 @@ FOFA EX 是一款基于fofa api实现的红队综合利用工具，可基于模�
 
 [+] 支持 java 版本：java8、java11
 
-该程序使用 Java11 编写，V2.2已使用插件模式可进行一键探活：
+该程序使用 Java11 编写，请尽可能使用java11（界面及功能优化得最好），V2.2已使用插件模式可进行一键探活：
 
 [java11：最新发布版本点击下载](https://github.com/10cks/fofaEX/releases/download/2.2/fofaEX_v2_2.zip) [V2.2]
 
