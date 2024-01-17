@@ -189,7 +189,7 @@ public class Main {
         fofaHackMenu.add(fofaHackMenuItemRun);
         fofaHackMenu.add(fofaHackMenuItemSetting);
         fofaHackMenu.add(fofaHackMenuItemAbout);
-        //labMenu.add(testMenu);      // 发布需要注释
+        labMenu.add(testMenu);      // 发布需要注释
         testMenu.add(focusTestItem);
         testMenu.add(switchToHttpxItem);
 
@@ -214,8 +214,9 @@ public class Main {
             table = new JTable();
         }
         // 初始化 table 右键
-        RightClickFunctions.table = table;
-        RightClickFunctions.initializeTable();
+        RightClickFunctions rightClickFunctions = new RightClickFunctions();
+        rightClickFunctions.setTable(table);
+        rightClickFunctions.initializeTable();
 
         textField0.addKeyListener(new KeyAdapter() {
             @Override
@@ -1578,7 +1579,6 @@ public class Main {
                             JButton exportButton = new JButton("Export to Excel");
                             exportButton.setFocusPainted(false); // 添加这一行来取消焦点边框的绘制
                             exportButton.setFocusable(false);  // 禁止了按钮获取焦点，因此按钮不会在被点击后显示为"激活"或"选中"的状态
-
 
                             if (!exportButtonAdded) {
                                 exportPanel.add(exportButton);

@@ -30,18 +30,15 @@ import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static java.awt.BorderLayout.CENTER;
 import static tableInit.GetjTableHeader.adjustColumnWidths;
 import static tableInit.GetjTableHeader.getjTableHeader;
-import static tableInit.RightClickFunctions.popupMenu;
-
 public class CommonTemplate {
 
     private static String pluginName = "";
     private static String allPluginsPath = "./plugins/";
-
     private static Process runningProcess = null;
     static AtomicBoolean wasManuallyStopped = new AtomicBoolean(false);
+
 
     public static JLabel addBanner(String banner) {
         JLabel labelIcon = new JLabel(banner);
@@ -214,18 +211,19 @@ public class CommonTemplate {
         // 检查标签是否已经存在
         if (tabbedPane.indexOfTab(pluginName) != -1) {
             int existingTabIndex = tabbedPane.indexOfTab(pluginName);
-            tabbedPane.removeTabAt(existingTabIndex);
+            tabbedPane.remove(existingTabIndex);
         }
         //ActionListener在选择“关闭”时关闭标签页
         ActionListener closeListener = event -> tabbedPane.removeTabAt(tabbedPane.indexOfTab(pluginName));
-
         // 创建表格
+        // 创建数据表
         JTable table = createTableFromJson(pluginJsonPath);
+
         // 清理可能已经添加的菜单项
         // 初始化 table 右键
-        RightClickFunctions.table = table;
-        RightClickFunctions.initializeTable();
-
+        RightClickFunctions rightClickFunctions = new RightClickFunctions();
+        rightClickFunctions.setTable(table);  // 选定 table
+        rightClickFunctions.initializeTable();
         // 重新设置表格头，以便新的渲染器生效
         JTableHeader header = getjTableHeader(table);
         table.setTableHeader(header);
@@ -237,7 +235,7 @@ public class CommonTemplate {
         table.setFillsViewportHeight(true);
 
         JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(new BorderLayout());  // 修改你的mainPanel的布局为 BorderLayout
+        mainPanel.setLayout(new BorderLayout());
         mainPanel.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
 
         JPanel panel1 = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));

@@ -11,20 +11,28 @@ import java.net.URI;
 
 public class RightClickFunctions {
     // 在类的成员变量中创建弹出菜单
-    public static JPopupMenu popupMenu = new JPopupMenu();
-    private static JMenuItem itemSelectColumn = new JMenuItem("选择当前整列");
-    private static JMenuItem itemDeselectColumn = new JMenuItem("取消选择整列");
-    private static JMenuItem itemOpenLink = new JMenuItem("打开链接");
-    static JMenuItem itemCopy = new JMenuItem("复制当前单元格");
-    private static JMenuItem itemSearch = new JMenuItem("表格搜索");
-    private static File lastOpenedPath; // 添加一个成员变量来保存上次打开的文件路径
+    private JPopupMenu popupMenu = new JPopupMenu();
+    private JMenuItem itemSelectColumn = new JMenuItem("选择当前整列");
+    private JMenuItem itemDeselectColumn = new JMenuItem("取消选择整列");
+    private JMenuItem itemOpenLink = new JMenuItem("打开链接");
+    private JMenuItem itemCopy = new JMenuItem("复制当前单元格");
+    private JMenuItem itemSearch = new JMenuItem("表格搜索");
+    private File lastOpenedPath; // 添加一个成员变量来保存上次打开的文件路径
     static TableCellRenderer highlightRenderer = new HighlightRenderer();
     private static TableCellRenderer defaultRenderer;
 
-    public static JTable table;
+    private boolean isInitialized = false; // 新添加的字段，用于跟踪是否已初始化
+
+    private JTable table;
     // 检查对话框是否已经存在
     private static JDialog searchDialog = null;
-    public static void initializeTable() {
+
+    // 添加一个setter方法
+    public void setTable(JTable newTable) {
+        table = newTable;
+    }
+
+    public void initializeTable() {
         // 添加菜单项到弹出菜单
         popupMenu.add(itemOpenLink);
         popupMenu.add(itemCopy);
@@ -126,7 +134,6 @@ public class RightClickFunctions {
                             sb.append("\n"); // 行之间添加换行符分隔
                         }
                     }
-
                     StringSelection stringSelection = new StringSelection(sb.toString());
                     Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
                     clipboard.setContents(stringSelection, null);
@@ -140,16 +147,15 @@ public class RightClickFunctions {
                 createSearchDialog();
             }
         });
-
     }
 
-    private static void createSearchDialog() {
+    private void createSearchDialog() {
 
         if (searchDialog != null) {
             // 对话框已经存在，可能需要将其带到前面
             searchDialog.toFront();
             searchDialog.requestFocus();
-        }else{
+        } else {
             // 创建一个新的JDialog
             searchDialog = new JDialog((Frame) null, "搜索", false);
             searchDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE); // 点击关闭按钮时释放窗口资源
@@ -204,7 +210,7 @@ public class RightClickFunctions {
         }
     }
 
-    private static void searchTable(String searchText) {
+    private void searchTable(String searchText) {
         if (!(highlightRenderer instanceof HighlightRenderer)) {
             highlightRenderer = new HighlightRenderer();
         }
@@ -220,7 +226,7 @@ public class RightClickFunctions {
         table.repaint();
     }
 
-    private static void resetSearch() {
+    private void resetSearch() {
         // Reset the renderer to the default for all columns
         for (int col = 0; col < table.getColumnCount(); col++) {
             table.getColumnModel().getColumn(col).setCellRenderer(defaultRenderer);
