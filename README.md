@@ -223,9 +223,6 @@ FofaEX 已加入 [FOFA 共创者计划](https://fofa.info/development)，感谢 
 
 ![](https://user-images.githubusercontent.com/40891670/209631625-f73811b0-a26a-4a42-8158-e5061464481d.png)
 
-### JetBrains OS licenses
-fofaEX had been being developed with IDEA IDE under the free JetBrains Open Source license(s) granted by JetBrains s.r.o., hence I would like to express my thanks here.
-
 ## 参考链接
 
 https://github.com/fofapro/fofa_view
