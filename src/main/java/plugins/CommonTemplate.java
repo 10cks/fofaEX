@@ -45,7 +45,8 @@ public class CommonTemplate {
 
     // 创建结果显示区域，并添加到面板的Center区域
     static JTextArea autoModeResultArea = new JTextArea();
-
+    // 添加一个 AutoMode 全局变量
+    public static boolean isCommandFinished = false;
 
     // Auto Mode 模式 <<<<<
 
@@ -387,21 +388,34 @@ public class CommonTemplate {
         autoModeResultArea.setWrapStyleWord(true);  // 设置单词包装
         autoModePanel.add(new JScrollPane(autoModeResultArea), BorderLayout.CENTER);
 
-        // 创建按钮面板用于放置按钮
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT)); // 使用FlowLayout并且指定按钮靠左对齐
-        buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));  // 设置边距为10px
+        // 创建流程面板用于查看上游数据
+        JLabel upstreamLabel = new JLabel("数据源："+ getInputFilePathFromJson(pluginJsonPath));
+        upstreamLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));  // 设置边距为10px
+        // 创建按钮面板用于放置按钮 使用BorderLayout
+        JPanel buttonPanel = new JPanel(new BorderLayout()); // 使用BorderLayout
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 10)); // 设置边距为10px
+
+        // 对于加载在WEST（西侧，即左侧）的组件，我们使用JPanel盛装，使其在界面看起来更紧凑
+        JPanel westPanel = new JPanel();
+        westPanel.add(upstreamLabel);
+        buttonPanel.add(westPanel, BorderLayout.WEST); // 添加到面板上，放到最左侧
+
+        // 对于加载在EAST（东侧，即右侧）的组件，我们使用JPanel盛装，使其在界面看起来更紧凑
+        JPanel eastPanel = new JPanel();
 
         // 创建执行按钮，并添加到新面板
         JButton execButton = new JButton("执行");
         execButton.setFocusPainted(false); // 取消焦点边框的绘制
         execButton.setFocusable(false);
-        buttonPanel.add(execButton);
+        eastPanel.add(execButton); // 将按钮添加到eastPanel
 
         // 创建“停止”按钮
         JButton stopButton = new JButton("停止");
         stopButton.setFocusPainted(false);
         stopButton.setFocusable(false);
-        buttonPanel.add(stopButton);
+        eastPanel.add(stopButton); // 将按钮添加到eastPanel
+
+        buttonPanel.add(eastPanel, BorderLayout.EAST); // 添加到面板上，放到最右侧
 
         // 把按钮面板添加到BorderLayout的North区域
         panel.add(buttonPanel, BorderLayout.NORTH);
@@ -460,6 +474,21 @@ public class CommonTemplate {
                 commandBuilder.append(" ").append(entry.getKey()).append(" ").append(entry.getValue());
             }
             return commandBuilder.toString();
+
+        } catch (FileNotFoundException ex) {
+            ex.printStackTrace();
+            return null;
+        }
+    }
+
+    private static String getInputFilePathFromJson(String pluginJsonPath) {
+        Gson gson = new Gson();
+        try {
+            Map<String, Object> jsonMap = gson.fromJson(new FileReader(pluginJsonPath), Map.class);
+            Map<String, Object> runMap = (Map<String, Object>) jsonMap.get("Run");
+            String inputFile = (String) runMap.get("InputFile");
+
+            return inputFile;
 
         } catch (FileNotFoundException ex) {
             ex.printStackTrace();
@@ -624,6 +653,8 @@ public class CommonTemplate {
                         if (wasManuallyStopped.get()) {
                             resultArea.append("\n"+tabName+" 程序被手动停止\n");
                         } else {
+                            // 在这里改变变量的值
+                            isCommandFinished = true;
                             resultArea.append("\n"+tabName+" 程序运行结束\n");
                             addPluginTab(tabbedPane, tabName, pluginJsonPath); // 新增标签
                             switchTab(tabbedPane, tabName);
