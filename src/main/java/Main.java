@@ -38,8 +38,7 @@ import javax.swing.undo.UndoManager;
 
 import static java.awt.BorderLayout.*;
 import static java.lang.Thread.sleep;
-import static plugins.CommonTemplate.saveTableData;
-import static plugins.CommonTemplate.switchTab;
+import static plugins.CommonTemplate.*;
 import static tableInit.GetjTableHeader.adjustColumnWidths;
 import static tableInit.GetjTableHeader.getjTableHeader;
 
@@ -172,6 +171,9 @@ public class Main {
         JMenuItem openFileMenuItem = new JMenuItem("打开文件");
         JMenuItem iconHashLabMenuItem = new JMenuItem("iconHash 计算");
         JMenu pluginMenu = new JMenu("插件模式");
+        JMenu autoRunMenu = new JMenu("Auto-Mode");
+        JMenuItem autoRunMenuItemRun = new JMenuItem("运行");
+        JMenuItem autoRunMenuItemSetting = new JMenuItem("设置");
         JMenu fofaHackMenu = new JMenu("Fofa-Hack");
         JMenuItem fofaHackMenuItemRun = new JMenuItem("运行");
         JMenuItem fofaHackMenuItemSetting = new JMenuItem("设置");
@@ -185,11 +187,17 @@ public class Main {
         labMenu.add(openFileMenuItem);
         labMenu.add(iconHashLabMenuItem);
         labMenu.add(pluginMenu);    // 发布需要注释
+
+        pluginMenu.add(autoRunMenu); // 自动模式添加到插件模式中
+        autoRunMenu.add(autoRunMenuItemRun);
+        autoRunMenu.add(autoRunMenuItemSetting);
+
         pluginMenu.add(fofaHackMenu);
         fofaHackMenu.add(fofaHackMenuItemRun);
         fofaHackMenu.add(fofaHackMenuItemSetting);
         fofaHackMenu.add(fofaHackMenuItemAbout);
-        labMenu.add(testMenu);      // 发布需要注释
+
+        // labMenu.add(testMenu);      // 发布需要注释
         testMenu.add(focusTestItem);
         testMenu.add(switchToHttpxItem);
 
@@ -964,6 +972,16 @@ public class Main {
             });
         });
 
+        autoRunMenuItemRun.addActionListener((ActionEvent event) -> {
+            JMenuItem item = runItems.get("domain2icp");
+            if (item != null) {
+                EventQueue.invokeLater(() -> {
+                    item.doClick();
+                });
+            }
+        });
+
+        // fofaHack 点击运行事件
         fofaHackMenuItemRun.addActionListener((ActionEvent event) -> {
             EventQueue.invokeLater(() -> {
                 FofaHack.main();
@@ -1016,9 +1034,9 @@ public class Main {
                                 "<b>fofa EX:</b><br>" +
                                 "Project: <a href='https://github.com/10cks/fofaEX'>https://github.com/10cks/fofaEX</a><br>" +
                                 "Author: bwner@OverSpace<br>" +
-                                "Version: 2.2<br>" +
+                                "Version: 3.1<br>" +
                                 "JDK Version: 11.0.5<br>" +
-                                "Update: 2023.12.11<br>" +
+                                "Update: 2024.01.17<br>" +
                                 "</body></html>"
                 );
                 editorPane.setEditable(false);

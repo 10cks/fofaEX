@@ -24,21 +24,30 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.List;
-import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static tableInit.GetjTableHeader.adjustColumnWidths;
 import static tableInit.GetjTableHeader.getjTableHeader;
 public class CommonTemplate {
-
     private static String pluginName = "";
     private static String allPluginsPath = "./plugins/";
     private static Process runningProcess = null;
     static AtomicBoolean wasManuallyStopped = new AtomicBoolean(false);
 
+    // Auto Mode 模式 <<<<<
+    // 创建一个 map 来保存所有的 runItem.
+    public static Map<String, JMenuItem> runItems = new HashMap<>();
+
+    // 创建使用BorderLayout的面板
+    static JPanel autoModePanel = new JPanel(new BorderLayout());
+
+    // 创建结果显示区域，并添加到面板的Center区域
+    static JTextArea autoModeResultArea = new JTextArea();
+
+
+    // Auto Mode 模式 <<<<<
 
     public static JLabel addBanner(String banner) {
         JLabel labelIcon = new JLabel(banner);
@@ -198,6 +207,8 @@ public class CommonTemplate {
 
                         // 把子菜单添加到主菜单中
                         pluginMenu.add(submenu);
+                        // 将 runItem 添加到 map 中.
+                        runItems.put(plugin.getKey(), runItem);
                     }
                 }
             } catch (IOException e) {
@@ -372,9 +383,14 @@ public class CommonTemplate {
         resultArea.setWrapStyleWord(true);  // 设置单词包装
         panel.add(new JScrollPane(resultArea), BorderLayout.CENTER);
 
-        // 创建新的面板用于放置按钮
+        autoModeResultArea.setLineWrap(true);  // 设置行包装
+        autoModeResultArea.setWrapStyleWord(true);  // 设置单词包装
+        autoModePanel.add(new JScrollPane(autoModeResultArea), BorderLayout.CENTER);
+
+        // 创建按钮面板用于放置按钮
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT)); // 使用FlowLayout并且指定按钮靠左对齐
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));  // 设置边距为10px
+
         // 创建执行按钮，并添加到新面板
         JButton execButton = new JButton("执行");
         execButton.setFocusPainted(false); // 取消焦点边框的绘制
@@ -387,18 +403,20 @@ public class CommonTemplate {
         stopButton.setFocusable(false);
         buttonPanel.add(stopButton);
 
-        // 把新面板添加到BorderLayout的North区域
+        // 把按钮面板添加到BorderLayout的North区域
         panel.add(buttonPanel, BorderLayout.NORTH);
 
         // 把面板添加到窗口中
+        // newFrame.add(autoModePanel);
         newFrame.add(panel);
         // 显示窗口
         newFrame.setVisible(true);
-
+        String command = constructCommandFromJson(pluginJsonPath);
+        executeCommand(command, resultArea, tabbedPane, frameName, pluginJsonPath); // 执行命令并显示结果
         // 运行按钮添加事件
         execButton.addActionListener(e -> {
             // 这里添加按钮动作，实际操作需按需修改
-            String command = constructCommandFromJson(pluginJsonPath);
+            //String command = constructCommandFromJson(pluginJsonPath);
             // 清屏
             resultArea.setText("");
             if (command != null) {
@@ -604,9 +622,9 @@ public class CommonTemplate {
                     }
                     SwingUtilities.invokeLater(() -> {
                         if (wasManuallyStopped.get()) {
-                            resultArea.append("\n程序被手动停止\n");
+                            resultArea.append("\n"+tabName+" 程序被手动停止\n");
                         } else {
-                            resultArea.append("\n程序运行结束\n");
+                            resultArea.append("\n"+tabName+" 程序运行结束\n");
                             addPluginTab(tabbedPane, tabName, pluginJsonPath); // 新增标签
                             switchTab(tabbedPane, tabName);
                         }
