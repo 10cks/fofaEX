@@ -26,7 +26,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static tableInit.GetjTableHeader.adjustColumnWidths;
 import static tableInit.GetjTableHeader.getjTableHeader;
@@ -47,6 +50,10 @@ public class CommonTemplate {
     static JTextArea autoModeResultArea = new JTextArea();
     // 添加一个 AutoMode 全局变量
     public static boolean isCommandFinished = false;
+
+    public static boolean isAutoMode = false;
+
+    public static CountDownLatch countDownLatch = new CountDownLatch(1);
 
     // Auto Mode 模式 <<<<<
 
@@ -389,7 +396,7 @@ public class CommonTemplate {
         autoModePanel.add(new JScrollPane(autoModeResultArea), BorderLayout.CENTER);
 
         // 创建流程面板用于查看上游数据
-        JLabel upstreamLabel = new JLabel("数据源："+ getInputFilePathFromJson(pluginJsonPath));
+        JLabel upstreamLabel = new JLabel("Data Stream: "+ extractFileName(getInputFilePathFromJson(pluginJsonPath)) + " --> " + frameName);
         upstreamLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));  // 设置边距为10px
         // 创建按钮面板用于放置按钮 使用BorderLayout
         JPanel buttonPanel = new JPanel(new BorderLayout()); // 使用BorderLayout
@@ -425,8 +432,20 @@ public class CommonTemplate {
         newFrame.add(panel);
         // 显示窗口
         newFrame.setVisible(true);
+
+        // AutoMode 使用
         String command = constructCommandFromJson(pluginJsonPath);
-        executeCommand(command, resultArea, tabbedPane, frameName, pluginJsonPath); // 执行命令并显示结果
+        if (command != null) {
+            try {
+                // 解析设置文件，运行InputTarget部分
+                parseJsonAndWriteFile(pluginJsonPath);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+            if(isAutoMode){
+                executeCommand(command, resultArea, tabbedPane, frameName, pluginJsonPath); // 执行命令并显示结果
+            }
+        }
         // 运行按钮添加事件
         execButton.addActionListener(e -> {
             // 这里添加按钮动作，实际操作需按需修改
@@ -494,6 +513,15 @@ public class CommonTemplate {
             ex.printStackTrace();
             return null;
         }
+    }
+
+    public static String extractFileName(String filePath) {
+        Pattern pattern = Pattern.compile(".*/(.*)(?=\\.json)");
+        Matcher matcher = pattern.matcher(filePath);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        return null;
     }
 
     // 新增插件“关于”
@@ -618,7 +646,6 @@ public class CommonTemplate {
             }
         }
     }
-
     static void executeCommand(String command, JTextArea resultArea, JTabbedPane tabbedPane, String tabName, String pluginJsonPath) {
         try {
             ProcessBuilder builder = new ProcessBuilder(command.split("\\s+"));
@@ -655,6 +682,7 @@ public class CommonTemplate {
                         } else {
                             // 在这里改变变量的值
                             isCommandFinished = true;
+                            countDownLatch.countDown();
                             resultArea.append("\n"+tabName+" 程序运行结束\n");
                             addPluginTab(tabbedPane, tabName, pluginJsonPath); // 新增标签
                             switchTab(tabbedPane, tabName);
@@ -663,9 +691,7 @@ public class CommonTemplate {
                     });
                 }
             });
-
             outputThread.start();
-
         } catch (Exception ex) {
             resultArea.setText("Error executing command: " + ex.getMessage());
             JOptionPane.showMessageDialog(null, "Execution failed", "Error", JOptionPane.ERROR_MESSAGE);

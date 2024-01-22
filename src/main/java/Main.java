@@ -975,9 +975,25 @@ public class Main {
         autoRunMenuItemRun.addActionListener((ActionEvent event) -> {
             JMenuItem item = runItems.get("domain2icp");
             if (item != null) {
-                EventQueue.invokeLater(() -> {
-                    item.doClick();
-                });
+                isAutoMode = true;
+                System.out.println(isCommandFinished);
+                item.doClick();
+                SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+                    @Override
+                    protected Void doInBackground() throws Exception {
+                        try {
+                            countDownLatch.await();
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                        return null;
+                    }
+                    @Override
+                    protected void done() {
+                        System.out.println(isCommandFinished);
+                    }
+                };
+                worker.execute();
             }
         });
 
