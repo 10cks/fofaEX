@@ -26,6 +26,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
+import plugins.AutoRunMenuItemRun;
 import plugins.CommonExecute;
 import plugins.CommonTemplate;
 import plugins.FofaHack;
@@ -172,7 +173,8 @@ public class Main {
         JMenuItem iconHashLabMenuItem = new JMenuItem("iconHash 计算");
         JMenu pluginMenu = new JMenu("插件模式");
         JMenu autoRunMenu = new JMenu("Auto-Mode");
-        JMenuItem autoRunMenuItemRun = new JMenuItem("运行");
+        JMenuItem item = new JMenuItem("运行");
+        AutoRunMenuItemRun.getInstance().setAutoRunMenuItemRun(item);
         JMenuItem autoRunMenuItemSetting = new JMenuItem("设置");
         JMenu fofaHackMenu = new JMenu("Fofa-Hack");
         JMenuItem fofaHackMenuItemRun = new JMenuItem("运行");
@@ -189,7 +191,7 @@ public class Main {
         labMenu.add(pluginMenu);    // 发布需要注释
 
         pluginMenu.add(autoRunMenu); // 自动模式添加到插件模式中
-        autoRunMenu.add(autoRunMenuItemRun);
+        autoRunMenu.add(AutoRunMenuItemRun.getInstance().getAutoRunMenuItemRun());
         autoRunMenu.add(autoRunMenuItemSetting);
 
         pluginMenu.add(fofaHackMenu);
@@ -972,29 +974,46 @@ public class Main {
             });
         });
 
-        autoRunMenuItemRun.addActionListener((ActionEvent event) -> {
-            JMenuItem item = runItems.get("domain2icp");
-            if (item != null) {
-                isAutoMode = true;
-                System.out.println(isCommandFinished);
-                item.doClick();
-                SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
-                    @Override
-                    protected Void doInBackground() throws Exception {
-                        try {
-                            countDownLatch.await();
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
+//        String needStr = "ip2domain -> domain2icp";
+
+        // 自动模式点击事件
+        AutoRunMenuItemRun.getInstance().getAutoRunMenuItemRun().addActionListener(event -> {
+            String needStr = "httpx -> ip2domain -> domain2icp";
+            LinkedList<String> commands = new LinkedList<>(Arrays.asList(needStr.split(" -> ")));
+
+            SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+                @Override
+                protected Void doInBackground() throws Exception {
+                    while (!commands.isEmpty()) {
+                        String currentCommand = commands.peek();
+                        JMenuItem item = runItems.get(currentCommand);
+                        if (item != null) {
+                            isAutoMode = true;
+                            // Reset the flag before each command
+                            isCurrentCommandFinished = false;
+
+                            // Run the command
+                            item.doClick();
+
+                            // Wait for the command to finish
+                            while (!isCurrentCommandFinished) {
+                                Thread.sleep(100); // sleep a bit before the next check
+                            }
+
+                            // 命令完成则从list移除
+                            commands.poll();
                         }
-                        return null;
                     }
-                    @Override
-                    protected void done() {
-                        System.out.println(isCommandFinished);
-                    }
-                };
-                worker.execute();
-            }
+                    return null;
+                }
+
+                @Override
+                protected void done() {
+                    isAutoMode = false;
+                }
+            };
+
+            worker.execute();
         });
 
         // fofaHack 点击运行事件

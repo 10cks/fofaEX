@@ -28,11 +28,11 @@ import java.util.*;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
+import static plugins.PluginDetails.getDetailsFromJson;
 import static tableInit.GetjTableHeader.adjustColumnWidths;
 import static tableInit.GetjTableHeader.getjTableHeader;
+
 public class CommonTemplate {
     private static String pluginName = "";
     private static String allPluginsPath = "./plugins/";
@@ -49,11 +49,14 @@ public class CommonTemplate {
     // 创建结果显示区域，并添加到面板的Center区域
     static JTextArea autoModeResultArea = new JTextArea();
     // 添加一个 AutoMode 全局变量
-    public static boolean isCommandFinished = false;
+    public static boolean isCurrentCommandFinished = false;
+    public static boolean isAllCommandFinished = false;
 
     public static boolean isAutoMode = false;
 
     public static CountDownLatch countDownLatch = new CountDownLatch(1);
+
+    private static JFrame autoFrame= null;
 
     // Auto Mode 模式 <<<<<
 
@@ -299,12 +302,13 @@ public class CommonTemplate {
             }
         });
 
-        mainPanel.add(panel1,BorderLayout.PAGE_END);
+        mainPanel.add(panel1, BorderLayout.PAGE_END);
         mainPanel.revalidate();
         mainPanel.repaint();
         //添加标签页
         tabbedPane.addTab(pluginName, mainPanel);
     }
+
     public static JTable createTableFromJson(String configFilePath) {
         // 创建Gson实例
         Gson gson = new Gson();
@@ -374,64 +378,135 @@ public class CommonTemplate {
         return table;
     }
 
+    public static JFrame getAutoFrame() {
+        if(autoFrame == null){
+            autoFrame = new JFrame("AutoMode");
+            autoFrame.setSize(800, 600);  // 改变窗口大小，使其能容纳更多文本
+            autoFrame.setLocationRelativeTo(null); // 窗口位置居中
+            autoFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // 关闭窗口时只关闭当前窗口，不影响其他窗口
+
+            // 自动模式文本区域
+            autoModeResultArea.setLineWrap(true);  // 设置行包装
+            autoModeResultArea.setWrapStyleWord(true);  // 设置单词包装
+            autoModePanel.add(new JScrollPane(autoModeResultArea), BorderLayout.CENTER);
+
+//            PluginDetails autoPluginDetails = getDetailsFromJson(pluginJsonPath);
+//            String autoInputFile = autoPluginDetails.getInputFile();
+//            String autoSelectColumn = autoPluginDetails.getSelectColumn();
+//            // 创建流程面板用于查看上游数据
+//            JLabel autoUpstreamLabel = new JLabel("Data Stream: " + autoInputFile + "(" +autoSelectColumn+ ")" + " --> " + frameName);
+//            autoUpstreamLabel.setBorder(BorderFactory.createEmptyBorder(10, 5, 10, 10));  // 设置边距为10px
+            // 创建按钮面板用于放置按钮 使用BorderLayout
+            JPanel autoButtonPanel = new JPanel(new BorderLayout()); // 使用BorderLayout
+            autoButtonPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 10)); // 设置边距为10px
+            // 对于加载在WEST（西侧，即左侧）的组件，我们使用JPanel盛装，使其在界面看起来更紧凑
+            JPanel autoWestPanel = new JPanel();
+//            autoWestPanel.add(autoUpstreamLabel);
+            autoButtonPanel.add(autoWestPanel, BorderLayout.WEST); // 添加到面板上，放到最左侧
+            // 对于加载在EAST（东侧，即右侧）的组件，我们使用JPanel盛装，使其在界面看起来更紧凑
+            JPanel autoEastPanel = new JPanel();
+            // 创建执行按钮，并添加到新面板
+            JButton autoExecButton = new JButton("执行");
+            autoExecButton.setFocusPainted(false); // 取消焦点边框的绘制
+            autoExecButton.setFocusable(false);
+            autoEastPanel.add(autoExecButton); // 将按钮添加到eastPanel
+            // 创建“停止”按钮
+            JButton autoStopButton = new JButton("停止");
+            autoStopButton.setFocusPainted(false);
+            autoStopButton.setFocusable(false);
+            // 将按钮添加到eastPanel
+            autoEastPanel.add(autoStopButton);
+            // 按钮添加到按钮面板上，放到最右侧
+            autoButtonPanel.add(autoEastPanel, BorderLayout.EAST);
+            // 把按钮面板添加到BorderLayout的North区域
+            autoModePanel.add(autoButtonPanel, BorderLayout.NORTH);
+
+            // 自动运行按钮添加事件
+            autoExecButton.addActionListener(e -> {
+                // 清屏
+                autoModeResultArea.setText("");
+                AutoRunMenuItemRun.getInstance().getAutoRunMenuItemRun().doClick();
+            });
+            // 停止按钮
+            autoStopButton.addActionListener(e -> {
+                if (runningProcess != null) {
+                    wasManuallyStopped.set(true);  // 设置被手动停止的标志
+                    runningProcess.destroy();
+                    runningProcess = null;
+                }
+            });
+        }
+        return autoFrame;
+    }
+
     // 新增插件“运行”功能面板
     public static void addPluginFrame(String pluginJsonPath, String frameName, JTabbedPane tabbedPane) {
+        JFrame normalFrame = new JFrame(); //首先在if/else块的外部声明变量
+//        JFrame autoFrame= new JFrame();; //首先在if/else块的外部声明变量
         // 建立新的窗口Frame
-        JFrame newFrame = new JFrame(frameName);
-        newFrame.setSize(800, 600);  // 改变窗口大小，使其能容纳更多文本
-        newFrame.setLocationRelativeTo(null); // 窗口位置居中
-        newFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // 关闭窗口时只关闭当前窗口，不影响其他窗口
+        if(isAutoMode){
+            autoFrame = getAutoFrame();
+        } else {
+            normalFrame = new JFrame(frameName);
+        }
+        normalFrame.setSize(800, 600);  // 改变窗口大小，使其能容纳更多文本
+        normalFrame.setLocationRelativeTo(null); // 窗口位置居中
+        normalFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // 关闭窗口时只关闭当前窗口，不影响其他窗口
 
         // 创建使用BorderLayout的面板
         JPanel panel = new JPanel(new BorderLayout());
-
         // 创建结果显示区域，并添加到面板的Center区域
         JTextArea resultArea = new JTextArea();
         resultArea.setLineWrap(true);  // 设置行包装
         resultArea.setWrapStyleWord(true);  // 设置单词包装
         panel.add(new JScrollPane(resultArea), BorderLayout.CENTER);
 
-        autoModeResultArea.setLineWrap(true);  // 设置行包装
-        autoModeResultArea.setWrapStyleWord(true);  // 设置单词包装
-        autoModePanel.add(new JScrollPane(autoModeResultArea), BorderLayout.CENTER);
-
+        // 常规模式按钮设置 <<<<<
+        PluginDetails pluginDetails = getDetailsFromJson(pluginJsonPath);
+        String inputFile = pluginDetails.getInputFile();
+        String selectColumn = pluginDetails.getSelectColumn();
         // 创建流程面板用于查看上游数据
-        JLabel upstreamLabel = new JLabel("Data Stream: "+ extractFileName(getInputFilePathFromJson(pluginJsonPath)) + " --> " + frameName);
-        upstreamLabel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));  // 设置边距为10px
+        JLabel upstreamLabel = new JLabel("Data Stream: " + inputFile + "(" +selectColumn+ ")" + " --> " + frameName);
+        upstreamLabel.setBorder(BorderFactory.createEmptyBorder(10, 5, 10, 10));  // 设置边距为10px
         // 创建按钮面板用于放置按钮 使用BorderLayout
         JPanel buttonPanel = new JPanel(new BorderLayout()); // 使用BorderLayout
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 10)); // 设置边距为10px
-
         // 对于加载在WEST（西侧，即左侧）的组件，我们使用JPanel盛装，使其在界面看起来更紧凑
         JPanel westPanel = new JPanel();
         westPanel.add(upstreamLabel);
         buttonPanel.add(westPanel, BorderLayout.WEST); // 添加到面板上，放到最左侧
-
         // 对于加载在EAST（东侧，即右侧）的组件，我们使用JPanel盛装，使其在界面看起来更紧凑
         JPanel eastPanel = new JPanel();
-
         // 创建执行按钮，并添加到新面板
         JButton execButton = new JButton("执行");
         execButton.setFocusPainted(false); // 取消焦点边框的绘制
         execButton.setFocusable(false);
         eastPanel.add(execButton); // 将按钮添加到eastPanel
-
         // 创建“停止”按钮
         JButton stopButton = new JButton("停止");
         stopButton.setFocusPainted(false);
         stopButton.setFocusable(false);
-        eastPanel.add(stopButton); // 将按钮添加到eastPanel
-
-        buttonPanel.add(eastPanel, BorderLayout.EAST); // 添加到面板上，放到最右侧
-
+        // 将按钮添加到eastPanel
+        eastPanel.add(stopButton);
+        // 按钮添加到按钮面板上，放到最右侧
+        buttonPanel.add(eastPanel, BorderLayout.EAST);
         // 把按钮面板添加到BorderLayout的North区域
         panel.add(buttonPanel, BorderLayout.NORTH);
+        // 常规模式按钮设置 <<<<<
 
-        // 把面板添加到窗口中
-        // newFrame.add(autoModePanel);
-        newFrame.add(panel);
-        // 显示窗口
-        newFrame.setVisible(true);
+        // 自动模式按钮设置 <<<<<
+
+        // 自动模式按钮设置 <<<<<
+
+        if(isAutoMode){
+            // 把面板添加到窗口中，显示窗口
+            autoFrame.add(autoModePanel);
+            autoFrame.setVisible(true);
+        }else{
+            // 把面板添加到窗口中，显示窗口
+            normalFrame.add(panel);
+            normalFrame.setVisible(true);
+        }
 
         // AutoMode 使用
         String command = constructCommandFromJson(pluginJsonPath);
@@ -442,14 +517,15 @@ public class CommonTemplate {
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
             }
-            if(isAutoMode){
+            if (isAutoMode) {
+                autoExecuteCommand(command, autoModeResultArea, tabbedPane, frameName, pluginJsonPath); // 执行命令并显示结果 frameName 此处为底部tab名
+            }
+            if (!isAutoMode) {
                 executeCommand(command, resultArea, tabbedPane, frameName, pluginJsonPath); // 执行命令并显示结果
             }
         }
         // 运行按钮添加事件
         execButton.addActionListener(e -> {
-            // 这里添加按钮动作，实际操作需按需修改
-            //String command = constructCommandFromJson(pluginJsonPath);
             // 清屏
             resultArea.setText("");
             if (command != null) {
@@ -474,10 +550,7 @@ public class CommonTemplate {
             }
         });
 
-        // 把面板添加到窗口中
-        newFrame.add(panel);
-        // 显示窗口
-        newFrame.setVisible(true);
+
     }
 
     private static String constructCommandFromJson(String pluginJsonPath) {
@@ -498,30 +571,6 @@ public class CommonTemplate {
             ex.printStackTrace();
             return null;
         }
-    }
-
-    private static String getInputFilePathFromJson(String pluginJsonPath) {
-        Gson gson = new Gson();
-        try {
-            Map<String, Object> jsonMap = gson.fromJson(new FileReader(pluginJsonPath), Map.class);
-            Map<String, Object> runMap = (Map<String, Object>) jsonMap.get("Run");
-            String inputFile = (String) runMap.get("InputFile");
-
-            return inputFile;
-
-        } catch (FileNotFoundException ex) {
-            ex.printStackTrace();
-            return null;
-        }
-    }
-
-    public static String extractFileName(String filePath) {
-        Pattern pattern = Pattern.compile(".*/(.*)(?=\\.json)");
-        Matcher matcher = pattern.matcher(filePath);
-        if (matcher.find()) {
-            return matcher.group(1);
-        }
-        return null;
     }
 
     // 新增插件“关于”
@@ -646,6 +695,7 @@ public class CommonTemplate {
             }
         }
     }
+
     static void executeCommand(String command, JTextArea resultArea, JTabbedPane tabbedPane, String tabName, String pluginJsonPath) {
         try {
             ProcessBuilder builder = new ProcessBuilder(command.split("\\s+"));
@@ -678,12 +728,12 @@ public class CommonTemplate {
                     }
                     SwingUtilities.invokeLater(() -> {
                         if (wasManuallyStopped.get()) {
-                            resultArea.append("\n"+tabName+" 程序被手动停止\n");
+                            resultArea.append("\n" + tabName + " 程序被手动停止\n");
                         } else {
                             // 在这里改变变量的值
-                            isCommandFinished = true;
+                            isCurrentCommandFinished = true;
                             countDownLatch.countDown();
-                            resultArea.append("\n"+tabName+" 程序运行结束\n");
+                            resultArea.append("\n" + tabName + " 程序运行结束\n");
                             addPluginTab(tabbedPane, tabName, pluginJsonPath); // 新增标签
                             switchTab(tabbedPane, tabName);
                         }
@@ -696,6 +746,10 @@ public class CommonTemplate {
             resultArea.setText("Error executing command: " + ex.getMessage());
             JOptionPane.showMessageDialog(null, "Execution failed", "Error", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    static void autoExecuteCommand(String command, JTextArea resultArea, JTabbedPane tabbedPane, String tabName, String pluginJsonPath) {
+        executeCommand(command, resultArea, tabbedPane, tabName, pluginJsonPath);
     }
 
     public static void main(String[] args) {
