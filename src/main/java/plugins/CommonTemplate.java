@@ -47,7 +47,7 @@ public class CommonTemplate {
     static JPanel autoModePanel = new JPanel(new BorderLayout());
 
     // 创建结果显示区域，并添加到面板的Center区域
-    static JTextArea autoModeResultArea = new JTextArea();
+    public static JTextArea autoModeResultArea = new JTextArea();
     // 添加一个 AutoMode 全局变量
     public static boolean isCurrentCommandFinished = false;
     public static boolean isAllCommandFinished = false;
@@ -62,7 +62,7 @@ public class CommonTemplate {
 
     public static String flow ="";
 
-    public static JLabel autoUpstreamLabel = new JLabel("AutoMode: "+ flow);
+    public static JLabel autoUpstreamLabel = new JLabel();
 
     // Auto Mode 模式 <<<<<
 
@@ -395,10 +395,6 @@ public class CommonTemplate {
             autoModeResultArea.setLineWrap(true);  // 设置行包装
             autoModeResultArea.setWrapStyleWord(true);  // 设置单词包装
             autoModePanel.add(new JScrollPane(autoModeResultArea), BorderLayout.CENTER);
-
-//            PluginDetails autoPluginDetails = getDetailsFromJson(pluginJsonPath);
-//            String autoInputFile = autoPluginDetails.getInputFile();
-//            String autoSelectColumn = autoPluginDetails.getSelectColumn();
             // 创建流程面板用于查看上游数据
             try {
                 initAutoModeFile = new AutoModeInitFile();
@@ -406,8 +402,13 @@ public class CommonTemplate {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            autoUpstreamLabel = new JLabel("AutoMode: "+ flow);
-            autoUpstreamLabel.setBorder(BorderFactory.createEmptyBorder(10, 5, 10, 10));  // 设置边距为10px
+            int arrowIndex = flow.indexOf(" -> ");
+            if (arrowIndex != -1) {
+                String commandBeforeArrow = flow.substring(0, arrowIndex).trim();
+                String highlightedCommand = "<span style='color:red;'>" + commandBeforeArrow + "</span>";
+                flow = flow.replace(commandBeforeArrow, highlightedCommand);
+            }
+            autoUpstreamLabel = new JLabel("<html><body style='width: 450px'><b>AutoMode:</b><br>" + flow + "</body></html>");
             // 创建按钮面板用于放置按钮 使用BorderLayout
             JPanel autoButtonPanel = new JPanel(new BorderLayout()); // 使用BorderLayout
             autoButtonPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 10)); // 设置边距为10px
@@ -433,16 +434,14 @@ public class CommonTemplate {
             // 把按钮面板添加到BorderLayout的North区域
             autoModePanel.add(autoButtonPanel, BorderLayout.NORTH);
 
-            // 自动运行按钮添加事件
+            // 自动模式运行按钮添加事件
             autoExecButton.addActionListener(e -> {
-                // 清屏
-                autoModeResultArea.setText("");
                 try {
                     flow = initAutoModeFile.getFlow();
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }
-                autoUpstreamLabel.setText("AutoMode: " + flow);
+                // 回调主函数自动模式点击事件
                 AutoRunMenuItemRun.getInstance().getAutoRunMenuItemRun().doClick();
             });
             // 停止按钮
@@ -647,15 +646,15 @@ public class CommonTemplate {
     public static void addPluginsSettingOpen(String pluginJsonPath) {
         File fofaHackSettingsFile = new File(pluginJsonPath);
         if (fofaHackSettingsFile.exists()) {
-            // 如果文件存在，使用notepad打开它
+            // 如果文件存在，使用默认程序打开
             try {
-                new ProcessBuilder("notepad", pluginJsonPath).start();
+                Desktop.getDesktop().open(fofaHackSettingsFile);
             } catch (IOException ex) {
                 ex.printStackTrace();
                 JOptionPane.showMessageDialog(null, "无法打开配置文件！", "错误", JOptionPane.ERROR_MESSAGE);
             }
         } else {
-            // 如果文件不存在，显示弹窗
+            // 如果文件不存在，显示错误消息
             JOptionPane.showMessageDialog(null, "未获取到配置文件！", "错误", JOptionPane.ERROR_MESSAGE);
         }
     }

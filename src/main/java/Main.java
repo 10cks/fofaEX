@@ -41,6 +41,8 @@ import static tableInit.GetjTableHeader.adjustColumnWidths;
 import static tableInit.GetjTableHeader.getjTableHeader;
 
 import java.util.concurrent.ExecutionException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Main {
@@ -975,13 +977,28 @@ public class Main {
         // 自动模式点击事件
         AutoRunMenuItemRun.getInstance().getAutoRunMenuItemRun().addActionListener(event -> {
             initAutoModeFile = new AutoModeInitFile();
+            // 清屏
+            autoModeResultArea.setText("");
             try {
                 flow = initAutoModeFile.getFlow();
                 System.out.println("Auto Mode Running: " + flow);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            LinkedList<String> commands = new LinkedList<>(Arrays.asList(flow.split(" -> ")));
+//            LinkedList<String> commands = new LinkedList<>(Arrays.asList(flow.split(" -> ")));
+            // 先按照箭头"->"分割
+            String[] parts = flow.split("->");
+            // 创建一个链表来存储结果
+            LinkedList<String> commands = new LinkedList<>();
+            // 遍历每一部分
+            for(String part : parts) {
+                // 使用正则表达式提取出括号外的部分
+                Matcher matcher = Pattern.compile("([^()]+)").matcher(part);
+                if (matcher.find()) {
+                    // 将提取出的部分添加到结果链表中
+                    commands.add(matcher.group(1).trim());
+                }
+            }
             SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
                 @Override
                 protected Void doInBackground() throws Exception {
@@ -992,28 +1009,37 @@ public class Main {
                             isAutoMode = true;
                             // Reset the flag before each command
                             isCurrentCommandFinished = false;
-
+                            autoUpstreamLabel.setText(highlightCommand(flow, currentCommand, "red"));
                             // Run the command
                             item.doClick();
-
                             // Wait for the command to finish
                             while (!isCurrentCommandFinished) {
                                 Thread.sleep(100); // sleep a bit before the next check
                             }
 
+                            // 运行完毕变为绿色
+                            int commandIndex = flow.indexOf(currentCommand);
+                            if (commandIndex != -1) {
+                                int openParenIndex = flow.indexOf('(', commandIndex);
+                                int closeParenIndex = flow.indexOf(')', openParenIndex);
+                                if (openParenIndex != -1 && closeParenIndex != -1) {
+                                    String completeCommand = flow.substring(commandIndex, closeParenIndex + 1);
+                                    String highlightedCommand = "<span style='color:green;'>" + completeCommand + "</span>";
+                                    flow = flow.replace(completeCommand, highlightedCommand);
+                                }
+                            }
+                            autoUpstreamLabel.setText("<html><body style='width: 450px'><b>AutoMode:</b><br>" + flow + "</body></html>");
                             // 命令完成则从list移除
                             commands.poll();
                         }
                     }
                     return null;
                 }
-
                 @Override
                 protected void done() {
                     isAutoMode = false;
                 }
             };
-
             worker.execute();
         });
 
@@ -1157,6 +1183,20 @@ public class Main {
             }
         });
 
+    }
+
+    public static String highlightCommand(String flow, String currentCommand, String color) {
+        int commandIndex = flow.indexOf(currentCommand);
+        if (commandIndex != -1) {
+            int openParenIndex = flow.indexOf('(', commandIndex);
+            int closeParenIndex = flow.indexOf(')', openParenIndex);
+            if (openParenIndex != -1 && closeParenIndex != -1) {
+                String completeCommand = flow.substring(commandIndex, closeParenIndex + 1);
+                String highlightedCommand = "<span style='color:"+ color + ";'>" + completeCommand + "</span>";
+                flow = flow.replace(completeCommand, highlightedCommand);
+            }
+        }
+        return "<html><body style='width: 450px'><b>AutoMode:</b><br>" + flow + "</body></html>";
     }
 
     private static JTextField createTextField(String text) {
