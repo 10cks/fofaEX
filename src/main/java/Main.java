@@ -26,10 +26,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
-import plugins.AutoRunMenuItemRun;
-import plugins.CommonExecute;
-import plugins.CommonTemplate;
-import plugins.FofaHack;
+import plugins.*;
 import tableInit.HighlightRenderer;
 import tableInit.RightClickFunctions;
 
@@ -125,6 +122,8 @@ public class Main {
     static TableCellRenderer highlightRenderer = new HighlightRenderer();
     private static TableCellRenderer defaultRenderer;
     private static JTabbedPane tabbedPane0;
+
+
 
     public static void main(String[] args) throws ClassNotFoundException, UnsupportedLookAndFeelException, InstantiationException, IllegalAccessException, FileNotFoundException {
 
@@ -387,7 +386,7 @@ public class Main {
             File rulesFile = new File(rulesPath);
             if (!rulesFile.exists()) {
                 rulesFile.createNewFile();
-                System.out.println("[+] The current path does not contain " + rulesPath + ". Create "+  rulesPath  +".");
+                System.out.println("[+] The current path does not contain " + rulesPath + ". Create " + rulesPath + ".");
             }
             rulesReader = new BufferedReader(new FileReader(rulesFile));
             // 创建 accounts.txt 文件如果它不存在
@@ -861,7 +860,7 @@ public class Main {
                 JButton cancelButton = new JButton("取消");
                 JOptionPane optionPane = new JOptionPane(inputField,
                         JOptionPane.PLAIN_MESSAGE, JOptionPane.DEFAULT_OPTION);
-                optionPane.setOptions(new Object[] { okButton, cancelButton });
+                optionPane.setOptions(new Object[]{okButton, cancelButton});
 
                 JDialog dialog = optionPane.createDialog("请输入默认查询数量");
                 okButton.addActionListener(ev -> {
@@ -973,14 +972,16 @@ public class Main {
                 calculator.setVisible(true);
             });
         });
-
-//        String needStr = "ip2domain -> domain2icp";
-
         // 自动模式点击事件
         AutoRunMenuItemRun.getInstance().getAutoRunMenuItemRun().addActionListener(event -> {
-            String needStr = "httpx -> ip2domain -> domain2icp";
-            LinkedList<String> commands = new LinkedList<>(Arrays.asList(needStr.split(" -> ")));
-
+            initAutoModeFile = new AutoModeInitFile();
+            try {
+                flow = initAutoModeFile.getFlow();
+                System.out.println("Auto Mode Running: " + flow);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            LinkedList<String> commands = new LinkedList<>(Arrays.asList(flow.split(" -> ")));
             SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
                 @Override
                 protected Void doInBackground() throws Exception {
@@ -2069,7 +2070,8 @@ public class Main {
             if (accountsFile.exists() && accountsFile.length() != 0) {
                 BufferedReader br = new BufferedReader(new FileReader(accountsFile));
                 //转换为哈希映射类型
-                Map<String, JsonElement> accounts = gson.fromJson(br, new TypeToken<Map<String, JsonElement>>(){}.getType());
+                Map<String, JsonElement> accounts = gson.fromJson(br, new TypeToken<Map<String, JsonElement>>() {
+                }.getType());
                 // 从哈希映射中获取数据并设置
                 if (accounts.get("fofaEmail") != null && accounts.get("fofaKey") != null) {
                     fofaEmail.setText(accounts.get("fofaEmail").getAsString());
@@ -2078,7 +2080,7 @@ public class Main {
                 if (accounts.get("queryNumber") != null) {
                     sizeSetting = accounts.get("queryNumber").getAsInt();
                 }
-                if(accounts.get("queryFull") != null) {
+                if (accounts.get("queryFull") != null) {
                     setFull = accounts.get("queryFull").getAsBoolean();
                 }
             }

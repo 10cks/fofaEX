@@ -58,6 +58,12 @@ public class CommonTemplate {
 
     private static JFrame autoFrame= null;
 
+    public static AutoModeInitFile initAutoModeFile = new AutoModeInitFile();
+
+    public static String flow ="";
+
+    public static JLabel autoUpstreamLabel = new JLabel("AutoMode: "+ flow);
+
     // Auto Mode 模式 <<<<<
 
     public static JLabel addBanner(String banner) {
@@ -393,15 +399,21 @@ public class CommonTemplate {
 //            PluginDetails autoPluginDetails = getDetailsFromJson(pluginJsonPath);
 //            String autoInputFile = autoPluginDetails.getInputFile();
 //            String autoSelectColumn = autoPluginDetails.getSelectColumn();
-//            // 创建流程面板用于查看上游数据
-//            JLabel autoUpstreamLabel = new JLabel("Data Stream: " + autoInputFile + "(" +autoSelectColumn+ ")" + " --> " + frameName);
-//            autoUpstreamLabel.setBorder(BorderFactory.createEmptyBorder(10, 5, 10, 10));  // 设置边距为10px
+            // 创建流程面板用于查看上游数据
+            try {
+                initAutoModeFile = new AutoModeInitFile();
+                flow = initAutoModeFile.getFlow();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            autoUpstreamLabel = new JLabel("AutoMode: "+ flow);
+            autoUpstreamLabel.setBorder(BorderFactory.createEmptyBorder(10, 5, 10, 10));  // 设置边距为10px
             // 创建按钮面板用于放置按钮 使用BorderLayout
             JPanel autoButtonPanel = new JPanel(new BorderLayout()); // 使用BorderLayout
             autoButtonPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 10)); // 设置边距为10px
             // 对于加载在WEST（西侧，即左侧）的组件，我们使用JPanel盛装，使其在界面看起来更紧凑
             JPanel autoWestPanel = new JPanel();
-//            autoWestPanel.add(autoUpstreamLabel);
+            autoWestPanel.add(autoUpstreamLabel);
             autoButtonPanel.add(autoWestPanel, BorderLayout.WEST); // 添加到面板上，放到最左侧
             // 对于加载在EAST（东侧，即右侧）的组件，我们使用JPanel盛装，使其在界面看起来更紧凑
             JPanel autoEastPanel = new JPanel();
@@ -425,6 +437,12 @@ public class CommonTemplate {
             autoExecButton.addActionListener(e -> {
                 // 清屏
                 autoModeResultArea.setText("");
+                try {
+                    flow = initAutoModeFile.getFlow();
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+                autoUpstreamLabel.setText("AutoMode: " + flow);
                 AutoRunMenuItemRun.getInstance().getAutoRunMenuItemRun().doClick();
             });
             // 停止按钮
@@ -463,6 +481,7 @@ public class CommonTemplate {
 
         // 常规模式按钮设置 <<<<<
         PluginDetails pluginDetails = getDetailsFromJson(pluginJsonPath);
+        assert pluginDetails != null;
         String inputFile = pluginDetails.getInputFile();
         String selectColumn = pluginDetails.getSelectColumn();
         // 创建流程面板用于查看上游数据
