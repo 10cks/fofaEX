@@ -124,9 +124,6 @@ public class Main {
     static TableCellRenderer highlightRenderer = new HighlightRenderer();
     private static TableCellRenderer defaultRenderer;
     private static JTabbedPane tabbedPane0;
-
-
-
     public static void main(String[] args) throws ClassNotFoundException, UnsupportedLookAndFeelException, InstantiationException, IllegalAccessException, FileNotFoundException {
 
         JFrame jFrame = new JFrame("fofaEX");
@@ -1054,6 +1051,7 @@ public class Main {
             @Override
             public void actionPerformed(ActionEvent e) {
                 JFileChooser fileChooser = new JFileChooser();
+
                 // 如果存在上次打开的路径，则设置文件选择器的当前目录
                 if (lastOpenedPath != null) {
                     fileChooser.setCurrentDirectory(lastOpenedPath);
@@ -1064,8 +1062,26 @@ public class Main {
                     // 更新 lastOpenedPath 为当前选择的文件或文件夹
                     lastOpenedPath = fileChooser.getCurrentDirectory();
 
-                    // 调用方法来处理文件
-                    FofaHack.loadFileIntoTable(file);
+                    // 获取文件的扩展名
+                    String fileExtension = file.getName().substring(file.getName().lastIndexOf(".") + 1);
+
+                    // 根据文件类型调用对应的处理方法
+                    switch (fileExtension.toLowerCase()) {
+                        case "csv":
+                            FofaHack.loadCSVIntoTable(file);
+                            break;
+                        case "xlsx":
+                            FofaHack.loadXLSXIntoTable(file);
+                            break;
+                        case "json":
+                            FofaHack.loadJSONIntoTable(file);
+                            break;
+                        default:
+                            JOptionPane.showMessageDialog(null, "Unsupported file type: " + fileExtension);
+                            break;
+                    }
+
+                    saveTableData(tabbedPane0);
                 }
             }
         });

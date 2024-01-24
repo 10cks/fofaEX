@@ -9,6 +9,8 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Map;
@@ -17,6 +19,8 @@ import com.google.gson.*;
 
 import java.util.Vector;
 
+import com.opencsv.CSVReader;
+import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -108,7 +112,6 @@ public class FofaHack {
 
     private void executeCommand(String searchStr, String endcount, JTextArea resultArea) {
         try {
-
             // 从配置文件中读取设置
             Properties properties = new Properties();
             properties.load(new FileInputStream("./plugins/fofahack/FofaHackSetting.txt"));
@@ -165,6 +168,8 @@ public class FofaHack {
                         try {
                             if (checkMakeFile()) {
                                 System.out.println("[*] FofaHack running success.");
+                                // 复制文件到 FofaEX.json 中
+
                                 // 导出表格
                                 JButton exportButton = new JButton("Export to Excel");
                                 exportButton.setFocusPainted(false); // 添加这一行来取消焦点边框的绘制
@@ -220,38 +225,27 @@ public class FofaHack {
         File outputFile = new File(outputname);
         File finalFile = new File(finalname);
 
+        // 检查或创建coredata文件夹
+        File directory = new File("coredata");
+        if (!directory.exists()) {
+            directory.mkdir();
+        }
+        File copyFile = new File("coredata/FofaEX.json");
+        // 在这里检查 final 文件是否存在
         if (finalFile.exists()) {
-            loadFileIntoTable(finalFile);
-            // 在这里检查 final 文件是否存在
-            System.out.println(finalname + " 加载完成");
+            Files.copy(finalFile.toPath(), copyFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            loadJSONIntoTable(copyFile);
             return true;
-        } else if (outputFile.exists()) {
-            loadFileIntoTable(outputFile);
-            // 在这里检查 output 文件是否存在
-            System.out.println(outputname + " 加载完成");
+        } else if (outputFile.exists()) { // 在这里检查 output 文件是否存在
+            Files.copy(outputFile.toPath(), copyFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            loadJSONIntoTable(copyFile);
             return true;
         }
         return false;
     }
 
-    public static void loadFileIntoTable(File file) {
-
-        // 重新设置表格头，以便新的渲染器生效
-        JTableHeader header = getjTableHeader(table);
-        table.setTableHeader(header);
-
-        adjustColumnWidths(table); // 自动调整列宽
-        JScrollPane scrollPane = new JScrollPane(table);
-
-        table.setRowHeight(24); // 设置表格的行高
-        table.setFillsViewportHeight(true);
-
-        panel.removeAll();
-        panel.add(scrollPane, BorderLayout.CENTER);
-
-        // 设置表格的默认渲染器
-        table.setDefaultRenderer(Object.class, new SelectedCellBorderHighlighter());
-
+    public static void loadJSONIntoTable(File file) {
+        initTable();
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             JsonArray jsonArray = JsonParser.parseReader(reader).getAsJsonArray();
             Vector<String> columnNames = null;
@@ -300,6 +294,139 @@ public class FofaHack {
         rowCountLabel.setText("Total Rows: " + table.getRowCount() + " ");
     }
 
+    public static void loadXLSXIntoTable(File file) {
+        initTable();
+        try {
+            // 用于导入.xlsx文件的Apache POI库
+            XSSFWorkbook workbook = new XSSFWorkbook(new FileInputStream(file));
+            XSSFSheet sheet = workbook.getSheetAt(0);
+            XSSFRow row;
+            XSSFCell cell;
+
+            int rows = sheet.getPhysicalNumberOfRows();
+            int cols = 0;
+            int tmp = 0;
+
+            // 获取表头
+            Vector<String> columnNames = new Vector<>();
+            row = sheet.getRow(0);
+            if (row != null) {
+                tmp = row.getPhysicalNumberOfCells();
+                if (tmp > cols) cols = tmp;
+                for (int j = 0; j < cols; j++) {
+                    cell = row.getCell(j);
+                    if (cell != null) {
+                        columnNames.add(cell.getStringCellValue());
+                    }
+                }
+            }
+
+            // 获取数据
+            Vector<Vector<Object>> dataVector = new Vector<>();
+            for (int i = 1; i < rows; i++) {
+                row = sheet.getRow(i);
+                if (row != null) {
+                    Vector<Object> rowData = new Vector<>();
+                    for (int j = 0; j < cols; j++) {
+                        cell = row.getCell(j);
+                        if (cell != null) {
+                            switch (cell.getCellType()) {
+                                case STRING:
+                                    rowData.add(cell.getStringCellValue());
+                                    break;
+                                case NUMERIC:
+                                    rowData.add(cell.getNumericCellValue());
+                                    break;
+                                case BOOLEAN:
+                                    rowData.add(cell.getBooleanCellValue());
+                                    break;
+                                default:
+                                    rowData.add(null);
+                                    break;
+                            }
+                        }
+                    }
+                    dataVector.add(rowData);
+                }
+            }
+
+            DefaultTableModel model = new DefaultTableModel(dataVector, columnNames);
+            table.setModel(model);
+            // 创建一个TableRowSorter并将其设置为表格：排序功能
+            TableRowSorter<TableModel> sorter = new TableRowSorter<>(model);
+            table.setRowSorter(sorter);
+
+        } catch (Exception ioe) {
+            ioe.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Execute Failed!", "XLSX Error", JOptionPane.ERROR_MESSAGE);
+        }
+        // 更新 panel 和 rowCountLabel
+        panel.revalidate();
+        panel.repaint();
+        rowCountLabel.setText("Total Rows: " + table.getRowCount() + " ");
+    }
+
+    public static void loadCSVIntoTable(java.io.File file) {
+        initTable();
+        try {
+            // 用于读取.csv文件的OpenCSV库
+            CSVReader reader = new CSVReader(new FileReader(file));
+            String[] nextLine;
+
+            Vector<String> columnNames = new Vector<>();
+            Vector<Vector<Object>> dataVector = new Vector<>();
+
+            int lineNumber = 0;
+            while ((nextLine = reader.readNext()) != null) {
+                Vector<Object> row = new Vector<>();
+                for (String item : nextLine) {
+                    row.add(item);
+                }
+
+                if (lineNumber == 0) {
+                    for (Object obj : row) {
+                        columnNames.add(obj.toString());
+                    }
+                } else {
+                    dataVector.add(row);
+                }
+                lineNumber++;
+            }
+
+            javax.swing.table.DefaultTableModel model = new javax.swing.table.DefaultTableModel(dataVector, columnNames);
+            table.setModel(model);
+            // 创建一个TableRowSorter并将其设置为表格：排序功能
+            TableRowSorter<TableModel> sorter = new TableRowSorter<>(model);
+            table.setRowSorter(sorter);
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Execute Failed!", "CSV Error", JOptionPane.ERROR_MESSAGE);
+        }
+        // 更新 panel 和 rowCountLabel
+        panel.revalidate();
+        panel.repaint();
+        rowCountLabel.setText("Total Rows: " + table.getRowCount() + " ");
+    }
+
+
+    public static void initTable(){
+
+        // 重新设置表格头，以便新的渲染器生效
+        JTableHeader header = getjTableHeader(table);
+        table.setTableHeader(header);
+
+        adjustColumnWidths(table); // 自动调整列宽
+        JScrollPane scrollPane = new JScrollPane(table);
+
+        table.setRowHeight(24); // 设置表格的行高
+        table.setFillsViewportHeight(true);
+
+        panel.removeAll();
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        // 设置表格的默认渲染器
+        table.setDefaultRenderer(Object.class, new SelectedCellBorderHighlighter());
+    }
     public static void exportTableToExcel(JTable table) {
         XSSFWorkbook workbook = new XSSFWorkbook();
 
