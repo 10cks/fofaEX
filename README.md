@@ -38,13 +38,22 @@ java "-Dfile.encoding=UTF-8" -jar .\fofaEX.jar
 
 [更新日志](https://github.com/10cks/fofaEX/blob/master/docs/update.md) [问题修复](https://github.com/10cks/fofaEX/blob/master/docs/issues.md) [第三方插件](https://github.com/10cks/fofaEX/blob/master/docs/plugins.md)
 
+程序主界面：
+
 ![image](https://github.com/10cks/fofaEX/assets/47177550/b1c91436-e8e7-463f-ac6d-4ea2ef737604)
+
+自动化资产探测：httpx 探活 -> ip反查域名 -> 域名反查ICP -> dismap 指纹采集
+
+![mnggiflab-compressed-mnggiflab-from-video-to-gif-2024_01_25_11_19_08](https://github.com/10cks/fofaEX/assets/47177550/d9be02fe-7a87-4930-91a5-3c1561d88c1d)
 
 ## 优势
 
 1. 更多的默认数据查询：默认查询全部数据
 
 ![image](https://github.com/10cks/fofaEX/assets/47177550/787106c1-7238-4531-8ab4-77de1d58f1d6)
+
+
+
 
 2. 快捷保存查询语法，便于HW或SRC挖掘
 3. 全部 API 接口的支持，界面可选择接口显示范围
