@@ -21,6 +21,8 @@ FOFA EX 是一款基于fofa api实现的红队综合利用工具，可基于模�
 
 [java11：最新发布版本点击下载](https://github.com/10cks/fofaEX/releases/tag/3.1) [V3.1]
 
+[插件下载地址](https://github.com/10cks/fofaEX_PublicPlugins)
+
 [java 8：最新发布版本点击下载](https://github.com/10cks/fofaEX/releases/download/java8_v2.2/fofaEX_v2_2_java8.zip) [V2.2]
 
 [最新测试版本点击下载](https://github.com/10cks/fofaEX/releases/download/2.1/fofaEX_v2_1_pre.zip) [V2.1]
