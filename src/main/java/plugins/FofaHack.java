@@ -50,6 +50,7 @@ public class FofaHack {
         // 输入面板
         JPanel panel = new JPanel();
         JTextField commandField = new JTextField(50);
+        commandField.setFont(new Font("宋体", Font.PLAIN, 14));
         JTextField endcountField = new JTextField(10);
         JButton executeButton = new JButton("搜索");
         JButton chooseFileButton = new JButton("选择程序");

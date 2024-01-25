@@ -192,7 +192,7 @@ public class Main {
         autoRunMenu.add(AutoRunMenuItemRun.getInstance().getAutoRunMenuItemRun());
         autoRunMenu.add(autoRunMenuItemSetting);
 
-        pluginMenu.add(fofaHackMenu);
+        //pluginMenu.add(fofaHackMenu);
         fofaHackMenu.add(fofaHackMenuItemRun);
         fofaHackMenu.add(fofaHackMenuItemSetting);
         fofaHackMenu.add(fofaHackMenuItemAbout);
@@ -1111,10 +1111,10 @@ public class Main {
                         "<html><body>" +
                                 "<b>fofa EX:</b><br>" +
                                 "Project: <a href='https://github.com/10cks/fofaEX'>https://github.com/10cks/fofaEX</a><br>" +
-                                "Author: bwner@OverSpace<br>" +
-                                "Version: 3.1<br>" +
+                                "Author: bwner<br>" +
+                                "Version: 3.2<br>" +
                                 "JDK Version: 11.0.5<br>" +
-                                "Update: 2024.01.17<br>" +
+                                "Update: 2024.01.25<br>" +
                                 "</body></html>"
                 );
                 editorPane.setEditable(false);
@@ -1160,7 +1160,23 @@ public class Main {
                 }
             }
         });
+        autoRunMenuItemSetting.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                //                    initAutoModeFile.updateSettingsJson(); // 根据AutoMode.json 更新配置文件
+                try {
+                    new ModifyModeJsonDialog();
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        });
 
+//                try {
+//                    initAutoModeFile.processJson(); // 根据配置文件更新AutoMode.json
+//                    initAutoModeFile.updateSettingsJson(); // 根据AutoMode.json 更新配置文件
+//                } catch (IOException ex) {
+//                    throw new RuntimeException(ex);
+//                }
 
         // 为" fofahack 关于项目"菜单项添加动作监听器
         fofaHackMenuItemAbout.addActionListener(new ActionListener() {

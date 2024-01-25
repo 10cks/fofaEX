@@ -646,15 +646,15 @@ public class CommonTemplate {
     public static void addPluginsSettingOpen(String pluginJsonPath) {
         File fofaHackSettingsFile = new File(pluginJsonPath);
         if (fofaHackSettingsFile.exists()) {
-            // 如果文件存在，使用默认程序打开
+            // 如果文件存在，使用notepad打开它
             try {
-                Desktop.getDesktop().open(fofaHackSettingsFile);
+                new ProcessBuilder("notepad", pluginJsonPath).start();
             } catch (IOException ex) {
                 ex.printStackTrace();
                 JOptionPane.showMessageDialog(null, "无法打开配置文件！", "错误", JOptionPane.ERROR_MESSAGE);
             }
         } else {
-            // 如果文件不存在，显示错误消息
+            // 如果文件不存在，显示弹窗
             JOptionPane.showMessageDialog(null, "未获取到配置文件！", "错误", JOptionPane.ERROR_MESSAGE);
         }
     }
