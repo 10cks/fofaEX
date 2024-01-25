@@ -1,5 +1,7 @@
 # 支持插件
 
+[插件下载地址](https://github.com/10cks/fofaEX_PublicPlugins)
+
 - [x] fofa-hack
 - [x] httpX
 - [x] nuclei
