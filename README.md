@@ -42,7 +42,7 @@ java "-Dfile.encoding=UTF-8" -jar .\fofaEX.jar
 
 ## 优势
 
-1. 更多的默认数据查询：默认查询全部数据（fofa_viewer 仅默认查询近一年数据）
+1. 更多的默认数据查询：默认查询全部数据
 
 ![image](https://github.com/10cks/fofaEX/assets/47177550/787106c1-7238-4531-8ab4-77de1d58f1d6)
 
