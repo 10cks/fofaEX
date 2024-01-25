@@ -7,9 +7,15 @@
 
 ## 简介
 
-FOFA EX 是一款基于fofa api实现的红队综合利用工具，可基于模板进行插件加载，目前集成了httpX可进行fofa搜索结果一键探活，支持nuclei一键扫描，支持IP反查域名，支持域名反查ICP备案。
+FOFA EX 是一款基于fofa api实现的红队综合利用工具，可基于模板把工具作为插件进行集成，自动化进行资产探测，目前提供的插件功能如下，需要去插件仓库进行下载，[插件下载地址](https://github.com/10cks/fofaEX_PublicPlugins)：
 
-集成了 fofa 官方的四十个 api 接口，增加搜索数量调整、翻页、iconHash生成、搜索耗时统计、当前用户个人账户信息查询等功能，查询结果可实施编辑与表内搜索，可进行导出； 增加快捷语法编辑记录功能，可将收录的语法进行保存与快捷输入；右键支持当前搜索结果一键打开链接等功能。点击加入 [内测群](https://github.com/10cks/fofaEX/blob/master/README.md#%E5%AD%A6%E4%B9%A0%E4%BA%A4%E6%B5%81) 学习交流与问题反馈。
+1. fofa（或自定义打开文件）探活
+2. nuclei 模板扫描
+3. IP反查域名
+4. 域名反查 ICP 备案
+5. dismap 指纹扫描
+
+默认集成了 fofa 官方的四十个 api 接口，增加搜索数量调整、翻页、iconHash生成、搜索耗时统计、当前用户个人账户信息查询等功能，查询结果可实施编辑与表内搜索，可进行导出； 增加快捷语法编辑记录功能，可将收录的语法进行保存与快捷输入；右键支持当前搜索结果一键打开链接等功能。点击加入 [内测群](https://github.com/10cks/fofaEX/blob/master/README.md#%E5%AD%A6%E4%B9%A0%E4%BA%A4%E6%B5%81) 学习交流与问题反馈。
 
 **本项目长期免费维护，您的star是对我最大的支持。**
 
@@ -32,13 +38,22 @@ java "-Dfile.encoding=UTF-8" -jar .\fofaEX.jar
 
 [更新日志](https://github.com/10cks/fofaEX/blob/master/docs/update.md) [问题修复](https://github.com/10cks/fofaEX/blob/master/docs/issues.md) [第三方插件](https://github.com/10cks/fofaEX/blob/master/docs/plugins.md)
 
+程序主界面：
+
 ![image](https://github.com/10cks/fofaEX/assets/47177550/b1c91436-e8e7-463f-ac6d-4ea2ef737604)
+
+自动化资产探测：httpx 探活 -> ip反查域名 -> 域名反查ICP -> dismap 指纹采集
+
+![mnggiflab-compressed-mnggiflab-from-video-to-gif-2024_01_25_11_19_08](https://github.com/10cks/fofaEX/assets/47177550/d9be02fe-7a87-4930-91a5-3c1561d88c1d)
 
 ## 优势
 
-1. 更多的默认数据查询：默认查询全部数据（fofa_viewer 仅默认查询近一年数据）
+1. 更多的默认数据查询：默认查询全部数据
 
 ![image](https://github.com/10cks/fofaEX/assets/47177550/787106c1-7238-4531-8ab4-77de1d58f1d6)
+
+
+
 
 2. 快捷保存查询语法，便于HW或SRC挖掘
 3. 全部 API 接口的支持，界面可选择接口显示范围
