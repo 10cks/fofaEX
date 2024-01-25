@@ -7,7 +7,7 @@
 
 ## 简介
 
-FOFA EX 是一款基于fofa api实现的红队综合利用工具，可基于模板进行插件加载，自动化资产探测，可自定义工具作为插件进行集成，目前自带功能如下：
+FOFA EX 是一款基于fofa api实现的红队综合利用工具，可基于模板把工具作为插件进行集成，自动化进行资产探测，目前提供的插件功能如下，需要去插件仓库进行下载，[插件下载地址](https://github.com/10cks/fofaEX_PublicPlugins)：
 
 1. fofa（或自定义打开文件）探活
 2. nuclei 模板扫描
@@ -15,7 +15,7 @@ FOFA EX 是一款基于fofa api实现的红队综合利用工具，可基于模�
 4. 域名反查 ICP 备案
 5. dismap 指纹扫描
 
-集成了 fofa 官方的四十个 api 接口，增加搜索数量调整、翻页、iconHash生成、搜索耗时统计、当前用户个人账户信息查询等功能，查询结果可实施编辑与表内搜索，可进行导出； 增加快捷语法编辑记录功能，可将收录的语法进行保存与快捷输入；右键支持当前搜索结果一键打开链接等功能。点击加入 [内测群](https://github.com/10cks/fofaEX/blob/master/README.md#%E5%AD%A6%E4%B9%A0%E4%BA%A4%E6%B5%81) 学习交流与问题反馈。
+默认集成了 fofa 官方的四十个 api 接口，增加搜索数量调整、翻页、iconHash生成、搜索耗时统计、当前用户个人账户信息查询等功能，查询结果可实施编辑与表内搜索，可进行导出； 增加快捷语法编辑记录功能，可将收录的语法进行保存与快捷输入；右键支持当前搜索结果一键打开链接等功能。点击加入 [内测群](https://github.com/10cks/fofaEX/blob/master/README.md#%E5%AD%A6%E4%B9%A0%E4%BA%A4%E6%B5%81) 学习交流与问题反馈。
 
 **本项目长期免费维护，您的star是对我最大的支持。**
 
@@ -26,8 +26,6 @@ FOFA EX 是一款基于fofa api实现的红队综合利用工具，可基于模�
 该程序使用 Java11 编写，请尽可能使用java11（界面及功能优化得最好），使用插件模式可进行一键探活：
 
 [java11：最新发布版本点击下载](https://github.com/10cks/fofaEX/releases/tag/3.1) [V3.1]
-
-[插件下载地址](https://github.com/10cks/fofaEX_PublicPlugins)
 
 [java 8：最新发布版本点击下载](https://github.com/10cks/fofaEX/releases/download/java8_v2.2/fofaEX_v2_2_java8.zip) [V2.2]
 
