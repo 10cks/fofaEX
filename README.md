@@ -7,7 +7,7 @@
 
 ## 简介
 
-FOFA EX 是一款基于fofa api实现的红队综合利用工具，可基于模板把工具作为插件进行集成，自动化进行资产探测，目前提供的插件功能如下，需要去插件仓库进行下载，[插件下载地址](https://github.com/10cks/fofaEX_PublicPlugins)：
+FOFA EX 是一款基于fofa api实现的红队综合利用工具（也可导入鹰图、夸克文件），可基于模板把工具作为插件进行集成，自动化进行资产探测，目前提供的插件功能如下，需要去插件仓库进行下载，[插件下载地址](https://github.com/10cks/fofaEX_PublicPlugins)：
 
 1. fofa（或自定义打开文件）探活
 2. nuclei 模板扫描
