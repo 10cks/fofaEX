@@ -49,9 +49,10 @@ public class FofaHack {
 
         // 输入面板
         JPanel panel = new JPanel();
-        JTextField commandField = new JTextField(50);
-        commandField.setFont(new Font("宋体", Font.PLAIN, 14));
-        JTextField endcountField = new JTextField(10);
+        JTextField commandField = new JTextField(30);
+        commandField.setFont(new Font("Mono", Font.PLAIN, 13));
+        JTextField endcountField = new JTextField(5);
+        endcountField.setFont(new Font("Mono", Font.PLAIN, 13));
         JButton executeButton = new JButton("搜索");
         JButton chooseFileButton = new JButton("选择程序");
 
@@ -86,7 +87,8 @@ public class FofaHack {
             public void actionPerformed(ActionEvent e) {
                 // 清空文本区域
                 resultArea.setText("");
-                String command = commandField.getText().trim();
+                String command = commandField.getText().trim().replace("\"", "\'");
+                command = "\"" + command + "\"";
                 String endcount = endcountField.getText().trim();
                 executeCommand(command, endcount, resultArea);
             }

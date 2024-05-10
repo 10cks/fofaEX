@@ -192,7 +192,7 @@ public class Main {
         autoRunMenu.add(AutoRunMenuItemRun.getInstance().getAutoRunMenuItemRun());
         autoRunMenu.add(autoRunMenuItemSetting);
 
-        //pluginMenu.add(fofaHackMenu);
+        pluginMenu.add(fofaHackMenu);
         fofaHackMenu.add(fofaHackMenuItemRun);
         fofaHackMenu.add(fofaHackMenuItemSetting);
         fofaHackMenu.add(fofaHackMenuItemAbout);
