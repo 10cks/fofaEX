@@ -124,6 +124,8 @@ public class Main {
     static TableCellRenderer highlightRenderer = new HighlightRenderer();
     private static TableCellRenderer defaultRenderer;
     private static JTabbedPane tabbedPane0;
+
+    private static JDialog demoDialog; // 声明为类成员变量
     public static void main(String[] args) throws ClassNotFoundException, UnsupportedLookAndFeelException, InstantiationException, IllegalAccessException, FileNotFoundException {
 
         JFrame jFrame = new JFrame("fofaEX");
@@ -206,8 +208,8 @@ public class Main {
 
         // 创建"关于"菜单项
         JMenu grammarMenu = new JMenu("官方语法");
-        JMenuItem demoMenuItem = new JMenuItem("语法示例");
-        grammarMenu .add(demoMenuItem);
+        JMenuItem fofaDemoMenuItem = new JMenuItem("fofa 语法示例");
+        grammarMenu.add(fofaDemoMenuItem);
         menuBar.add(grammarMenu);
 
         // 创建"关于"菜单项
@@ -1149,344 +1151,349 @@ public class Main {
         });
 
         // 为"官方语法"菜单项添加动作监听器
-        demoMenuItem.addActionListener(new ActionListener() {
+        fofaDemoMenuItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                JEditorPane editorPane = new JEditorPane("text/html", "");
-                editorPane.setText(
-                        "<html><body>" +
-                                "<table border=\"0.5\">" +
-                                "<tr>" +
-                                "<th>查询字段</th>" +
-                                "<th>描述</th>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>icp=\"京ICP证030173号\"</td>" +
-                                "<td>通过HTML正文包含的ICP备案号进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>sdk_hash==\"Mkb4Ms4R96glv/T6TRzwPWh3UDatBqeF\"</td>" +
-                                "<td>通过网站嵌入的第三方代码计算的hash值进行查询（商业版及以上）</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>country=\"CN\"</td>" +
-                                "<td>通过国家的简称代码进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>country=\"中国\"</td>" +
-                                "<td>通过国家中文名称进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>region=\"Zhejiang\"</td>" +
-                                "<td>通过省份/地区英文名称进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>region=\"浙江\"</td>" +
-                                "<td>通过省份/地区中文名称进行查询（仅支持中国地区）</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>city=\"Hangzhou\"</td>" +
-                                "<td>通过城市英文名称进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>cert.is_expired=true</td>" +
-                                "<td>筛选证书已过期的资产（个人版及以上）</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>after=\"2023-01-01\"</td>" +
-                                "<td>筛选某一时间之后有更新的资产</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>before=\"2023-12-01\"</td>" +
-                                "<td>筛选某一时间之前有更新的资产</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>after=\"2023-01-01\" && before=\"2023-12-01\"</td>" +
-                                "<td>筛选某一时间区间有更新的资产</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>port_size=\"6\"</td>" +
-                                "<td>筛选开放端口数量等于6个的独立IP（个人版及以上）</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>port_size_gt=\"6\"</td>" +
-                                "<td>筛选开放端口数量大于6个的独立IP（个人版及以上）</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>port_size_lt=\"12\"</td>" +
-                                "<td>筛选开放端口数量小于12个的独立IP（个人版及以上）</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>ip_ports=\"80,161\"</td>" +
-                                "<td>筛选同时开放不同端口的独立IP</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>ip_country=\"CN\"</td>" +
-                                "<td>通过国家的简称代码进行查询独立IP</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>ip_region=\"Zhejiang\"</td>" +
-                                "<td>通过省份/地区英文名称进行查询独立IP</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>ip_city=\"Hangzhou\"</td>" +
-                                "<td>通过城市英文名称进行查询独立IP</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>ip_after=\"2021-03-18\"</td>" +
-                                "<td>筛选某一时间之后有更新的独立IP</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>ip_before=\"2019-09-09\"</td>" +
-                                "<td>筛选某一时间之前有更新的独立IP</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>cert=\"baidu\"</td>" +
-                                "<td>通过证书进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>cert.subject=\"Oracle Corporation\"</td>" +
-                                "<td>通过证书的持有者进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>cert.issuer=\"DigiCert\"</td>" +
-                                "<td>通过证书的颁发者进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>cert.subject.org=\"Oracle Corporation\"</td>" +
-                                "<td>通过证书持有者的组织进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>cert.subject.cn=\"baidu.com\"</td>" +
-                                "<td>通过证书持有者的通用名称进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>cert.issuer.org=\"cPanel, Inc.\"</td>" +
-                                "<td>通过证书颁发者的组织进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>cert.issuer.cn=\"Synology Inc. CA\"</td>" +
-                                "<td>通过证书颁发者的通用名称进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>cert.is_valid=true</td>" +
-                                "<td>筛选证书是有效证书的资产（个人版及以上）</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>cert.is_valid=false</td>" +
-                                "<td>筛选证书是无效证书的资产（个人版及以上）</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>cert.is_match=true</td>" +
-                                "<td>筛选证书和域名匹配的资产（个人版及以上）</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>cert.is_match=false</td>" +
-                                "<td>筛选证书和域名不匹配的资产（个人版及以上）</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>cert.is_expired=false</td>" +
-                                "<td>筛选证书未过期的资产（个人版及以上）</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>jarm=\"2ad2ad0002ad2ad22c2ad2ad2ad2ad2eac92ec34bcc0cf7520e97547f83e81\"</td>" +
-                                "<td>通过JARM指纹进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>tls.version=\"TLS 1.3\"</td>" +
-                                "<td>通过tls的协议版本进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>tls.ja3s=\"15af977ce25de452b96affa2addb1036\"</td>" +
-                                "<td>通过tls的ja3s指纹进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>ip=\"1.1.1.1\"</td>" +
-                                "<td>通过单一IPv4地址进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>ip=\"220.181.111.1/24\"</td>" +
-                                "<td>通过IPv4 C段进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>ip=\"2600:9000:202a:2600:18:4ab7:f600:93a1\"</td>" +
-                                "<td>通过单一Ipv6地址进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>port=\"6379\"</td>" +
-                                "<td>通过端口号进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>domain=\"qq.com\"</td>" +
-                                "<td>通过根域名进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>host=\".fofa.info\"</td>" +
-                                "<td>通过主机名进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>os=\"centos\"</td>" +
-                                "<td>通过操作系统进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>server=\"Microsoft-IIS/10\"</td>" +
-                                "<td>通过服务器进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>asn=\"19551\"</td>" +
-                                "<td>通过自治系统号进行搜索</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>org=\"LLC Baxet\"</td>" +
-                                "<td>通过所属组织进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>is_domain=true</td>" +
-                                "<td>筛选拥有域名的资产</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>is_domain=false</td>" +
-                                "<td>筛选没有域名的资产</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>is_ipv6=true</td>" +
-                                "<td>筛选是ipv6的资产</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>is_ipv6=false</td>" +
-                                "<td>筛选是ipv4的资产</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>app=\"Microsoft-Exchange\"</td>" +
-                                "<td>通过FOFA整理的规则进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>fid=\"sSXXGNUO2FefBTcCLIT/2Q==\"</td>" +
-                                "<td>通过FOFA聚合的站点指纹进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>product=\"NGINX\"</td>" +
-                                "<td>通过FOFA标记的产品名进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>category=\"服务\"</td>" +
-                                "<td>通过FOFA标记的分类进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>type=\"service\"</td>" +
-                                "<td>筛选协议资产</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>type=\"subdomain\"</td>" +
-                                "<td>筛选服务（网站类）资产</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>cloud_name=\"Aliyundun\"</td>" +
-                                "<td>通过云服务商进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>is_cloud=true</td>" +
-                                "<td>筛选是云服务的资产</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>is_cloud=false</td>" +
-                                "<td>筛选不是云服务的资产</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>is_fraud=true</td>" +
-                                "<td>筛选是仿冒垃圾站群的资产（专业版及以上）</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>is_fraud=false</td>" +
-                                "<td>筛选不是仿冒垃圾站群的资产（已默认筛选）</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>is_honeypot=true</td>" +
-                                "<td>筛选是蜜罐的资产（专业版及以上）</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>is_honeypot=false</td>" +
-                                "<td>筛选不是蜜罐的资产（已默认筛选）</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>protocol=\"quic\"</td>" +
-                                "<td>通过协议名称进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>banner=\"users\"</td>" +
-                                "<td>通过协议返回信息进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>base_protocol=\"udp\"</td>" +
-                                "<td>查询传输层为udp协议的资产</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>base_protocol=\"tcp\"</td>" +
-                                "<td>查询传输层为tcp协议的资产</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>title=\"beijing\"</td>" +
-                                "<td>通过网站标题进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>header=\"elastic\"</td>" +
-                                "<td>通过响应标头进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>header_hash=\"1258854265\"</td>" +
-                                "<td>通过http/https响应头计算的hash值进行查询（个人版及以上）</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>body=\"网络空间测绘\"</td>" +
-                                "<td>通过HTML正文进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>body_hash=\"-2090962452\"</td>" +
-                                "<td>通过HTML正文计算的hash值进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>js_name=\"js/jquery.js\"</td>" +
-                                "<td>通过HTML正文包含的JS进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>js_md5=\"82ac3f14327a8b7ba49baa208d4eaa15\"</td>" +
-                                "<td>通过JS源码进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>cname=\"ap21.inst.siteforce.com\"</td>" +
-                                "<td>通过别名记录进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>cname_domain=\"siteforce.com\"</td>" +
-                                "<td>通过别名记录解析的主域名进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>icon_hash=\"-247388890\"</td>" +
-                                "<td>通过网站图标的hash值进行查询</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>status_code=\"402\"</td>" +
-                                "<td>筛选服务状态为402的服务（网站）资产</td>" +
-                                "</tr>" +
-                                "</table>" +
-                                "</body></html>"
-                );
-                editorPane.setEditable(false);
-                editorPane.setOpaque(false);
+                if (demoDialog == null) {
+                    JEditorPane editorPane = new JEditorPane("text/html", "");
+                    editorPane.setText(
+                            "<html><body>" +
+                                    "<table border=\"0.5\">" +
+                                    "<tr>" +
+                                    "<th>查询字段</th>" +
+                                    "<th>描述</th>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>icp=\"京ICP证030173号\"</td>" +
+                                    "<td>通过HTML正文包含的ICP备案号进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>sdk_hash==\"Mkb4Ms4R96glv/T6TRzwPWh3UDatBqeF\"</td>" +
+                                    "<td>通过网站嵌入的第三方代码计算的hash值进行查询（商业版及以上）</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>country=\"CN\"</td>" +
+                                    "<td>通过国家的简称代码进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>country=\"中国\"</td>" +
+                                    "<td>通过国家中文名称进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>region=\"Zhejiang\"</td>" +
+                                    "<td>通过省份/地区英文名称进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>region=\"浙江\"</td>" +
+                                    "<td>通过省份/地区中文名称进行查询（仅支持中国地区）</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>city=\"Hangzhou\"</td>" +
+                                    "<td>通过城市英文名称进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>cert.is_expired=true</td>" +
+                                    "<td>筛选证书已过期的资产（个人版及以上）</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>after=\"2023-01-01\"</td>" +
+                                    "<td>筛选某一时间之后有更新的资产</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>before=\"2023-12-01\"</td>" +
+                                    "<td>筛选某一时间之前有更新的资产</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>after=\"2023-01-01\" && before=\"2023-12-01\"</td>" +
+                                    "<td>筛选某一时间区间有更新的资产</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>port_size=\"6\"</td>" +
+                                    "<td>筛选开放端口数量等于6个的独立IP（个人版及以上）</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>port_size_gt=\"6\"</td>" +
+                                    "<td>筛选开放端口数量大于6个的独立IP（个人版及以上）</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>port_size_lt=\"12\"</td>" +
+                                    "<td>筛选开放端口数量小于12个的独立IP（个人版及以上）</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>ip_ports=\"80,161\"</td>" +
+                                    "<td>筛选同时开放不同端口的独立IP</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>ip_country=\"CN\"</td>" +
+                                    "<td>通过国家的简称代码进行查询独立IP</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>ip_region=\"Zhejiang\"</td>" +
+                                    "<td>通过省份/地区英文名称进行查询独立IP</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>ip_city=\"Hangzhou\"</td>" +
+                                    "<td>通过城市英文名称进行查询独立IP</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>ip_after=\"2021-03-18\"</td>" +
+                                    "<td>筛选某一时间之后有更新的独立IP</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>ip_before=\"2019-09-09\"</td>" +
+                                    "<td>筛选某一时间之前有更新的独立IP</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>cert=\"baidu\"</td>" +
+                                    "<td>通过证书进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>cert.subject=\"Oracle Corporation\"</td>" +
+                                    "<td>通过证书的持有者进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>cert.issuer=\"DigiCert\"</td>" +
+                                    "<td>通过证书的颁发者进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>cert.subject.org=\"Oracle Corporation\"</td>" +
+                                    "<td>通过证书持有者的组织进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>cert.subject.cn=\"baidu.com\"</td>" +
+                                    "<td>通过证书持有者的通用名称进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>cert.issuer.org=\"cPanel, Inc.\"</td>" +
+                                    "<td>通过证书颁发者的组织进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>cert.issuer.cn=\"Synology Inc. CA\"</td>" +
+                                    "<td>通过证书颁发者的通用名称进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>cert.is_valid=true</td>" +
+                                    "<td>筛选证书是有效证书的资产（个人版及以上）</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>cert.is_valid=false</td>" +
+                                    "<td>筛选证书是无效证书的资产（个人版及以上）</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>cert.is_match=true</td>" +
+                                    "<td>筛选证书和域名匹配的资产（个人版及以上）</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>cert.is_match=false</td>" +
+                                    "<td>筛选证书和域名不匹配的资产（个人版及以上）</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>cert.is_expired=false</td>" +
+                                    "<td>筛选证书未过期的资产（个人版及以上）</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>jarm=\"2ad2ad0002ad2ad22c2ad2ad2ad2ad2eac92ec34bcc0cf7520e97547f83e81\"</td>" +
+                                    "<td>通过JARM指纹进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>tls.version=\"TLS 1.3\"</td>" +
+                                    "<td>通过tls的协议版本进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>tls.ja3s=\"15af977ce25de452b96affa2addb1036\"</td>" +
+                                    "<td>通过tls的ja3s指纹进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>ip=\"1.1.1.1\"</td>" +
+                                    "<td>通过单一IPv4地址进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>ip=\"220.181.111.1/24\"</td>" +
+                                    "<td>通过IPv4 C段进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>ip=\"2600:9000:202a:2600:18:4ab7:f600:93a1\"</td>" +
+                                    "<td>通过单一Ipv6地址进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>port=\"6379\"</td>" +
+                                    "<td>通过端口号进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>domain=\"qq.com\"</td>" +
+                                    "<td>通过根域名进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>host=\".fofa.info\"</td>" +
+                                    "<td>通过主机名进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>os=\"centos\"</td>" +
+                                    "<td>通过操作系统进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>server=\"Microsoft-IIS/10\"</td>" +
+                                    "<td>通过服务器进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>asn=\"19551\"</td>" +
+                                    "<td>通过自治系统号进行搜索</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>org=\"LLC Baxet\"</td>" +
+                                    "<td>通过所属组织进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>is_domain=true</td>" +
+                                    "<td>筛选拥有域名的资产</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>is_domain=false</td>" +
+                                    "<td>筛选没有域名的资产</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>is_ipv6=true</td>" +
+                                    "<td>筛选是ipv6的资产</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>is_ipv6=false</td>" +
+                                    "<td>筛选是ipv4的资产</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>app=\"Microsoft-Exchange\"</td>" +
+                                    "<td>通过FOFA整理的规则进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>fid=\"sSXXGNUO2FefBTcCLIT/2Q==\"</td>" +
+                                    "<td>通过FOFA聚合的站点指纹进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>product=\"NGINX\"</td>" +
+                                    "<td>通过FOFA标记的产品名进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>category=\"服务\"</td>" +
+                                    "<td>通过FOFA标记的分类进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>type=\"service\"</td>" +
+                                    "<td>筛选协议资产</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>type=\"subdomain\"</td>" +
+                                    "<td>筛选服务（网站类）资产</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>cloud_name=\"Aliyundun\"</td>" +
+                                    "<td>通过云服务商进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>is_cloud=true</td>" +
+                                    "<td>筛选是云服务的资产</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>is_cloud=false</td>" +
+                                    "<td>筛选不是云服务的资产</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>is_fraud=true</td>" +
+                                    "<td>筛选是仿冒垃圾站群的资产（专业版及以上）</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>is_fraud=false</td>" +
+                                    "<td>筛选不是仿冒垃圾站群的资产（已默认筛选）</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>is_honeypot=true</td>" +
+                                    "<td>筛选是蜜罐的资产（专业版及以上）</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>is_honeypot=false</td>" +
+                                    "<td>筛选不是蜜罐的资产（已默认筛选）</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>protocol=\"quic\"</td>" +
+                                    "<td>通过协议名称进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>banner=\"users\"</td>" +
+                                    "<td>通过协议返回信息进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>base_protocol=\"udp\"</td>" +
+                                    "<td>查询传输层为udp协议的资产</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>base_protocol=\"tcp\"</td>" +
+                                    "<td>查询传输层为tcp协议的资产</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>title=\"beijing\"</td>" +
+                                    "<td>通过网站标题进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>header=\"elastic\"</td>" +
+                                    "<td>通过响应标头进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>header_hash=\"1258854265\"</td>" +
+                                    "<td>通过http/https响应头计算的hash值进行查询（个人版及以上）</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>body=\"网络空间测绘\"</td>" +
+                                    "<td>通过HTML正文进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>body_hash=\"-2090962452\"</td>" +
+                                    "<td>通过HTML正文计算的hash值进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>js_name=\"js/jquery.js\"</td>" +
+                                    "<td>通过HTML正文包含的JS进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>js_md5=\"82ac3f14327a8b7ba49baa208d4eaa15\"</td>" +
+                                    "<td>通过JS源码进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>cname=\"ap21.inst.siteforce.com\"</td>" +
+                                    "<td>通过别名记录进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>cname_domain=\"siteforce.com\"</td>" +
+                                    "<td>通过别名记录解析的主域名进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>icon_hash=\"-247388890\"</td>" +
+                                    "<td>通过网站图标的hash值进行查询</td>" +
+                                    "</tr>" +
+                                    "<tr>" +
+                                    "<td>status_code=\"402\"</td>" +
+                                    "<td>筛选服务状态为402的服务（网站）资产</td>" +
+                                    "</tr>" +
+                                    "</table>" +
+                                    "</body></html>"
+                    );
+                    editorPane.setEditable(false);
+                    editorPane.setOpaque(false);
 
-                // 创建非模态对话框
-                JDialog dialog = new JDialog();
-                dialog.setTitle("语法示例");
-                JScrollPane scrollPane = new JScrollPane(editorPane);
-                scrollPane.setPreferredSize(new Dimension(900, 500));  // 设置首选大小
-                dialog.setContentPane(scrollPane);
-                dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-                dialog.setModalityType(Dialog.ModalityType.MODELESS); // 设置为非模态
-                dialog.pack(); // 调整对话框大小以适应内容
-                dialog.setLocationRelativeTo(null); // 居中显示
-                dialog.setVisible(true);
-                // 设置滚动条初始化在顶部
-                SwingUtilities.invokeLater(() -> scrollPane.getViewport().setViewPosition(new Point(0, 0)));
+                    // 创建非模态对话框
+                    demoDialog = new JDialog();
+                    demoDialog.setTitle("fofa 语法示例");
+                    JScrollPane scrollPane = new JScrollPane(editorPane);
+                    scrollPane.setPreferredSize(new Dimension(950, 500));  // 设置首选大小
+                    demoDialog.setContentPane(scrollPane);
+                    demoDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+                    demoDialog.setModalityType(Dialog.ModalityType.MODELESS); // 设置为非模态
+                    demoDialog.pack(); // 调整对话框大小以适应内容
+                    demoDialog.setLocationRelativeTo(null); // 居中显示
+
+                    // 设置滚动条初始化在顶部
+                    SwingUtilities.invokeLater(() -> scrollPane.getViewport().setViewPosition(new Point(0, 0)));
+                }
+                demoDialog.setVisible(true);
+                demoDialog.toFront(); // 将对话框置于前端
+
             }
         });
 
