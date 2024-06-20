@@ -222,9 +222,7 @@ mac 使用插件：
 
 ## 学习交流
 
-扫描二维码备注“加群”，进入 fofaEX 内测群，可体验更多有趣功能。（仅限学习交流，黑灰产及公众号推广勿扰）
 
-![image](https://github.com/10cks/fofaEX/assets/47177550/a0646ad7-c1e8-4a3b-b654-6ca8e49be54c)
 
 
 ## 致谢
