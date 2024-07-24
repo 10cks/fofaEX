@@ -233,6 +233,10 @@ mac 使用插件：
 
 [Mechoy](https://github.com/Mechoy) [XinCaoZ](https://github.com/XinCaoZ) [ha1yu](https://github.com/ha1yu) [wavesky](https://github.com/wave-to) [gh0stkey](https://github.com/gh0stkey/HaE)
 
+除此之外，也感谢Fofaex安全开发小组的各位成员在开发中提供的建议与想法，以下排名不分先后：
+
+start 李趴菜 lemon不酸 A 一木之子 素风 Z1t0
+
 ### FOFA 共创者计划
 
 FofaEX 已加入 [FOFA 共创者计划](https://fofa.info/development)，感谢 FOFA 提供的账号支持。
